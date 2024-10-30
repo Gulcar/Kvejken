@@ -4,6 +4,7 @@ project(Kvejken C CXX)
 
 add_executable(${PROJECT_NAME}
     src/Main.cpp
+    src/Renderer.cpp
     libs/glad/src/glad.c
 )
 
