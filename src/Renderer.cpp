@@ -21,7 +21,7 @@ namespace kvejken::renderer
 
     void create_window(const char* title, int width, int height)
     {
-        assert(m_window == nullptr);
+        ASSERT(m_window == nullptr);
         m_window_width = width;
         m_window_height = height;
 
@@ -33,25 +33,16 @@ namespace kvejken::renderer
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         //glfwWindowHint(GLFW_SAMPLES, 4);
 
-        GLFWwindow* window = glfwCreateWindow(width, height, "Kvejken", nullptr, nullptr);
-        if (!window) ERROR_EXIT("Failed to create a glfw window");
+        m_window = glfwCreateWindow(width, height, "Kvejken", nullptr, nullptr);
+        if (!m_window) ERROR_EXIT("Failed to create a glfw window");
 
-        glfwMakeContextCurrent(window);
+        glfwMakeContextCurrent(m_window);
         gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 
         printf("OpenGL version: %s\n", glGetString(GL_VERSION));
 
         glViewport(0, 0, width, height);
-        glfwSetFramebufferSizeCallback(window, on_window_resize);
-
-        while (!glfwWindowShouldClose(window))
-        {
-            glfwPollEvents();
-
-            glClear(GL_COLOR_BUFFER_BIT);
-
-            glfwSwapBuffers(window);
-        }
+        glfwSetFramebufferSizeCallback(m_window, on_window_resize);
     }
 
     void terminate()
@@ -62,7 +53,8 @@ namespace kvejken::renderer
 
     bool is_window_open()
     {
-        return m_window != nullptr;
+        return m_window != nullptr &&
+            glfwWindowShouldClose(m_window) == false;
     }
 
     int window_width()
