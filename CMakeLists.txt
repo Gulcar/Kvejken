@@ -11,9 +11,11 @@ add_executable(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
 
 add_subdirectory(libs/glfw/)
+add_subdirectory(libs/glm/)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     glfw
+    glm::glm
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
