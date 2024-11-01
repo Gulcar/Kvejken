@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string_view>
+#include <stdint.h>
+#include <fstream>
 
 #ifdef WIN32
 #define DEBUG_BREAK() __debugbreak()
@@ -29,5 +31,19 @@ namespace utils
             return false;
         const char* str_end = str.data() + (str.length() - check.length());
         return strncmp(str_end, check.data(), check.size()) == 0;
+    }
+
+    inline std::string read_file_to_string(std::string_view file_path)
+    {
+        std::ifstream file(file_path.data());
+
+        file.seekg(0, std::ios::end);
+        size_t size = file.tellg();
+        std::string str(size, '\0');
+
+        file.seekg(0);
+        file.read(&str[0], size);
+        file.close();
+        return str;
     }
 }

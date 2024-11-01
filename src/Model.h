@@ -6,17 +6,21 @@
 
 namespace kvejken
 {
+    struct Vertex
+    {
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texture_coords;
+    };
+
     class Model
     {
     public:
         Model(std::string_view file_name);
 
+        const std::vector<Vertex>& vertices() const { return m_vertices; }
+
     private:
-        std::vector<glm::vec3> m_vertices;
-        std::vector<glm::vec3> m_normals;
-        std::vector<glm::vec2> m_texture_coords;
-        std::vector<uint32_t> m_indices;
-        std::vector<uint32_t> m_normal_indices;
-        std::vector<uint32_t> m_texture_coords_indices;
+        std::vector<Vertex> m_vertices;
     };
 }

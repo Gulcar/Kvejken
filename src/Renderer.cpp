@@ -1,7 +1,13 @@
 #include "Renderer.h"
+#include "Model.h"
+#include "Utils.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Utils.h"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/norm.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <algorithm>
 
 namespace kvejken::renderer
 {
@@ -10,6 +16,64 @@ namespace kvejken::renderer
         GLFWwindow* m_window = nullptr;
         int m_window_width = 0;
         int m_window_height = 0;
+
+        // TODO: trenutno so biti obratno od zelenega vrstnega reda, nevem ce standard definira vrstni red
+        struct DrawOrderKey
+        {
+            uint32_t layer : 1; // hud or world
+            uint32_t transparency : 1;
+            uint32_t distance : 27; // distance from camera
+            uint32_t shader_id : 3;
+        };
+        std::vector<std::pair<DrawOrderKey, Model*>> m_draw_queue;
+
+        constexpr uint32_t VERTICES_PER_BATCH = 2048;
+        constexpr uint32_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(Vertex);
+        std::vector<Vertex> m_batched_vertices;
+        uint32_t m_vao, m_vbo;
+        uint32_t m_shader;
+
+        Camera m_camera = {};
+        glm::mat4 m_view_proj = {};
+    }
+
+    static uint32_t load_shader(std::string_view source, GLenum type)
+    {
+        uint32_t shader = glCreateShader(type);
+        const char* char_source = source.data();
+        glShaderSource(shader, 1, &char_source, 0);
+        glCompileShader(shader);
+        return shader;
+    }
+
+    static uint32_t load_shader_program(std::string_view vertex_src_file, std::string_view fragment_src_file)
+    {
+        uint32_t vertex_shader = load_shader(utils::read_file_to_string(vertex_src_file), GL_VERTEX_SHADER);
+        uint32_t fragment_shader = load_shader(utils::read_file_to_string(fragment_src_file), GL_FRAGMENT_SHADER);
+
+        uint32_t program = glCreateProgram();
+        glAttachShader(program, vertex_shader);
+        glAttachShader(program, fragment_shader);
+        glLinkProgram(program);
+
+        int link_status;
+        glGetProgramiv(program, GL_LINK_STATUS, &link_status);
+        if (!link_status)
+        {
+            int log_length;
+            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
+            char* log = new char[log_length + 1];
+            glGetProgramInfoLog(program, log_length + 1, 0, log);
+            ERROR_EXIT("failed to link shader program:\n%s", log);
+        }
+
+        glDetachShader(program, vertex_shader);
+        glDetachShader(program, fragment_shader);
+
+        glDeleteShader(vertex_shader);
+        glDeleteShader(fragment_shader);
+
+        return program;
     }
 
     static void on_window_resize(GLFWwindow* window, int width, int height)
@@ -43,6 +107,34 @@ namespace kvejken::renderer
 
         glViewport(0, 0, width, height);
         glfwSetFramebufferSizeCallback(m_window, on_window_resize);
+
+        // default camera
+        m_camera.position = glm::vec3(-2.5f, 1.7f, 3.0f);
+        m_camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+        // opengl buffers
+        glGenVertexArrays(1, &m_vao);
+        glBindVertexArray(m_vao);
+
+        glGenBuffers(1, &m_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, nullptr, GL_DYNAMIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coords));
+        // TODO: verjetno bo se texture index tukaj
+
+        m_batched_vertices.reserve(VERTICES_PER_BATCH);
+
+        m_shader = load_shader_program("../../assets/vert.glsl", "../../assets/frag.glsl");
+        glUseProgram(m_shader);
+
+        glEnable(GL_DEPTH_TEST);
     }
 
     void terminate()
@@ -67,6 +159,11 @@ namespace kvejken::renderer
         return m_window_height;
     }
 
+    float aspect_ratio()
+    {
+        return m_window_width / (float)m_window_height;
+    }
+
     void poll_events()
     {
         glfwPollEvents();
@@ -74,7 +171,52 @@ namespace kvejken::renderer
 
     void clear_screen()
     {
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect_ratio(), 0.01f, 100.0f);
+        glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);
+        m_view_proj = proj * view;
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
+    }
+
+    static bool draw_sort_predicate(const std::pair<DrawOrderKey, Model*>& a, const std::pair<DrawOrderKey, Model*>& b)
+    {
+        return *(uint32_t*)(&a.first) > *(uint32_t*)(&b.first);
+    }
+
+    static void flush_vertices()
+    {
+        if (m_batched_vertices.size() == 0)
+            return;
+        glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(Vertex), m_batched_vertices.data());
+        glDrawArrays(GL_TRIANGLES, 0, m_batched_vertices.size());
+        m_batched_vertices.clear();
+    }
+
+    void draw_queue()
+    {
+        if (m_draw_queue.size() == 0)
+            return;
+
+        std::sort(m_draw_queue.begin(), m_draw_queue.end(), draw_sort_predicate);
+
+        uint32_t shader_id = m_draw_queue[0].first.shader_id;
+
+        for (int i = 0; i < m_draw_queue.size(); i++)
+        {
+            Model* model = m_draw_queue[0].second;
+
+            if (m_batched_vertices.size() + model->vertices().size() > VERTICES_PER_BATCH)
+                flush_vertices();
+            // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
+
+            m_batched_vertices.insert(m_batched_vertices.end(), model->vertices().begin(), model->vertices().end());
+        }
+
+        flush_vertices();
+
+        m_draw_queue.clear();
+        m_batched_vertices.clear();
     }
 
     void swap_buffers()
@@ -82,6 +224,18 @@ namespace kvejken::renderer
         glfwSwapBuffers(m_window);
     }
 
-    //void draw_model();
+    void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
+    {
+        // TODO: if not in camera view don't draw
+        DrawOrderKey order;
+        order.layer = 1;
+        order.transparency = 0;
+        // TODO: max z distance (hardcoded je 100), shaders
+        order.distance = (int)(glm::distance2(position, m_camera.position) / (100.0f * 100.0f) * 134217727);
+        order.shader_id = 0;
+
+        m_draw_queue.push_back({ order, model });
+    }
+
     //void draw_sprite();
 }
