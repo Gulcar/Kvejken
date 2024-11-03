@@ -5,6 +5,7 @@
 #include <GLFW/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/euler_angles.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
@@ -25,11 +26,25 @@ namespace kvejken::renderer
             uint32_t distance : 27; // distance from camera
             uint32_t shader_id : 3;
         };
-        std::vector<std::pair<DrawOrderKey, Model*>> m_draw_queue;
+        struct DrawCommand
+        {
+            DrawOrderKey order;
+            Model* model;
+            glm::mat4 transform;
+        };
+        std::vector<DrawCommand> m_draw_queue;
 
+        struct BatchVertex
+        {
+            glm::vec3 position;
+            glm::vec3 normal;
+            glm::vec2 texture_coords;
+            uint8_t texture_index;
+        };
         constexpr uint32_t VERTICES_PER_BATCH = 2048;
-        constexpr uint32_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(Vertex);
-        std::vector<Vertex> m_batched_vertices;
+        constexpr uint32_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
+        std::vector<BatchVertex> m_batched_vertices;
+
         uint32_t m_vao, m_vbo;
         uint32_t m_shader;
 
@@ -122,12 +137,13 @@ namespace kvejken::renderer
         glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, nullptr, GL_DYNAMIC_DRAW);
 
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, position));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, normal));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coords));
-        // TODO: verjetno bo se texture index tukaj
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_coords));
+        glEnableVertexAttribArray(3);
+        glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_index));
 
         m_batched_vertices.reserve(VERTICES_PER_BATCH);
 
@@ -179,16 +195,16 @@ namespace kvejken::renderer
         glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
     }
 
-    static bool draw_sort_predicate(const std::pair<DrawOrderKey, Model*>& a, const std::pair<DrawOrderKey, Model*>& b)
+    static bool draw_sort_predicate(const DrawCommand& a, const DrawCommand& b)
     {
-        return *(uint32_t*)(&a.first) > *(uint32_t*)(&b.first);
+        return *(uint32_t*)(&a.order) > *(uint32_t*)(&b.order);
     }
 
     static void flush_vertices()
     {
         if (m_batched_vertices.size() == 0)
             return;
-        glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(Vertex), m_batched_vertices.data());
+        glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(BatchVertex), m_batched_vertices.data());
         glDrawArrays(GL_TRIANGLES, 0, m_batched_vertices.size());
         m_batched_vertices.clear();
     }
@@ -200,17 +216,26 @@ namespace kvejken::renderer
 
         std::sort(m_draw_queue.begin(), m_draw_queue.end(), draw_sort_predicate);
 
-        uint32_t shader_id = m_draw_queue[0].first.shader_id;
+        uint32_t shader_id = m_draw_queue[0].order.shader_id;
 
         for (int i = 0; i < m_draw_queue.size(); i++)
         {
-            Model* model = m_draw_queue[0].second;
+            Model* model = m_draw_queue[i].model;
 
             if (m_batched_vertices.size() + model->vertices().size() > VERTICES_PER_BATCH)
                 flush_vertices();
             // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
 
-            m_batched_vertices.insert(m_batched_vertices.end(), model->vertices().begin(), model->vertices().end());
+            // TODO: if model->vertices().size() > VERTICES_PER_BATCH
+            for (const auto& vertex : model->vertices())
+            {
+                BatchVertex bv;
+                bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
+                bv.normal = vertex.normal;
+                bv.texture_coords = vertex.texture_coords;
+                bv.texture_index = 0; // TODO
+                m_batched_vertices.push_back(bv);
+            }
         }
 
         flush_vertices();
@@ -234,7 +259,11 @@ namespace kvejken::renderer
         order.distance = (int)(glm::distance2(position, m_camera.position) / (100.0f * 100.0f) * 134217727);
         order.shader_id = 0;
 
-        m_draw_queue.push_back({ order, model });
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+            * glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)
+            * glm::scale(glm::mat4(1.0f), scale);
+
+        m_draw_queue.push_back({ order, model, transform });
     }
 
     //void draw_sprite();

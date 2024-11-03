@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "Utils.h"
 #include "Model.h"
+#include <GLFW/glfw3.h>
 
 using namespace kvejken;
 
@@ -21,7 +22,7 @@ int main()
 
         renderer::clear_screen();
 
-        renderer::draw_model(&model, glm::vec3(0, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, 0, 0));
+        renderer::draw_model(&model, glm::vec3(std::sin(glfwGetTime()), 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, glfwGetTime(), 0));
         renderer::draw_queue();
 
         renderer::swap_buffers();
