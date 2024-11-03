@@ -1,6 +1,6 @@
 #pragma once
-
 #include <glm/vec3.hpp>
+#include <string_view>
 
 namespace kvejken
 {
@@ -19,6 +19,13 @@ namespace kvejken::renderer
         float z_far;
     };
 
+    struct Texture
+    {
+        uint32_t id;
+        uint32_t width;
+        uint32_t height;
+    };
+
     void create_window(const char* title, int width, int height);
     void terminate();
 
@@ -31,6 +38,8 @@ namespace kvejken::renderer
     void clear_screen();
     void draw_queue();
     void swap_buffers();
+
+    Texture load_texture(std::string_view file_path);
 
     void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     //void draw_sprite();

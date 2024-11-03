@@ -9,6 +9,7 @@
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
+#include <map>
 
 namespace kvejken::renderer
 {
@@ -46,9 +47,12 @@ namespace kvejken::renderer
         constexpr uint32_t VERTICES_PER_BATCH = 2048;
         constexpr uint32_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
         std::vector<BatchVertex> m_batched_vertices;
+        std::vector<uint32_t> m_batched_textures;
 
         uint32_t m_vao, m_vbo;
         uint32_t m_shader;
+
+        std::map<std::string, uint32_t> m_textures;
 
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
@@ -252,6 +256,12 @@ namespace kvejken::renderer
     void swap_buffers()
     {
         glfwSwapBuffers(m_window);
+    }
+
+    Texture load_texture(std::string_view file_path)
+    {
+        // TODO
+        return {};
     }
 
     void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)

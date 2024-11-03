@@ -5,10 +5,15 @@
 
 namespace kvejken
 {
-    Model::Model(std::string_view file_name)
+    Model::Model(const std::string& file_path)
     {
-        std::ifstream file(file_name.data());
+        std::ifstream file(file_path);
         ASSERT(file.is_open() && file.good());
+
+        std::string directory = "./";
+        size_t last_slash_pos = file_path.find_last_of("/\\");
+        if (last_slash_pos != std::string::npos)
+            directory = file_path.substr(0, last_slash_pos + 1);
 
         std::vector<glm::vec3> positions;
         std::vector<glm::vec3> normals;
@@ -62,6 +67,10 @@ namespace kvejken
                 normal_indices.push_back(bvn);
                 normal_indices.push_back(cvn);
             }
+            else if (utils::starts_with(line, "mtllib "))
+            {
+                load_material(directory, line.substr(7, -1));
+            }
         }
 
         m_vertices.reserve(position_indices.size());
@@ -73,6 +82,21 @@ namespace kvejken
                 normals[normal_indices[i] - 1],
                 texture_coords[texture_coords_indices[i] - 1],
             });
+        }
+    }
+
+    void Model::load_material(const std::string& directory, const std::string& file_path)
+    {
+        std::ifstream file(directory + file_path);
+        ASSERT(file.is_open() && file.good());
+
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (utils::starts_with(line, "map_Kd "))
+            {
+                m_diffuse_texture_file = directory + line.substr(7, -1);
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 #pragma once
-#include <string_view>
+#include <string>
 #include <vector>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -16,11 +16,15 @@ namespace kvejken
     class Model
     {
     public:
-        Model(std::string_view file_name);
+        Model(const std::string& file_path);
 
         const std::vector<Vertex>& vertices() const { return m_vertices; }
+        const std::string& diffuse_texture_file() const { return m_diffuse_texture_file; }
 
     private:
+        void load_material(const std::string& directory, const std::string& file_path);
+
         std::vector<Vertex> m_vertices;
+        std::string m_diffuse_texture_file;
     };
 }
