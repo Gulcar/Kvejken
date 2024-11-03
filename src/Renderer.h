@@ -14,6 +14,9 @@ namespace kvejken::renderer
         glm::vec3 position;
         glm::vec3 target;
         glm::vec3 up;
+        float fovy;
+        float z_near;
+        float z_far;
     };
 
     void create_window(const char* title, int width, int height);

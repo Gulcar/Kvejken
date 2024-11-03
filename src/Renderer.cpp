@@ -18,14 +18,16 @@ namespace kvejken::renderer
         int m_window_width = 0;
         int m_window_height = 0;
 
-        // TODO: trenutno so biti obratno od zelenega vrstnega reda, nevem ce standard definira vrstni red
         struct DrawOrderKey
         {
-            uint32_t layer : 1; // hud or world
-            uint32_t transparency : 1;
-            uint32_t distance : 27; // distance from camera
+            // bits are defined from LSB to MSB
+            uint32_t inverse_depth : 27; // closer to camera is a higher number
             uint32_t shader_id : 3;
+            uint32_t transparency : 1;
+            uint32_t layer : 1; // hud or world
         };
+        static_assert(sizeof(DrawOrderKey) == sizeof(uint32_t));
+
         struct DrawCommand
         {
             DrawOrderKey order;
@@ -127,6 +129,9 @@ namespace kvejken::renderer
         m_camera.position = glm::vec3(-2.5f, 1.7f, 3.0f);
         m_camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
         m_camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
+        m_camera.fovy = 60.0f;
+        m_camera.z_near = 0.01f;
+        m_camera.z_far = 100.0f;
 
         // opengl buffers
         glGenVertexArrays(1, &m_vao);
@@ -189,7 +194,7 @@ namespace kvejken::renderer
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 proj = glm::perspective(glm::radians(60.0f), aspect_ratio(), 0.01f, 100.0f);
+        glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);
         m_view_proj = proj * view;
         glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
@@ -255,9 +260,11 @@ namespace kvejken::renderer
         DrawOrderKey order;
         order.layer = 1;
         order.transparency = 0;
-        // TODO: max z distance (hardcoded je 100), shaders
-        order.distance = (int)(glm::distance2(position, m_camera.position) / (100.0f * 100.0f) * 134217727);
         order.shader_id = 0;
+
+        float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
+        constexpr int max_depth = (2 << 27) - 1; // for 27 bits
+        order.inverse_depth = (int)((1.0f - distance01) * max_depth);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)
