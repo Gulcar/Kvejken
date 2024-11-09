@@ -1,4 +1,5 @@
 #pragma once
+#include "Renderer.h"
 #include <string>
 #include <vector>
 #include <glm/vec2.hpp>
@@ -19,12 +20,12 @@ namespace kvejken
         Model(const std::string& file_path);
 
         const std::vector<Vertex>& vertices() const { return m_vertices; }
-        const std::string& diffuse_texture_file() const { return m_diffuse_texture_file; }
+        const Texture& diffuse_texture() const { return m_diffuse_texture; }
 
     private:
         void load_material(const std::string& directory, const std::string& file_path);
 
         std::vector<Vertex> m_vertices;
-        std::string m_diffuse_texture_file;
+        Texture m_diffuse_texture = {};
     };
 }

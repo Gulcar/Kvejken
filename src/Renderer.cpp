@@ -3,6 +3,7 @@
 #include "Utils.h"
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <stb_image.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/euler_angles.hpp>
@@ -44,15 +45,16 @@ namespace kvejken::renderer
             glm::vec2 texture_coords;
             uint8_t texture_index;
         };
-        constexpr uint32_t VERTICES_PER_BATCH = 2048;
-        constexpr uint32_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
+        constexpr size_t VERTICES_PER_BATCH = 2048;
+        constexpr size_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
+        constexpr size_t TEXTURES_PER_BATCH = 8;
         std::vector<BatchVertex> m_batched_vertices;
         std::vector<uint32_t> m_batched_textures;
 
         uint32_t m_vao, m_vbo;
         uint32_t m_shader;
 
-        std::map<std::string, uint32_t> m_textures;
+        std::map<std::string, Texture> m_textures;
 
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
@@ -159,7 +161,12 @@ namespace kvejken::renderer
         m_shader = load_shader_program("../../assets/vert.glsl", "../../assets/frag.glsl");
         glUseProgram(m_shader);
 
+        int texture_indices[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+        glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), 8, texture_indices);
+
         glEnable(GL_DEPTH_TEST);
+
+        stbi_set_flip_vertically_on_load(true);
     }
 
     void terminate()
@@ -209,13 +216,22 @@ namespace kvejken::renderer
         return *(uint32_t*)(&a.order) > *(uint32_t*)(&b.order);
     }
 
-    static void flush_vertices()
+    static void draw_batch()
     {
         if (m_batched_vertices.size() == 0)
             return;
+
+        for (int i = 0; i < m_batched_textures.size(); i++)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
+        }
+
         glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(BatchVertex), m_batched_vertices.data());
         glDrawArrays(GL_TRIANGLES, 0, m_batched_vertices.size());
+
         m_batched_vertices.clear();
+        m_batched_textures.clear();
     }
 
     void draw_queue()
@@ -232,8 +248,26 @@ namespace kvejken::renderer
             Model* model = m_draw_queue[i].model;
 
             if (m_batched_vertices.size() + model->vertices().size() > VERTICES_PER_BATCH)
-                flush_vertices();
+                draw_batch();
             // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
+
+            uint8_t texture_index = 255;
+            for (int i = 0; i < m_batched_textures.size(); i++)
+            {
+                if (m_batched_textures[i] == model->diffuse_texture().id)
+                {
+                    texture_index = i;
+                    break;
+                }
+            }
+
+            if (texture_index == 255)
+            {
+                if (m_batched_textures.size() >= TEXTURES_PER_BATCH)
+                    draw_batch();
+                texture_index = m_batched_textures.size();
+                m_batched_textures.push_back(model->diffuse_texture().id);
+            }
 
             // TODO: if model->vertices().size() > VERTICES_PER_BATCH
             for (const auto& vertex : model->vertices())
@@ -242,12 +276,12 @@ namespace kvejken::renderer
                 bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
                 bv.normal = vertex.normal;
                 bv.texture_coords = vertex.texture_coords;
-                bv.texture_index = 0; // TODO
+                bv.texture_index = texture_index;
                 m_batched_vertices.push_back(bv);
             }
         }
 
-        flush_vertices();
+        draw_batch();
 
         m_draw_queue.clear();
         m_batched_vertices.clear();
@@ -258,10 +292,42 @@ namespace kvejken::renderer
         glfwSwapBuffers(m_window);
     }
 
-    Texture load_texture(std::string_view file_path)
+    Texture load_texture(const char* file_path)
     {
-        // TODO
-        return {};
+        auto it = m_textures.find(file_path);
+        if (it != m_textures.end())
+            return it->second;
+
+        Texture tex = {};
+        int num_components;
+        uint8_t* data = stbi_load(file_path, &tex.width, &tex.height, &num_components, 0);
+        if (data == nullptr)
+            ERROR_EXIT("Failed to load texture '%s' (%s)", file_path, stbi_failure_reason());
+        if (tex.width % 4 != 0 || tex.height % 4 != 0)
+            ERROR_EXIT("Texture size is not a multiple of 4 (w=%d, h=%d)", tex.width, tex.height);
+
+        glGenTextures(1, &tex.id);
+        glBindTexture(GL_TEXTURE_2D, tex.id);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        GLenum internal_format, format;
+        switch (num_components)
+        {
+        case 1: internal_format = GL_R8;    format = GL_RED; break;
+        case 3: internal_format = GL_RGB8;  format = GL_RGB; break;
+        case 4: internal_format = GL_RGBA8; format = GL_RGBA; break;
+        default:
+            ERROR_EXIT("Invalid number of channels on image (%d)", num_components);
+        }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tex.width, tex.height, 0, format, GL_UNSIGNED_BYTE, data);
+        stbi_image_free(data);
+
+        m_textures[file_path] = tex;
+        return tex;
     }
 
     void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
@@ -271,6 +337,7 @@ namespace kvejken::renderer
         order.layer = 1;
         order.transparency = 0;
         order.shader_id = 0;
+        // TODO: mogoce v key dodam se texture_id da lepo batcha teksture skupaj
 
         float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
         constexpr int max_depth = (2 << 27) - 1; // for 27 bits

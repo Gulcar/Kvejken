@@ -1,14 +1,10 @@
 #pragma once
 #include <glm/vec3.hpp>
-#include <string_view>
 
 namespace kvejken
 {
     class Model;
-}
 
-namespace kvejken::renderer
-{
     struct Camera
     {
         glm::vec3 position;
@@ -22,10 +18,13 @@ namespace kvejken::renderer
     struct Texture
     {
         uint32_t id;
-        uint32_t width;
-        uint32_t height;
+        int width;
+        int height;
     };
+}
 
+namespace kvejken::renderer
+{
     void create_window(const char* title, int width, int height);
     void terminate();
 
@@ -39,7 +38,7 @@ namespace kvejken::renderer
     void draw_queue();
     void swap_buffers();
 
-    Texture load_texture(std::string_view file_path);
+    Texture load_texture(const char* file_path);
 
     void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     //void draw_sprite();

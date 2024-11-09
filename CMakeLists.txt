@@ -7,6 +7,7 @@ add_executable(${PROJECT_NAME}
     src/Renderer.cpp
     src/Model.cpp
     libs/glad/src/glad.c
+    libs/stb/stb_image.cpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)
@@ -21,4 +22,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     libs/glad/include/
+    libs/stb/
 )

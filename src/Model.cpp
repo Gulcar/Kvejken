@@ -95,7 +95,8 @@ namespace kvejken
         {
             if (utils::starts_with(line, "map_Kd "))
             {
-                m_diffuse_texture_file = directory + line.substr(7, -1);
+                std::string file_path = directory + line.substr(7, -1);
+                m_diffuse_texture = renderer::load_texture(file_path.c_str());
             }
         }
     }
