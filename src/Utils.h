@@ -4,6 +4,9 @@
 #include <string_view>
 #include <stdint.h>
 #include <fstream>
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/common.hpp>
 
 #ifdef WIN32
 #define DEBUG_BREAK() __debugbreak()
@@ -45,5 +48,26 @@ namespace utils
         file.read(&str[0], size);
         file.close();
         return str;
+    }
+
+    // GL_INT_2_10_10_10_REV
+    inline uint32_t pack_normals(glm::vec3 v)
+    {
+        const uint32_t xs = v.x < 0;
+        const uint32_t ys = v.y < 0;
+        const uint32_t zs = v.z < 0;
+        uint32_t vi =
+            zs << 29 | ((uint32_t)(v.z * 511 + (zs << 9)) & 511) << 20 |
+            ys << 19 | ((uint32_t)(v.y * 511 + (ys << 9)) & 511) << 10 |
+            xs << 9 | ((uint32_t)(v.x * 511 + (xs << 9)) & 511);
+        return vi;
+    }
+
+    // normalized for range [-1, 2]
+    inline glm::u16vec2 pack_texture_coords(glm::vec2 v)
+    {
+        float ux = ((v.x + 1.0f) / 3.0f) * ((1 << 16) - 1);
+        float uy = ((v.y + 1.0f) / 3.0f) * ((1 << 16) - 1);
+        return glm::u16vec2((uint16_t)ux, (uint16_t)uy);
     }
 }

@@ -79,8 +79,8 @@ namespace kvejken
         {
             m_vertices.push_back(Vertex{
                 positions[position_indices[i] - 1],
-                normals[normal_indices[i] - 1],
-                texture_coords[texture_coords_indices[i] - 1],
+                utils::pack_normals(normals[normal_indices[i] - 1]),
+                utils::pack_texture_coords(texture_coords[texture_coords_indices[i] - 1]),
             });
         }
     }

@@ -41,11 +41,11 @@ namespace kvejken::renderer
         struct BatchVertex
         {
             glm::vec3 position;
-            glm::vec3 normal; // TODO: mogoce pretvori normal in texture_coords tako da porabi manj prostora
-            glm::vec2 texture_coords; // https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices#Attribute_sizes
+            uint32_t normal;
+            glm::u16vec2 texture_coords;
             uint8_t texture_index;
         };
-        constexpr size_t VERTICES_PER_BATCH = 2048;
+        constexpr size_t VERTICES_PER_BATCH = 4096;
         constexpr size_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
         constexpr size_t TEXTURES_PER_BATCH = 8;
         std::vector<BatchVertex> m_batched_vertices;
@@ -150,9 +150,9 @@ namespace kvejken::renderer
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, position));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, normal));
+        glVertexAttribPointer(1, 4, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, normal));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_coords));
+        glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_coords));
         glEnableVertexAttribArray(3);
         glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_index));
 

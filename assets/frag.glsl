@@ -26,6 +26,7 @@ void main()
     }
     v_frag_color = tex_color;
     //v_frag_color = vec4(v_uv, 0.0, 1.0);
+    //v_frag_color = vec4(v_normal, 1.0);
     if (v_frag_color.a < 0.1)
         discard;
 }

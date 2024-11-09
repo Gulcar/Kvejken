@@ -15,6 +15,6 @@ void main()
 {
     gl_Position = u_view_proj * vec4(a_pos, 1.0);
     v_normal = a_normal;
-    v_uv = a_uv;
+    v_uv = a_uv * 3 - 1;
     v_texture_index = a_texture_index;
 }
