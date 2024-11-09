@@ -25,6 +25,10 @@ int main()
         renderer::draw_model(&model, glm::vec3(std::sin(glfwGetTime()), 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, glfwGetTime(), 0));
         renderer::draw_model(&model, glm::vec3(3, 0.4f, -5), glm::vec3(0.5f), glm::vec3(0, 0, 0));
         renderer::draw_model(&model, glm::vec3(2, 0, -3), glm::vec3(0.5f), glm::vec3(0, 0, 0));
+        for (int i = 0; i < 100; i++)
+        {
+            renderer::draw_model(&model, glm::vec3(i, 0, -3), glm::vec3(0.5f), glm::vec3(0, 0, 0));
+        }
         renderer::draw_queue();
 
         renderer::swap_buffers();

@@ -41,8 +41,8 @@ namespace kvejken::renderer
         struct BatchVertex
         {
             glm::vec3 position;
-            glm::vec3 normal;
-            glm::vec2 texture_coords;
+            glm::vec3 normal; // TODO: mogoce pretvori normal in texture_coords tako da porabi manj prostora
+            glm::vec2 texture_coords; // https://www.khronos.org/opengl/wiki/Vertex_Specification_Best_Practices#Attribute_sizes
             uint8_t texture_index;
         };
         constexpr size_t VERTICES_PER_BATCH = 2048;
@@ -247,8 +247,6 @@ namespace kvejken::renderer
         {
             Model* model = m_draw_queue[i].model;
 
-            if (m_batched_vertices.size() + model->vertices().size() > VERTICES_PER_BATCH)
-                draw_batch();
             // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
 
             uint8_t texture_index = 255;
@@ -269,9 +267,15 @@ namespace kvejken::renderer
                 m_batched_textures.push_back(model->diffuse_texture().id);
             }
 
-            // TODO: if model->vertices().size() > VERTICES_PER_BATCH
             for (const auto& vertex : model->vertices())
             {
+                if (m_batched_vertices.size() >= VERTICES_PER_BATCH)
+                {
+                    draw_batch();
+                    texture_index = 0;
+                    m_batched_textures.push_back(model->diffuse_texture().id);
+                }
+
                 BatchVertex bv;
                 bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
                 bv.normal = vertex.normal;
