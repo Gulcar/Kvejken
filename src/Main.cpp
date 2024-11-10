@@ -16,6 +16,7 @@ int main()
 
     Model test_cube("../../assets/test_cube.obj");
     Model test_rock("../../assets/test_rock.obj");
+    Model test_multiple("../../assets/test_multiple.obj");
 
     while (renderer::is_window_open())
     {
@@ -32,6 +33,7 @@ int main()
         }
 
         renderer::draw_model(&test_rock, glm::vec3(4, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, -glfwGetTime(), 0));
+        renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0.5f), glm::vec3(0, -PI / 2.0f, 0));
 
         renderer::draw_queue();
 

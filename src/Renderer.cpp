@@ -34,7 +34,7 @@ namespace kvejken::renderer
         struct DrawCommand
         {
             DrawOrderKey order;
-            Model* model;
+            const Mesh* mesh;
             glm::mat4 transform;
         };
         std::vector<DrawCommand> m_draw_queue;
@@ -249,14 +249,14 @@ namespace kvejken::renderer
 
         for (int i = 0; i < m_draw_queue.size(); i++)
         {
-            Model* model = m_draw_queue[i].model;
+            const Mesh* mesh = m_draw_queue[i].mesh;
 
             // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
 
             uint8_t texture_index = 255;
             for (int i = 0; i < m_batched_textures.size(); i++)
             {
-                if (m_batched_textures[i] == model->diffuse_texture().id)
+                if (m_batched_textures[i] == mesh->diffuse_texture().id)
                 {
                     texture_index = i;
                     break;
@@ -268,16 +268,16 @@ namespace kvejken::renderer
                 if (m_batched_textures.size() >= TEXTURES_PER_BATCH)
                     draw_batch();
                 texture_index = m_batched_textures.size();
-                m_batched_textures.push_back(model->diffuse_texture().id);
+                m_batched_textures.push_back(mesh->diffuse_texture().id);
             }
 
-            for (const auto& vertex : model->vertices())
+            for (const auto& vertex : mesh->vertices())
             {
                 if (m_batched_vertices.size() >= VERTICES_PER_BATCH)
                 {
                     draw_batch();
                     texture_index = 0;
-                    m_batched_textures.push_back(model->diffuse_texture().id);
+                    m_batched_textures.push_back(mesh->diffuse_texture().id);
                 }
 
                 BatchVertex bv;
@@ -338,14 +338,22 @@ namespace kvejken::renderer
         return tex;
     }
 
-    void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
+    void draw_model(const Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
+    {
+        for (int i = 0; i < model->meshes().size(); i++)
+        {
+            draw_mesh(&(model->meshes()[i]), position, scale, rotation);
+        }
+    }
+
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
     {
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
         order.layer = 1;
         order.transparency = 0;
         order.shader_id = 0;
-        order.texture_id = model->diffuse_texture().id % (1 << 5);
+        order.texture_id = mesh->diffuse_texture().id % (1 << 5);
 
         float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
         constexpr int max_depth = (2 << 22) - 1; // for 22 bits
@@ -357,7 +365,7 @@ namespace kvejken::renderer
             * glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)
             * glm::scale(glm::mat4(1.0f), scale);
 
-        m_draw_queue.push_back({ order, model, transform });
+        m_draw_queue.push_back({ order, mesh, transform });
     }
 
     //void draw_sprite();

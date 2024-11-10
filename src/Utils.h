@@ -19,6 +19,8 @@
 #define ERROR_EXIT(...) { fprintf(stderr, "ERORR: "); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "!\n"); DEBUG_BREAK(); exit(1); }
 #define ASSERT(x) { if (!(x)) { fprintf(stderr, "ERROR assert failed: " __FILE__ " line %d!\n", __LINE__); DEBUG_BREAK(); exit(1); } }
 
+constexpr float PI = 3.14159265358979323846f;
+
 namespace utils
 {
     inline bool starts_with(std::string_view str, std::string_view check)

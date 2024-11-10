@@ -4,6 +4,7 @@
 namespace kvejken
 {
     class Model;
+    class Mesh;
 
     struct Camera
     {
@@ -40,6 +41,7 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path);
 
-    void draw_model(Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
+    void draw_model(const Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     //void draw_sprite();
 }

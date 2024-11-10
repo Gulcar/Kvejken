@@ -2,9 +2,47 @@
 #include "Utils.h"
 #include <fstream>
 #include <string>
+#include <map>
 
 namespace kvejken
 {
+    Mesh::Mesh(const std::vector<Vertex>& vertices, Texture texture)
+    {
+        m_vertices = vertices;
+        m_diffuse_texture = texture;
+    }
+
+    Mesh::Mesh(std::vector<Vertex>&& vertices, Texture texture)
+    {
+        m_vertices = std::move(vertices);
+        m_diffuse_texture = texture;
+    }
+
+    static std::map<std::string, Texture> load_materials(const std::string& directory, const std::string& file_path)
+    {
+        std::ifstream file(directory + file_path);
+        ASSERT(file.is_open() && file.good());
+
+        std::map<std::string, Texture> materials;
+        std::string current_material;
+
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (utils::starts_with(line, "newmtl "))
+            {
+                current_material = line.substr(7, -1);
+            }
+            else if (utils::starts_with(line, "map_Kd "))
+            {
+                std::string file_path = directory + line.substr(7, -1);
+                materials[current_material] = renderer::load_texture(file_path.c_str());
+            }
+        }
+
+        return materials;
+    }
+
     Model::Model(const std::string& file_path)
     {
         std::ifstream file(file_path);
@@ -23,13 +61,32 @@ namespace kvejken
         std::vector<uint32_t> normal_indices;
         std::vector<uint32_t> texture_coords_indices;
 
+        std::map<std::string, Texture> materials;
+        std::string current_material;
+
+        std::vector<Vertex> vertices;
+
         std::string line;
         while (std::getline(file, line))
         {
             if (line.length() == 0 || line[0] == '#')
                 continue;
 
-            if (utils::starts_with(line, "v "))
+            if (utils::starts_with(line, "mtllib "))
+            {
+                auto m = load_materials(directory, line.substr(7, -1));
+                materials.merge(m);
+            }
+            else if (utils::starts_with(line, "usemtl "))
+            {
+                if (current_material.length() > 0)
+                {
+                    m_meshes.emplace_back(std::move(vertices), materials[current_material]);
+                    vertices.clear();
+                }
+                current_material = line.substr(7, -1);
+            }
+            else if (utils::starts_with(line, "v "))
             {
                 float x, y, z;
                 ASSERT(sscanf(line.c_str(), "v %f %f %f", &x, &y, &z) == 3);
@@ -55,49 +112,24 @@ namespace kvejken
                 ASSERT(sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i",
                     &av, &avt, &avn, &bv, &bvt, &bvn, &cv, &cvt, &cvn) == 9);
 
-                position_indices.push_back(av);
-                position_indices.push_back(bv);
-                position_indices.push_back(cv);
-
-                texture_coords_indices.push_back(avt);
-                texture_coords_indices.push_back(bvt);
-                texture_coords_indices.push_back(cvt);
-
-                normal_indices.push_back(avn);
-                normal_indices.push_back(bvn);
-                normal_indices.push_back(cvn);
-            }
-            else if (utils::starts_with(line, "mtllib "))
-            {
-                load_material(directory, line.substr(7, -1));
-            }
-        }
-
-        m_vertices.reserve(position_indices.size());
-
-        for (int i = 0; i < position_indices.size(); i++)
-        {
-            m_vertices.push_back(Vertex{
-                positions[position_indices[i] - 1],
-                utils::pack_normals(normals[normal_indices[i] - 1]),
-                utils::pack_texture_coords(texture_coords[texture_coords_indices[i] - 1]),
-            });
-        }
-    }
-
-    void Model::load_material(const std::string& directory, const std::string& file_path)
-    {
-        std::ifstream file(directory + file_path);
-        ASSERT(file.is_open() && file.good());
-
-        std::string line;
-        while (std::getline(file, line))
-        {
-            if (utils::starts_with(line, "map_Kd "))
-            {
-                std::string file_path = directory + line.substr(7, -1);
-                m_diffuse_texture = renderer::load_texture(file_path.c_str());
+                vertices.push_back(Vertex{
+                    positions[av - 1],
+                    utils::pack_normals(normals[avn - 1]),
+                    utils::pack_texture_coords(texture_coords[avt - 1]),
+                });
+                vertices.push_back(Vertex{
+                    positions[bv - 1],
+                    utils::pack_normals(normals[bvn - 1]),
+                    utils::pack_texture_coords(texture_coords[bvt - 1]),
+                });
+                vertices.push_back(Vertex{
+                    positions[cv - 1],
+                    utils::pack_normals(normals[cvn - 1]),
+                    utils::pack_texture_coords(texture_coords[cvt - 1]),
+                });
             }
         }
+
+        m_meshes.emplace_back(std::move(vertices), materials[current_material]);
     }
 }

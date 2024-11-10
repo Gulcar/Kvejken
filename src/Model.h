@@ -14,18 +14,28 @@ namespace kvejken
         glm::u16vec2 texture_coords;
     };
 
-    class Model
+    class Mesh
     {
     public:
-        Model(const std::string& file_path);
+        Mesh(const std::vector<Vertex>& vertices, Texture texture);
+        Mesh(std::vector<Vertex>&& vertices, Texture texture);
 
         const std::vector<Vertex>& vertices() const { return m_vertices; }
         const Texture& diffuse_texture() const { return m_diffuse_texture; }
 
     private:
-        void load_material(const std::string& directory, const std::string& file_path);
-
         std::vector<Vertex> m_vertices;
         Texture m_diffuse_texture = {};
+    };
+
+    class Model
+    {
+    public:
+        Model(const std::string& file_path);
+
+        const std::vector<Mesh>& meshes() const { return m_meshes; }
+
+    private:
+        std::vector<Mesh> m_meshes;
     };
 }
