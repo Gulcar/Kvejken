@@ -6,7 +6,7 @@ in vec3 v_normal;
 in vec2 v_uv;
 flat in int v_texture_index;
 
-uniform sampler2D u_textures[8];
+uniform sampler2D u_textures[16];
 
 void main()
 {
@@ -23,6 +23,14 @@ void main()
     case 5: tex_color = texture(u_textures[5], v_uv); break;
     case 6: tex_color = texture(u_textures[6], v_uv); break;
     case 7: tex_color = texture(u_textures[7], v_uv); break;
+    case 8: tex_color = texture(u_textures[8], v_uv); break;
+    case 9: tex_color = texture(u_textures[9], v_uv); break;
+    case 10: tex_color = texture(u_textures[10], v_uv); break;
+    case 11: tex_color = texture(u_textures[11], v_uv); break;
+    case 12: tex_color = texture(u_textures[12], v_uv); break;
+    case 13: tex_color = texture(u_textures[13], v_uv); break;
+    case 14: tex_color = texture(u_textures[14], v_uv); break;
+    case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
     v_frag_color = tex_color;
     //v_frag_color = vec4(v_uv, 0.0, 1.0);

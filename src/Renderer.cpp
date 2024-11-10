@@ -23,7 +23,8 @@ namespace kvejken::renderer
         struct DrawOrderKey
         {
             // bits are defined from LSB to MSB
-            uint32_t inverse_depth : 27; // closer to camera is a higher number
+            uint32_t depth : 22; // closer to camera is a higher number (backwards if transparent)
+            uint32_t texture_id : 5;
             uint32_t shader_id : 3;
             uint32_t transparency : 1;
             uint32_t layer : 1; // hud or world
@@ -45,9 +46,10 @@ namespace kvejken::renderer
             glm::u16vec2 texture_coords;
             uint8_t texture_index;
         };
-        constexpr size_t VERTICES_PER_BATCH = 4096;
+        constexpr size_t VERTICES_PER_BATCH = 4128;
+        static_assert(VERTICES_PER_BATCH % 3 == 0);
         constexpr size_t VERTEX_BUFFER_SIZE = VERTICES_PER_BATCH * sizeof(BatchVertex);
-        constexpr size_t TEXTURES_PER_BATCH = 8;
+        constexpr size_t TEXTURES_PER_BATCH = 16; // https://stackoverflow.com/a/46428637
         std::vector<BatchVertex> m_batched_vertices;
         std::vector<uint32_t> m_batched_textures;
 
@@ -161,8 +163,10 @@ namespace kvejken::renderer
         m_shader = load_shader_program("../../assets/vert.glsl", "../../assets/frag.glsl");
         glUseProgram(m_shader);
 
-        int texture_indices[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-        glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), 8, texture_indices);
+        int texture_indices[TEXTURES_PER_BATCH];
+        for (int i = 0; i < TEXTURES_PER_BATCH; i++)
+            texture_indices[i] = i;
+        glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), TEXTURES_PER_BATCH, texture_indices);
 
         glEnable(GL_DEPTH_TEST);
 
@@ -341,11 +345,13 @@ namespace kvejken::renderer
         order.layer = 1;
         order.transparency = 0;
         order.shader_id = 0;
-        // TODO: mogoce v key dodam se texture_id da lepo batcha teksture skupaj
+        order.texture_id = model->diffuse_texture().id % (1 << 5);
 
         float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
-        constexpr int max_depth = (2 << 27) - 1; // for 27 bits
-        order.inverse_depth = (int)((1.0f - distance01) * max_depth);
+        constexpr int max_depth = (2 << 22) - 1; // for 22 bits
+        if (!order.transparency)
+            distance01 = 1.0f - distance01;
+        order.depth = (int)(distance01 * max_depth);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)
