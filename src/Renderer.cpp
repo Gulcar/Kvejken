@@ -356,9 +356,10 @@ namespace kvejken::renderer
         order.texture_id = mesh->diffuse_texture().id % (1 << 5);
 
         float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
-        constexpr int max_depth = (2 << 22) - 1; // for 22 bits
+        if (distance01 > 1.0f) distance01 = 1.0f;
         if (!order.transparency)
             distance01 = 1.0f - distance01;
+        constexpr int max_depth = (1 << 22) - 1; // for 22 bits
         order.depth = (int)(distance01 * max_depth);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
