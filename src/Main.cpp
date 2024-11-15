@@ -20,6 +20,8 @@ int main()
 
     Model terrain("../../assets/terrain.obj");
 
+    int frame_count = 0;
+
     while (renderer::is_window_open())
     {
         renderer::poll_events();
@@ -41,5 +43,12 @@ int main()
         renderer::draw_queue();
 
         renderer::swap_buffers();
+
+        frame_count++;
+        if (frame_count % 512 == 0)
+        {
+            float frametime = glfwGetTime() / frame_count;
+            printf("frametime: %f ms (%d fps)\n", frametime * 1000, (int)(1 / frametime));
+        }
     }
 }

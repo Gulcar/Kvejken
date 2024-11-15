@@ -169,6 +169,20 @@ namespace kvejken::renderer
         glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), TEXTURES_PER_BATCH, texture_indices);
 
         glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        // glEnable(GL_BLEND);
+
+        /*
+        * renderer todo:
+        * - shading
+        * - fog
+        * fancy:
+        * - shadow mapping
+        * - ssao
+        * - bloom
+        */
+
+        glfwSwapInterval(0);
 
         stbi_set_flip_vertically_on_load(true);
     }
