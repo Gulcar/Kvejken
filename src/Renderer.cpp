@@ -53,7 +53,7 @@ namespace kvejken::renderer
         std::vector<BatchVertex> m_batched_vertices;
         std::vector<uint32_t> m_batched_textures;
 
-        uint32_t m_vao, m_vbo;
+        uint32_t m_batch_vao, m_batch_vbo;
         uint32_t m_shader;
 
         std::map<std::string, Texture> m_textures;
@@ -142,11 +142,11 @@ namespace kvejken::renderer
         m_camera.z_far = 100.0f;
 
         // opengl buffers
-        glGenVertexArrays(1, &m_vao);
-        glBindVertexArray(m_vao);
+        glGenVertexArrays(1, &m_batch_vao);
+        glBindVertexArray(m_batch_vao);
 
-        glGenBuffers(1, &m_vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glGenBuffers(1, &m_batch_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_batch_vbo);
         glBufferData(GL_ARRAY_BUFFER, VERTEX_BUFFER_SIZE, nullptr, GL_DYNAMIC_DRAW);
 
         glEnableVertexAttribArray(0);
@@ -226,7 +226,6 @@ namespace kvejken::renderer
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);
         m_view_proj = proj * view;
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
     }
 
     static bool draw_sort_predicate(const DrawCommand& a, const DrawCommand& b)
@@ -245,6 +244,9 @@ namespace kvejken::renderer
             glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
         }
 
+        glBindVertexArray(m_batch_vao);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
+        glBindBuffer(GL_ARRAY_BUFFER, m_batch_vbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(BatchVertex), m_batched_vertices.data());
         glDrawArrays(GL_TRIANGLES, 0, m_batched_vertices.size());
 
@@ -264,6 +266,21 @@ namespace kvejken::renderer
         for (int i = 0; i < m_draw_queue.size(); i++)
         {
             const Mesh* mesh = m_draw_queue[i].mesh;
+
+            if (mesh->has_vertex_buffer())
+            {
+                glBindVertexArray(mesh->vertex_array_id());
+
+                glm::mat4 proj = m_view_proj * m_draw_queue[i].transform;
+                glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &proj[0][0]);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture().id);
+
+                glDrawArrays(GL_TRIANGLES, 0, mesh->vertex_count());
+
+                continue;
+            }
 
             // TODO: if (shader_id != m_draw_queue[i].first.shader_id)
 

@@ -17,15 +17,30 @@ namespace kvejken
     class Mesh
     {
     public:
-        Mesh(const std::vector<Vertex>& vertices, Texture texture);
-        Mesh(std::vector<Vertex>&& vertices, Texture texture);
+        Mesh(const std::vector<Vertex>& vertices, Texture texture, bool gen_vertex_buffer);
+        Mesh(std::vector<Vertex>&& vertices, Texture texture, bool gen_vertex_buffer);
+
+        Mesh(const Mesh& other) = delete;
+        Mesh& operator=(const Mesh& other) = delete;
+        Mesh(Mesh&& other) noexcept;
+        Mesh& operator=(Mesh&& other) noexcept;
+
+        ~Mesh();
+
+        void prepare_vertex_buffer();
 
         const std::vector<Vertex>& vertices() const { return m_vertices; }
         const Texture& diffuse_texture() const { return m_diffuse_texture; }
 
+        bool has_vertex_buffer() const { return m_vbo != (uint32_t)(-1); }
+        uint32_t vertex_array_id() const { return m_vao; }
+        uint32_t vertex_count() const { return m_vertex_count; }
+
     private:
         std::vector<Vertex> m_vertices;
-        Texture m_diffuse_texture = {};
+        Texture m_diffuse_texture;
+        uint32_t m_vao = -1, m_vbo = -1;
+        uint32_t m_vertex_count;
     };
 
     class Model

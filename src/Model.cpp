@@ -3,20 +3,88 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <glad/glad.h>
 
 namespace kvejken
 {
-    Mesh::Mesh(const std::vector<Vertex>& vertices, Texture texture)
+    Mesh::Mesh(const std::vector<Vertex>& vertices, Texture texture, bool gen_vertex_buffer)
     {
+        m_vertex_count = vertices.size();
         m_vertices = vertices;
         m_diffuse_texture = texture;
+
+        if (gen_vertex_buffer)
+            prepare_vertex_buffer();
     }
 
-    Mesh::Mesh(std::vector<Vertex>&& vertices, Texture texture)
+    Mesh::Mesh(std::vector<Vertex>&& vertices, Texture texture, bool gen_vertex_buffer)
     {
+        m_vertex_count = vertices.size();
         m_vertices = std::move(vertices);
         m_diffuse_texture = texture;
+
+        if (gen_vertex_buffer)
+            prepare_vertex_buffer();
     }
+
+    Mesh::Mesh(Mesh&& other) noexcept
+    {
+        m_vertices = std::move(other.m_vertices);
+        m_diffuse_texture = other.m_diffuse_texture;
+        m_vao = other.m_vao;
+        m_vbo = other.m_vbo;
+        m_vertex_count = other.m_vertex_count;
+
+        other.m_vao = -1;
+        other.m_vbo = -1;
+    }
+
+    Mesh& Mesh::operator=(Mesh&& other) noexcept
+    {
+        m_vertices = std::move(other.m_vertices);
+        m_diffuse_texture = other.m_diffuse_texture;
+        m_vao = other.m_vao;
+        m_vbo = other.m_vbo;
+        m_vertex_count = other.m_vertex_count;
+
+        other.m_vao = -1;
+        other.m_vbo = -1;
+        return *this;
+    }
+
+    Mesh::~Mesh()
+    {
+        if (m_vao != (uint32_t)(-1))
+        {
+            glDeleteVertexArrays(1, &m_vao);
+            glDeleteBuffers(1, &m_vbo);
+            m_vao = -1;
+            m_vbo = -1;
+        }
+    }
+
+    void Mesh::prepare_vertex_buffer()
+    {
+        ASSERT(m_vao == (uint32_t)(-1));
+
+        glGenVertexArrays(1, &m_vao);
+        glBindVertexArray(m_vao);
+
+        glGenBuffers(1, &m_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+        glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 4, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coords));
+
+        // free memory
+        m_vertices = std::vector<Vertex>();
+    }
+
 
     static std::map<std::string, Texture> load_materials(const std::string& directory, const std::string& file_path)
     {
@@ -79,12 +147,14 @@ namespace kvejken
             }
             else if (utils::starts_with(line, "usemtl "))
             {
-                if (current_material.length() > 0)
+                std::string new_material = line.substr(7, -1);
+                if (current_material.length() > 0 && current_material != new_material)
                 {
-                    m_meshes.emplace_back(std::move(vertices), materials[current_material]);
+                    bool gen_vertex_buffer = vertices.size() > 4000;
+                    m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
                     vertices.clear();
                 }
-                current_material = line.substr(7, -1);
+                current_material = new_material;
             }
             else if (utils::starts_with(line, "v "))
             {
@@ -130,6 +200,7 @@ namespace kvejken
             }
         }
 
-        m_meshes.emplace_back(std::move(vertices), materials[current_material]);
+        bool gen_vertex_buffer = vertices.size() > 4000;
+        m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
     }
 }
