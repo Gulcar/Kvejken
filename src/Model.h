@@ -10,7 +10,7 @@ namespace kvejken
     struct Vertex
     {
         glm::vec3 position;
-        uint32_t normal;
+        glm::vec3 normal;
         glm::u16vec2 texture_coords;
     };
 

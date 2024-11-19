@@ -7,6 +7,8 @@
 
 namespace kvejken
 {
+    constexpr size_t MAX_VERTICES_TO_BATCH = 1000;
+
     Mesh::Mesh(const std::vector<Vertex>& vertices, Texture texture, bool gen_vertex_buffer)
     {
         m_vertex_count = vertices.size();
@@ -77,7 +79,7 @@ namespace kvejken
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, position));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coords));
 
@@ -150,7 +152,7 @@ namespace kvejken
                 std::string new_material = line.substr(7, -1);
                 if (current_material.length() > 0 && current_material != new_material)
                 {
-                    bool gen_vertex_buffer = vertices.size() > 4000;
+                    bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH;
                     m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
                     vertices.clear();
                 }
@@ -184,23 +186,23 @@ namespace kvejken
 
                 vertices.push_back(Vertex{
                     positions[av - 1],
-                    utils::pack_normals(normals[avn - 1]),
+                    normals[avn - 1],
                     utils::pack_texture_coords(texture_coords[avt - 1]),
                 });
                 vertices.push_back(Vertex{
                     positions[bv - 1],
-                    utils::pack_normals(normals[bvn - 1]),
+                    normals[bvn - 1],
                     utils::pack_texture_coords(texture_coords[bvt - 1]),
                 });
                 vertices.push_back(Vertex{
                     positions[cv - 1],
-                    utils::pack_normals(normals[cvn - 1]),
+                    normals[cvn - 1],
                     utils::pack_texture_coords(texture_coords[cvt - 1]),
                 });
             }
         }
 
-        bool gen_vertex_buffer = vertices.size() > 4000;
+        bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH;
         m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
     }
 }

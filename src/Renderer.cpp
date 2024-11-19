@@ -244,14 +244,32 @@ namespace kvejken::renderer
             glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
         }
 
-        glBindVertexArray(m_batch_vao);
         glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
+        glm::mat4 identity_normal = glm::mat4(1.0f);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &identity_normal[0][0]);
+
+        glBindVertexArray(m_batch_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_batch_vbo);
         glBufferSubData(GL_ARRAY_BUFFER, 0, m_batched_vertices.size() * sizeof(BatchVertex), m_batched_vertices.data());
         glDrawArrays(GL_TRIANGLES, 0, m_batched_vertices.size());
 
         m_batched_vertices.clear();
         m_batched_textures.clear();
+    }
+
+    static void draw_single_mesh(const Mesh* mesh, const glm::mat4& transform)
+    {
+        glBindVertexArray(mesh->vertex_array_id());
+
+        glm::mat4 proj = m_view_proj * transform;
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &proj[0][0]);
+        glm::mat4 normal_matrix = glm::transpose(glm::inverse(transform));
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &normal_matrix[0][0]);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture().id);
+
+        glDrawArrays(GL_TRIANGLES, 0, mesh->vertex_count());
     }
 
     void draw_queue()
@@ -269,16 +287,7 @@ namespace kvejken::renderer
 
             if (mesh->has_vertex_buffer())
             {
-                glBindVertexArray(mesh->vertex_array_id());
-
-                glm::mat4 proj = m_view_proj * m_draw_queue[i].transform;
-                glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &proj[0][0]);
-
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture().id);
-
-                glDrawArrays(GL_TRIANGLES, 0, mesh->vertex_count());
-
+                draw_single_mesh(mesh, m_draw_queue[i].transform);
                 continue;
             }
 
@@ -302,6 +311,8 @@ namespace kvejken::renderer
                 m_batched_textures.push_back(mesh->diffuse_texture().id);
             }
 
+            glm::mat4 normal_matrix = glm::transpose(glm::inverse(m_draw_queue[i].transform));
+
             for (const auto& vertex : mesh->vertices())
             {
                 if (m_batched_vertices.size() >= VERTICES_PER_BATCH)
@@ -313,7 +324,7 @@ namespace kvejken::renderer
 
                 BatchVertex bv;
                 bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
-                bv.normal = vertex.normal;
+                bv.normal = utils::pack_normals(normal_matrix * glm::vec4(vertex.normal, 1.0f));
                 bv.texture_coords = vertex.texture_coords;
                 bv.texture_index = texture_index;
                 m_batched_vertices.push_back(bv);

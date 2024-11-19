@@ -8,6 +8,9 @@ flat in int v_texture_index;
 
 uniform sampler2D u_textures[16];
 
+const vec3 sun_dir = normalize(vec3(15, 100, 45));
+const vec4 sun_color = vec4(1.0, 0.9, 0.9, 1.0);
+
 void main()
 {
     v_frag_color = vec4(v_uv / 2.0 + 0.5, 0.0, 1.0);
@@ -32,7 +35,11 @@ void main()
     case 14: tex_color = texture(u_textures[14], v_uv); break;
     case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
-    v_frag_color = tex_color;
+
+    float light = max(dot(sun_dir, v_normal), 0.0) + 0.15;
+
+    v_frag_color = tex_color * sun_color * light;
+
     //v_frag_color = vec4(v_uv, 0.0, 1.0);
     //v_frag_color = vec4(v_normal, 1.0);
     if (v_frag_color.a < 0.1)
