@@ -33,20 +33,25 @@ int main()
     */
 
     Entity e1, e2, e3, e4;
-    e1 = create_entity();
-    e2 = create_entity();
-    e3 = create_entity();
-    e4 = create_entity();
+    e1 = ecs::create_entity();
+    e2 = ecs::create_entity();
+    e3 = ecs::create_entity();
+    e4 = ecs::create_entity();
 
-    add_component(Camera{}, e1);
-    add_component(Camera{}, e2);
-    add_component(glm::vec3(), e3);
-    add_component(glm::vec3(), e4);
-    add_component(glm::vec2(), e3);
+    ecs::add_component(Camera{}, e1);
+    ecs::add_component(Camera{}, e2);
+    ecs::add_component(glm::vec3(1.0f, 2.0f, 3.0f), e3);
+    ecs::add_component(glm::vec3(4.0f, 5.0f, 6.0f), e4);
+    ecs::add_component(glm::vec2(), e3);
 
-    auto c1 = get_components<Camera>();
-    auto c2 = get_components<glm::vec3>();
-    auto c3 = get_components<glm::vec2>();
+    auto& c1 = ecs::get_components<Camera>();
+    auto& c2 = ecs::get_components<glm::vec3>();
+    auto& c3 = ecs::get_components<glm::vec2>();
+
+    for (const auto& v3 : c2)
+    {
+        printf("(%f, %f, %f)\n", v3.x, v3.y, v3.z);
+    }
 
     while (renderer::is_window_open())
     {

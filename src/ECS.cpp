@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 
-namespace kvejken
+namespace kvejken::ecs
 {
     std::vector<IComponentPool*> m_component_pools;
 
