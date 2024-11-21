@@ -21,7 +21,7 @@
 
 constexpr float PI = 3.14159265358979323846f;
 
-namespace utils
+namespace kvejken::utils
 {
     inline bool starts_with(std::string_view str, std::string_view check)
     {

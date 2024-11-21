@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include "Utils.h"
 #include "Model.h"
+#include "ECS.h"
 #include <GLFW/glfw3.h>
 
 using namespace kvejken;
@@ -21,6 +22,31 @@ int main()
     Model terrain("../../assets/terrain.obj");
 
     int frame_count = 0;
+
+    /*
+    printf("%d\n", component_id<float>());
+    printf("%d\n", component_id<float>());
+    printf("%d\n", component_id<int>());
+    printf("%d\n", create_entity());
+    printf("%d\n", create_entity());
+    printf("%d\n", create_entity());
+    */
+
+    Entity e1, e2, e3, e4;
+    e1 = create_entity();
+    e2 = create_entity();
+    e3 = create_entity();
+    e4 = create_entity();
+
+    add_component(Camera{}, e1);
+    add_component(Camera{}, e2);
+    add_component(glm::vec3(), e3);
+    add_component(glm::vec3(), e4);
+    add_component(glm::vec2(), e3);
+
+    auto c1 = get_components<Camera>();
+    auto c2 = get_components<glm::vec3>();
+    auto c3 = get_components<glm::vec2>();
 
     while (renderer::is_window_open())
     {

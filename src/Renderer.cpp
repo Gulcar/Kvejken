@@ -174,7 +174,6 @@ namespace kvejken::renderer
 
         /*
         * renderer todo:
-        * - shading
         * - fog
         * fancy:
         * - shadow mapping
