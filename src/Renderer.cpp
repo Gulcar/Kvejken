@@ -160,7 +160,7 @@ namespace kvejken::renderer
 
         m_batched_vertices.reserve(VERTICES_PER_BATCH);
 
-        m_shader = load_shader_program("../../assets/vert.glsl", "../../assets/frag.glsl");
+        m_shader = load_shader_program("../../assets/shaders/vert.glsl", "../../assets/shaders/frag.glsl");
         glUseProgram(m_shader);
 
         int texture_indices[TEXTURES_PER_BATCH];

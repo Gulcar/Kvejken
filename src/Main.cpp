@@ -15,11 +15,11 @@ int main()
 
     renderer::create_window("Kvejken", 1280, 720);
 
-    Model test_cube("../../assets/test_cube.obj");
-    Model test_rock("../../assets/test_rock.obj");
-    Model test_multiple("../../assets/test_multiple.obj");
+    Model test_cube("../../assets/test/test_cube.obj");
+    Model test_rock("../../assets/test/test_rock.obj");
+    Model test_multiple("../../assets/test/test_multiple.obj");
 
-    Model terrain("../../assets/terrain.obj");
+    Model terrain("../../assets/environment/terrain.obj");
 
     int frame_count = 0;
 
