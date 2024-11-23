@@ -21,6 +21,10 @@ int main()
 
     Model terrain("../../assets/environment/terrain.obj");
 
+    std::vector<Model> eels;
+    for (int i = 1; i <= 12; i++)
+        eels.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
+
     int frame_count = 0;
 
     /*
@@ -70,6 +74,9 @@ int main()
         renderer::draw_model(&test_rock, glm::vec3(4, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, -glfwGetTime(), 0));
         renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0.5f), glm::vec3(0, -PI / 2.0f, 0));
         renderer::draw_model(&terrain, glm::vec3(0, -5, 0), glm::vec3(1), glm::vec3(0));
+
+        int eel_index = (int)(std::fmodf(glfwGetTime(), 0.5f) / 0.5f * 12);
+        renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0.5f), glm::vec3(0));
 
         renderer::draw_queue();
 
