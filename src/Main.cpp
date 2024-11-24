@@ -62,16 +62,16 @@ int main()
     Entity test4 = ecs::create_entity();
     ecs::add_component(Player{ 4 }, test4);
 
-    for (auto& [player, transform] : ecs::get_components<Player, Transform>())
+    for (auto [player, transform] : ecs::get_components<Player, Transform>())
     {
-        printf("p: %d, %t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
+        printf("p: %d, t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
         player.health += 1;
         transform.position.y += 0.1f;
     }
 
-    for (auto& [transform, player] : ecs::get_components<Transform, Player>())
+    for (auto [transform, player, camera] : ecs::get_components<Transform, Player, Camera>())
     {
-        printf("p: %d, %t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
+        printf("p: %d, t: (%f, %f, %f), c: %f\n", player.health, transform.position.x, transform.position.y, transform.position.z, camera.fovy);
     }
 
     int frame_count = 0;
