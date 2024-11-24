@@ -48,6 +48,7 @@ namespace kvejken
     public:
         Model(const std::string& file_path);
 
+        std::vector<Mesh>& meshes() { return m_meshes; }
         const std::vector<Mesh>& meshes() const { return m_meshes; }
 
     private:

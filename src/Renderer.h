@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
+#include <string>
 
 namespace kvejken
 {
@@ -44,4 +45,6 @@ namespace kvejken::renderer
     void draw_model(const Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
     //void draw_sprite();
+
+    void set_skybox(const std::string& skybox_obj_path);
 }

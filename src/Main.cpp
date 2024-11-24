@@ -25,6 +25,8 @@ int main()
     for (int i = 1; i <= 12; i++)
         eels.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
 
+    renderer::set_skybox("../../assets/environment/skybox.obj");
+
     int frame_count = 0;
 
     /*

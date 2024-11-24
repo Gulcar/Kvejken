@@ -7,6 +7,7 @@ in vec2 v_uv;
 flat in int v_texture_index;
 
 uniform sampler2D u_textures[16];
+uniform float u_shading;
 
 const vec3 sun_dir = normalize(vec3(15, 100, 45));
 const vec4 sun_color = vec4(1.0, 0.9, 0.9, 1.0);
@@ -37,6 +38,7 @@ void main()
     }
 
     float light = max(dot(sun_dir, v_normal), 0.0) + 0.15;
+    light = mix(1.0f, light, u_shading);
 
     v_frag_color = tex_color * sun_color * light;
 

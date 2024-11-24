@@ -8,9 +8,11 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm/mat3x3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <algorithm>
 #include <map>
+#include <memory>
 
 namespace kvejken::renderer
 {
@@ -60,6 +62,8 @@ namespace kvejken::renderer
 
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
+
+        std::unique_ptr<Model> m_skybox = nullptr;
     }
 
     static uint32_t load_shader(std::string_view source, GLenum type)
@@ -137,7 +141,7 @@ namespace kvejken::renderer
         m_camera.position = glm::vec3(-2.5f, 1.7f, 3.0f);
         m_camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
         m_camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
-        m_camera.fovy = 60.0f;
+        m_camera.fovy = 50.0f;
         m_camera.z_near = 0.01f;
         m_camera.z_far = 100.0f;
 
@@ -167,6 +171,8 @@ namespace kvejken::renderer
         for (int i = 0; i < TEXTURES_PER_BATCH; i++)
             texture_indices[i] = i;
         glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), TEXTURES_PER_BATCH, texture_indices);
+
+        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -218,13 +224,20 @@ namespace kvejken::renderer
         glfwPollEvents();
     }
 
+    static void draw_skybox(glm::mat4 proj, glm::mat4 view);
+
     void clear_screen()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        m_camera.target = glm::vec3(std::cos(glfwGetTime() / 3), 0.0f, std::sin(glfwGetTime() / 3)) + m_camera.position;
+
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);
         m_view_proj = proj * view;
+
+        if (m_skybox)
+            draw_skybox(proj, view);
     }
 
     static bool draw_sort_predicate(const DrawCommand& a, const DrawCommand& b)
@@ -411,4 +424,41 @@ namespace kvejken::renderer
     }
 
     //void draw_sprite();
+
+    void set_skybox(const std::string& skybox_obj_path)
+    {
+        m_skybox = std::make_unique<Model>(skybox_obj_path);
+
+        for (auto& mesh : m_skybox->meshes())
+        {
+            if (!mesh.has_vertex_buffer())
+                mesh.prepare_vertex_buffer();
+        }
+    }
+
+    static void draw_skybox(glm::mat4 proj, glm::mat4 view)
+    {
+        glDisable(GL_DEPTH_TEST);
+
+        // odstrani premik, zato da je skybox vedno centriran na kameri
+        view = glm::mat4(glm::mat3(view));
+        glm::mat4 vp = proj * view;
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &vp[0][0]);
+
+        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 0.0f);
+
+        for (auto& mesh : m_skybox->meshes())
+        {
+            ASSERT(mesh.has_vertex_buffer());
+            glBindVertexArray(mesh.vertex_array_id());
+
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, mesh.diffuse_texture().id);
+
+            glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count());
+        }
+
+        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
+        glEnable(GL_DEPTH_TEST);
+    }
 }
