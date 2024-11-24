@@ -7,6 +7,7 @@ add_executable(${PROJECT_NAME}
     src/Renderer.cpp
     src/Model.cpp
     src/ECS.cpp
+    src/Input.cpp
     libs/glad/src/glad.c
     libs/stb/stb_image.cpp
 )

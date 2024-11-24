@@ -5,6 +5,7 @@
 #include "Model.h"
 #include "ECS.h"
 #include "Components.h"
+#include "Input.h"
 #include <GLFW/glfw3.h>
 
 using namespace kvejken;
@@ -15,6 +16,8 @@ int main()
     atexit(renderer::terminate);
 
     renderer::create_window("Kvejken", 1280, 720);
+    
+    input::init(renderer::window_ptr());
 
     Model test_cube("../../assets/test/test_cube.obj");
     Model test_rock("../../assets/test/test_rock.obj");
@@ -28,57 +31,47 @@ int main()
 
     renderer::set_skybox("../../assets/environment/skybox.obj");
 
-    Entity player = ecs::create_entity();
-
-    Transform transform = {};
-    transform.position = glm::vec3(0, 1.5f, 0);
-    transform.scale = 1.0f;
-    transform.rotation = glm::quat(0, 0, 0, 1);
-    ecs::add_component(transform, player);
-
-    Camera camera = {};
-    camera.position = glm::vec3(0, 0, 0);
-    camera.target = glm::vec3(0, 0, -1);
-    camera.up = glm::vec3(0, 1, 0);
-    camera.fovy = 50.0f;
-    camera.z_near = 0.01f;
-    camera.z_far = 100.0f;
-    ecs::add_component(camera, player);
-
-    Player p;
-    p.health = 100;
-    p.local = true;
-    ecs::add_component(p, player);
-
-    Entity test = ecs::create_entity();
-    ecs::add_component(Transform{ glm::vec3(1, 2, 3) }, test);
-    ecs::add_component(Player{ 1 }, test);
-    Entity test2 = ecs::create_entity();
-    ecs::add_component(Transform{ glm::vec3(4, 5, 6) }, test2);
-    ecs::add_component(Player{ 2 }, test2);
-
-    Entity test3 = ecs::create_entity();
-    ecs::add_component(Transform{ glm::vec3(7, 8, 9) }, test3);
-    Entity test4 = ecs::create_entity();
-    ecs::add_component(Player{ 4 }, test4);
-
-    for (auto [player, transform] : ecs::get_components<Player, Transform>())
     {
-        printf("p: %d, t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
-        player.health += 1;
-        transform.position.y += 0.1f;
-    }
+        Entity entity = ecs::create_entity();
 
-    for (auto [transform, player, camera] : ecs::get_components<Transform, Player, Camera>())
-    {
-        printf("p: %d, t: (%f, %f, %f), c: %f\n", player.health, transform.position.x, transform.position.y, transform.position.z, camera.fovy);
+        Transform transform = {};
+        transform.position = glm::vec3(0, 1.5f, 0);
+        transform.scale = 1.0f;
+        transform.rotation = glm::quat(1, 0, 0, 0);
+        ecs::add_component(transform, entity);
+
+        Player player;
+        player.health = 100;
+        player.local = true;
+        ecs::add_component(player, entity);
+
+        Camera camera = {};
+        camera.position = glm::vec3(0, 0, 0);
+        camera.target = glm::vec3(0, 0, -1);
+        camera.up = glm::vec3(0, 1, 0);
+        camera.fovy = 50.0f;
+        camera.z_near = 0.01f;
+        camera.z_far = 100.0f;
+        ecs::add_component(camera, entity);
     }
 
     int frame_count = 0;
+    float prev_time = glfwGetTime();
 
     while (renderer::is_window_open())
     {
         renderer::poll_events();
+        float time = glfwGetTime();
+        float delta_time = time - prev_time;
+        prev_time = time;
+
+        for (auto [player, transform] : ecs::get_components<Player, Transform>())
+        {
+            if (!player.local)
+                continue;
+            transform.position.x += input::key_axis(GLFW_KEY_A, GLFW_KEY_D) * delta_time;
+            transform.position.z += input::key_axis(GLFW_KEY_W, GLFW_KEY_S) * delta_time;
+        }
 
         renderer::clear_screen();
 

@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include "ECS.h"
+#include "Components.h"
 
 namespace kvejken::renderer
 {
@@ -198,6 +200,11 @@ namespace kvejken::renderer
         m_window = nullptr;
     }
 
+    GLFWwindow* window_ptr()
+    {
+        return m_window;
+    }
+
     bool is_window_open()
     {
         return m_window != nullptr &&
@@ -230,7 +237,12 @@ namespace kvejken::renderer
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        m_camera.target = glm::vec3(std::cos(glfwGetTime() / 3), 0.0f, std::sin(glfwGetTime() / 3)) + m_camera.position;
+        auto [camera, transform] = *(ecs::get_components<Camera, Transform>().begin());
+        m_camera = camera;
+        m_camera.position += transform.position;
+        glm::vec3 dir = m_camera.target - m_camera.position;
+        dir = dir * transform.rotation;
+        m_camera.target = m_camera.position + dir;
 
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);

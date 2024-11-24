@@ -2,6 +2,8 @@
 #include <glm/vec3.hpp>
 #include <string>
 
+struct GLFWwindow;
+
 namespace kvejken
 {
     class Model;
@@ -29,6 +31,7 @@ namespace kvejken::renderer
 {
     void create_window(const char* title, int width, int height);
     void terminate();
+    GLFWwindow* window_ptr();
 
     bool is_window_open();
     int window_width();
