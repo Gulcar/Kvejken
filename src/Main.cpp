@@ -4,6 +4,7 @@
 #include "Utils.h"
 #include "Model.h"
 #include "ECS.h"
+#include "Components.h"
 #include <GLFW/glfw3.h>
 
 using namespace kvejken;
@@ -27,37 +28,53 @@ int main()
 
     renderer::set_skybox("../../assets/environment/skybox.obj");
 
-    int frame_count = 0;
+    Entity player = ecs::create_entity();
 
-    /*
-    printf("%d\n", component_id<float>());
-    printf("%d\n", component_id<float>());
-    printf("%d\n", component_id<int>());
-    printf("%d\n", create_entity());
-    printf("%d\n", create_entity());
-    printf("%d\n", create_entity());
-    */
+    Transform transform = {};
+    transform.position = glm::vec3(0, 1.5f, 0);
+    transform.scale = 1.0f;
+    transform.rotation = glm::quat(0, 0, 0, 1);
+    ecs::add_component(transform, player);
 
-    Entity e1, e2, e3, e4;
-    e1 = ecs::create_entity();
-    e2 = ecs::create_entity();
-    e3 = ecs::create_entity();
-    e4 = ecs::create_entity();
+    Camera camera = {};
+    camera.position = glm::vec3(0, 0, 0);
+    camera.target = glm::vec3(0, 0, -1);
+    camera.up = glm::vec3(0, 1, 0);
+    camera.fovy = 50.0f;
+    camera.z_near = 0.01f;
+    camera.z_far = 100.0f;
+    ecs::add_component(camera, player);
 
-    ecs::add_component(Camera{}, e1);
-    ecs::add_component(Camera{}, e2);
-    ecs::add_component(glm::vec3(1.0f, 2.0f, 3.0f), e3);
-    ecs::add_component(glm::vec3(4.0f, 5.0f, 6.0f), e4);
-    ecs::add_component(glm::vec2(), e3);
+    Player p;
+    p.health = 100;
+    p.local = true;
+    ecs::add_component(p, player);
 
-    auto& c1 = ecs::get_components<Camera>();
-    auto& c2 = ecs::get_components<glm::vec3>();
-    auto& c3 = ecs::get_components<glm::vec2>();
+    Entity test = ecs::create_entity();
+    ecs::add_component(Transform{ glm::vec3(1, 2, 3) }, test);
+    ecs::add_component(Player{ 1 }, test);
+    Entity test2 = ecs::create_entity();
+    ecs::add_component(Transform{ glm::vec3(4, 5, 6) }, test2);
+    ecs::add_component(Player{ 2 }, test2);
 
-    for (const auto& v3 : c2)
+    Entity test3 = ecs::create_entity();
+    ecs::add_component(Transform{ glm::vec3(7, 8, 9) }, test3);
+    Entity test4 = ecs::create_entity();
+    ecs::add_component(Player{ 4 }, test4);
+
+    for (auto& [player, transform] : ecs::get_components<Player, Transform>())
     {
-        printf("(%f, %f, %f)\n", v3.x, v3.y, v3.z);
+        printf("p: %d, %t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
+        player.health += 1;
+        transform.position.y += 0.1f;
     }
+
+    for (auto& [transform, player] : ecs::get_components<Transform, Player>())
+    {
+        printf("p: %d, %t: (%f, %f, %f)\n", player.health, transform.position.x, transform.position.y, transform.position.z);
+    }
+
+    int frame_count = 0;
 
     while (renderer::is_window_open())
     {
