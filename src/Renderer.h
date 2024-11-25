@@ -13,7 +13,7 @@ namespace kvejken
     struct Camera
     {
         glm::vec3 position;
-        glm::vec3 target;
+        glm::vec3 direction;
         glm::vec3 up;
         float fovy;
         float z_near;

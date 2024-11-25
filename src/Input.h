@@ -21,9 +21,11 @@ namespace kvejken::input
     bool mouse_pressed(int button);
     bool mouse_released(int button);
 
+    glm::vec2 mouse_delta();
     glm::vec2 mouse_screen_position();
     glm::vec3 mouse_world_position();
 
     void lock_mouse();
     void unlock_mouse();
+    bool is_mouse_locked();
 }

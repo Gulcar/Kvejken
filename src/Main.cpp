@@ -36,8 +36,8 @@ int main()
 
         Transform transform = {};
         transform.position = glm::vec3(0, 1.5f, 0);
-        transform.scale = 1.0f;
         transform.rotation = glm::quat(1, 0, 0, 0);
+        transform.scale = 1.0f;
         ecs::add_component(transform, entity);
 
         Player player;
@@ -47,7 +47,7 @@ int main()
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0, 0);
-        camera.target = glm::vec3(0, 0, -1);
+        camera.direction = glm::vec3(0, 0, -1);
         camera.up = glm::vec3(0, 1, 0);
         camera.fovy = 50.0f;
         camera.z_near = 0.01f;
@@ -60,17 +60,40 @@ int main()
 
     while (renderer::is_window_open())
     {
+        input::clear();
         renderer::poll_events();
+
         float time = glfwGetTime();
         float delta_time = time - prev_time;
         prev_time = time;
+
+        if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
+            input::lock_mouse();
+        if (input::key_pressed(GLFW_KEY_ESCAPE))
+            input::unlock_mouse();
 
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
             if (!player.local)
                 continue;
-            transform.position.x += input::key_axis(GLFW_KEY_A, GLFW_KEY_D) * delta_time;
-            transform.position.z += input::key_axis(GLFW_KEY_W, GLFW_KEY_S) * delta_time;
+
+            glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
+            glm::vec3 right = glm::cross(forward, glm::vec3(0, 1, 0));
+            glm::vec3 move = {};
+            move += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
+            move += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
+            if (move != glm::vec3(0, 0, 0))
+            {
+                move = glm::normalize(move);
+                transform.position += move * 3.0f * delta_time;
+            }
+
+            if (input::is_mouse_locked())
+            {
+                glm::vec2 mouse_delta = input::mouse_delta();
+                transform.rotation = glm::angleAxis(-mouse_delta.x / 1000.0f, glm::vec3(0, 1, 0)) * transform.rotation;
+                transform.rotation = glm::angleAxis(-mouse_delta.y / 1000.0f, right) * transform.rotation;
+            }
         }
 
         renderer::clear_screen();

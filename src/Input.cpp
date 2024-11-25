@@ -12,6 +12,8 @@ namespace kvejken::input
 
     static GLFWwindow* m_window = nullptr;
 
+    static glm::vec2 m_prev_mouse_pos = {};
+
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
         if (action == GLFW_PRESS)
@@ -51,6 +53,8 @@ namespace kvejken::input
 
         memset(m_mouse_just_pressed, 0, sizeof(m_mouse_just_pressed));
         memset(m_mouse_just_released, 0, sizeof(m_mouse_just_released));
+
+        m_prev_mouse_pos = mouse_screen_position();
     }
 
     bool key_held(int key)
@@ -88,6 +92,11 @@ namespace kvejken::input
         return m_mouse_just_released[button];
     }
 
+    glm::vec2 mouse_delta()
+    {
+        return mouse_screen_position() - m_prev_mouse_pos;
+    }
+
     glm::vec2 mouse_screen_position()
     {
         double x, y;
@@ -109,5 +118,10 @@ namespace kvejken::input
     void unlock_mouse()
     {
         glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
+
+    bool is_mouse_locked()
+    {
+        return glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL;
     }
 }

@@ -7,8 +7,8 @@ namespace kvejken
     struct Transform
     {
         glm::vec3 position;
-        float scale;
         glm::quat rotation;
+        float scale;
     };
 
     struct Player

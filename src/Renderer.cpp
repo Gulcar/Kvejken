@@ -142,7 +142,7 @@ namespace kvejken::renderer
 
         // default camera
         m_camera.position = glm::vec3(-2.5f, 1.7f, 3.0f);
-        m_camera.target = glm::vec3(0.0f, 0.0f, 0.0f);
+        m_camera.direction = glm::normalize(glm::vec3(0, 0, 0) - m_camera.position);
         m_camera.up = glm::vec3(0.0f, 1.0f, 0.0f);
         m_camera.fovy = 50.0f;
         m_camera.z_near = 0.01f;
@@ -241,12 +241,10 @@ namespace kvejken::renderer
         auto [camera, transform] = *(ecs::get_components<Camera, Transform>().begin());
         m_camera = camera;
         m_camera.position += transform.position;
-        glm::vec3 dir = m_camera.target - m_camera.position;
-        dir = transform.rotation * dir;
-        m_camera.target = m_camera.position + dir;
+        m_camera.direction = transform.rotation * m_camera.direction;
 
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
-        glm::mat4 view = glm::lookAt(m_camera.position, m_camera.target, m_camera.up);
+        glm::mat4 view = glm::lookAt(m_camera.position, m_camera.position + m_camera.direction, m_camera.up);
         m_view_proj = proj * view;
 
         if (m_skybox)
