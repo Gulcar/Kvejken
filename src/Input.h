@@ -23,4 +23,7 @@ namespace kvejken::input
 
     glm::vec2 mouse_screen_position();
     glm::vec3 mouse_world_position();
+
+    void lock_mouse();
+    void unlock_mouse();
 }

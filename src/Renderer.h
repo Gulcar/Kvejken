@@ -1,5 +1,6 @@
 #pragma once
 #include <glm/vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <string>
 
 struct GLFWwindow;
@@ -45,8 +46,8 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path);
 
-    void draw_model(const Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation);
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
     //void draw_sprite();
 
     void set_skybox(const std::string& skybox_obj_path);

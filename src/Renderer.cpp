@@ -7,6 +7,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include <glm/mat3x3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -241,7 +242,7 @@ namespace kvejken::renderer
         m_camera = camera;
         m_camera.position += transform.position;
         glm::vec3 dir = m_camera.target - m_camera.position;
-        dir = dir * transform.rotation;
+        dir = transform.rotation * dir;
         m_camera.target = m_camera.position + dir;
 
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
@@ -404,15 +405,15 @@ namespace kvejken::renderer
         return tex;
     }
 
-    void draw_model(const Model* model, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), position, scale, rotation);
+            draw_mesh(&(model->meshes()[i]), position, rotation, scale);
         }
     }
 
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::vec3 scale, glm::vec3 rotation)
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
@@ -429,7 +430,7 @@ namespace kvejken::renderer
         order.depth = (int)(distance01 * max_depth);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
-            * glm::eulerAngleYXZ(rotation.y, rotation.x, rotation.z)
+            * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
 
         m_draw_queue.push_back({ order, mesh, transform });

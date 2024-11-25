@@ -10,7 +10,7 @@ namespace kvejken::input
     static bool m_mouse_just_pressed[GLFW_MOUSE_BUTTON_LAST + 1];
     static bool m_mouse_just_released[GLFW_MOUSE_BUTTON_LAST + 1];
 
-    static GLFWwindow* m_window;
+    static GLFWwindow* m_window = nullptr;
 
     static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
     {
@@ -41,6 +41,7 @@ namespace kvejken::input
         m_window = window;
         glfwSetKeyCallback(m_window, key_callback);
         glfwSetMouseButtonCallback(m_window, mouse_button_callback);
+        clear();
     }
 
     void clear()
@@ -98,5 +99,15 @@ namespace kvejken::input
     {
         // TODO
         return glm::vec3(0, 0, 0);
+    }
+
+    void lock_mouse()
+    {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    }
+
+    void unlock_mouse()
+    {
+        glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     }
 }

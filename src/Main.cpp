@@ -75,20 +75,20 @@ int main()
 
         renderer::clear_screen();
 
-        renderer::draw_model(&test_cube, glm::vec3(std::sin(glfwGetTime()), 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, glfwGetTime(), 0));
-        renderer::draw_model(&test_cube, glm::vec3(3, 0.4f, -5), glm::vec3(0.5f), glm::vec3(0, 0, 0));
-        renderer::draw_model(&test_cube, glm::vec3(2, 0, -3), glm::vec3(0.5f), glm::vec3(0, 0, 0));
+        renderer::draw_model(&test_cube, glm::vec3(std::sin(glfwGetTime()), 0, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
+        renderer::draw_model(&test_cube, glm::vec3(3, 0.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        renderer::draw_model(&test_cube, glm::vec3(2, 0, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
         for (int i = 0; i < 100; i++)
         {
-            renderer::draw_model(&test_cube, glm::vec3(i, 0, -3), glm::vec3(0.5f), glm::vec3(0, 0, 0));
+            renderer::draw_model(&test_cube, glm::vec3(i, 0, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
         }
 
-        renderer::draw_model(&test_rock, glm::vec3(4, 0, 0), glm::vec3(1, 1, 1), glm::vec3(0, -glfwGetTime(), 0));
-        renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0.5f), glm::vec3(0, -PI / 2.0f, 0));
-        renderer::draw_model(&terrain, glm::vec3(0, -5, 0), glm::vec3(1), glm::vec3(0));
+        renderer::draw_model(&test_rock, glm::vec3(4, 0, 0), glm::vec3(0, -glfwGetTime(), 0), glm::vec3(1.0f));
+        renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0, -PI / 2.0f, 0), glm::vec3(0.5f));
+        renderer::draw_model(&terrain, glm::vec3(0, -5, 0), glm::vec3(0, 0, 0), glm::vec3(1.0f));
 
         int eel_index = (int)(std::fmodf(glfwGetTime(), 0.5f) / 0.5f * 12);
-        renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0.5f), glm::vec3(0));
+        renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
         renderer::draw_queue();
 
