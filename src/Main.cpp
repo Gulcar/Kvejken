@@ -96,7 +96,7 @@ int main()
             constexpr float MOUSE_SENS = 1.0f;
 
             constexpr float CAMERA_HEIGHT = 1.0f;
-            constexpr float GROUND_CHECK_DIST = 0.3f;
+            constexpr float GROUND_CHECK_DIST = 0.5f;
             constexpr float PLAYER_GRAVITY = -25.0f;
             constexpr float JUMP_STRENGTH = 9.0f;
             constexpr float COYOTE_TIME = 0.12f;
@@ -168,6 +168,7 @@ int main()
             if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
             {
                 player.velocity_y += JUMP_STRENGTH;
+                player.move_velocity = player.move_velocity * MAX_MOVE_SPEED_AIR / MAX_MOVE_SPEED;
                 player.jump_allowed_time = -1.0f;
             }
 
