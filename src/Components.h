@@ -15,6 +15,9 @@ namespace kvejken
     {
         int health;
         bool local;
+        float velocity_y;
+        glm::vec2 move_velocity;
+        float jump_allowed_time;
     };
 }
 

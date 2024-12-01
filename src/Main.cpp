@@ -47,7 +47,7 @@ int main()
         transform.scale = 1.0f;
         ecs::add_component(transform, entity);
 
-        Player player;
+        Player player = {};
         player.health = 100;
         player.local = true;
         ecs::add_component(player, entity);
@@ -70,9 +70,9 @@ int main()
         input::clear();
         renderer::poll_events();
 
-        float time = glfwGetTime();
-        float delta_time = time - prev_time;
-        prev_time = time;
+        float game_time = glfwGetTime();
+        float delta_time = game_time - prev_time;
+        prev_time = game_time;
 
         if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
             input::lock_mouse();
@@ -86,14 +86,41 @@ int main()
 
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
             glm::vec3 right = glm::cross(forward, glm::vec3(0, 1, 0));
-            glm::vec3 move = {};
-            move += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
-            move += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
-            if (move != glm::vec3(0, 0, 0))
+            glm::vec3 move_dir = {};
+            move_dir += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
+            move_dir += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
+            move_dir.y = 0.0f;
+
+            bool moving = false;
+            if (move_dir != glm::vec3(0, 0, 0))
             {
-                move = glm::normalize(move);
-                transform.position += move * 6.0f * delta_time;
+                move_dir = glm::normalize(move_dir);
+
+                float dist = 100.0f;
+                // TODO: check wider
+                collision::raycast(transform.position, move_dir, nullptr, &dist);
+                if (dist > 0.5f)
+                {
+                    player.move_velocity += glm::vec2(move_dir.x, move_dir.z) * 70.0f * delta_time;
+                    moving = true;
+                }
             }
+
+            if (moving == false)
+            {
+                if (glm::length(player.move_velocity) < 40.0f * delta_time)
+                    player.move_velocity = glm::vec2(0, 0);
+                else
+                    player.move_velocity -= glm::normalize(player.move_velocity) * 40.0f * delta_time;
+            }
+
+            float move_velocity = glm::length(player.move_velocity);
+            if (move_velocity > 6.0f)
+            {
+                player.move_velocity = player.move_velocity / move_velocity * 6.0f;
+            }
+
+            transform.position += glm::vec3(player.move_velocity.x, 0.0f, player.move_velocity.y) * delta_time;
 
             if (input::is_mouse_locked())
             {
@@ -101,6 +128,26 @@ int main()
                 transform.rotation = glm::angleAxis(-mouse_delta.x / 1000.0f, glm::vec3(0, 1, 0)) * transform.rotation;
                 transform.rotation = glm::angleAxis(-mouse_delta.y / 1000.0f, right) * transform.rotation;
             }
+
+            float dist = 100.0f;
+            collision::raycast(transform.position, glm::vec3(0, -1, 0), nullptr, &dist);
+            if (dist > 1.0f)
+            {
+                player.velocity_y -= 25.0f * delta_time;
+            }
+            else
+            {
+                transform.position.y += 1.0f - dist;
+                player.velocity_y = -0.01f;
+                player.jump_allowed_time = game_time + 0.12f;
+            }
+
+            if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
+            {
+                player.velocity_y += 9.0f;
+            }
+
+            transform.position.y += player.velocity_y * delta_time;
         }
 
         renderer::clear_screen();
@@ -126,7 +173,7 @@ int main()
                 continue;
 
             glm::vec3 hit_pos;
-            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), &hit_pos))
+            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), &hit_pos, nullptr))
             {
                 renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.5f));
             }

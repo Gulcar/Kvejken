@@ -37,7 +37,7 @@ namespace kvejken::collision
         }
     }
 
-    bool raycast(glm::vec3 position, glm::vec3 direction, glm::vec3* out_hit_position)
+    bool raycast(glm::vec3 position, glm::vec3 direction, glm::vec3* out_hit_position, float *out_dist)
     {
         float closest_dist = 9999.0f;
 
@@ -47,14 +47,22 @@ namespace kvejken::collision
             float distance;
             if (glm::intersectRayTriangle(position, direction, tri.v1, tri.v2, tri.v3, bary_coords, distance))
             {
-                if (distance < closest_dist)
+                if (distance > 0.0f && distance < closest_dist)
                 {
                     closest_dist = distance;
                 }
             }
         }
 
-        *out_hit_position = position + direction * closest_dist;
-        return closest_dist != 9999.0f;
+        if (closest_dist != 9999.0f)
+        {
+            if (out_hit_position) *out_hit_position = position + direction * closest_dist;
+            if (out_dist) *out_dist = closest_dist;
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 }
