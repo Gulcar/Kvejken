@@ -184,20 +184,25 @@ namespace kvejken
                 ASSERT(sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i",
                     &av, &avt, &avn, &bv, &bvt, &bvn, &cv, &cvt, &cvn) == 9);
 
+                glm::vec2 tex_coords_a = texture_coords[avt - 1];
+                glm::vec2 tex_coords_b = texture_coords[bvt - 1];
+                glm::vec2 tex_coords_c = texture_coords[cvt - 1];
+                utils::wrap_texture_coords(&tex_coords_a, &tex_coords_b, &tex_coords_c);
+
                 vertices.push_back(Vertex{
                     positions[av - 1],
                     normals[avn - 1],
-                    utils::pack_texture_coords(texture_coords[avt - 1]),
+                    utils::pack_texture_coords(tex_coords_a),
                 });
                 vertices.push_back(Vertex{
                     positions[bv - 1],
                     normals[bvn - 1],
-                    utils::pack_texture_coords(texture_coords[bvt - 1]),
+                    utils::pack_texture_coords(tex_coords_b),
                 });
                 vertices.push_back(Vertex{
                     positions[cv - 1],
                     normals[cvn - 1],
-                    utils::pack_texture_coords(texture_coords[cvt - 1]),
+                    utils::pack_texture_coords(tex_coords_c),
                 });
             }
         }

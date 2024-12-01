@@ -50,8 +50,8 @@ int main()
         camera.direction = glm::vec3(0, 0, -1);
         camera.up = glm::vec3(0, 1, 0);
         camera.fovy = 50.0f;
-        camera.z_near = 0.01f;
-        camera.z_far = 100.0f;
+        camera.z_near = 0.1f;
+        camera.z_far = 150.0f;
         ecs::add_component(camera, entity);
     }
 
@@ -85,7 +85,7 @@ int main()
             if (move != glm::vec3(0, 0, 0))
             {
                 move = glm::normalize(move);
-                transform.position += move * 3.0f * delta_time;
+                transform.position += move * 6.0f * delta_time;
             }
 
             if (input::is_mouse_locked())

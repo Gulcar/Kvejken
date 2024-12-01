@@ -72,4 +72,32 @@ namespace kvejken::utils
         float uy = ((v.y + 1.0f) / 3.0f) * ((1 << 16) - 1);
         return glm::u16vec2((uint16_t)ux, (uint16_t)uy);
     }
+
+    inline void wrap_texture_coords(glm::vec2* a, glm::vec2* b, glm::vec2* c)
+    {
+        if (a->x >= 2.0f || b->x >= 2.0f || c->x >= 2.0f)
+        {
+            a->x -= 1.0f;
+            b->x -= 1.0f;
+            c->x -= 1.0f;
+        }
+        else if (a->x <= -1.0f || b->x <= -1.0f || c->x <= -1.0f)
+        {
+            a->x += 1.0f;
+            b->x += 1.0f;
+            c->x += 1.0f;
+        }
+        if (a->y >= 2.0f || b->y >= 2.0f || c->y >= 2.0f)
+        {
+            a->y -= 1.0f;
+            b->y -= 1.0f;
+            c->y -= 1.0f;
+        }
+        else if (a->y <= -1.0f || b->y <= -1.0f || c->y <= -1.0f)
+        {
+            a->y += 1.0f;
+            b->y += 1.0f;
+            c->y += 1.0f;
+        }
+    }
 }
