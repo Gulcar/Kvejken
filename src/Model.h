@@ -46,7 +46,7 @@ namespace kvejken
     class Model
     {
     public:
-        Model(const std::string& file_path);
+        Model(const std::string& file_path, bool allow_vbo = true);
 
         std::vector<Mesh>& meshes() { return m_meshes; }
         const std::vector<Mesh>& meshes() const { return m_meshes; }

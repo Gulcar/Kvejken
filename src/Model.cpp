@@ -113,7 +113,7 @@ namespace kvejken
         return materials;
     }
 
-    Model::Model(const std::string& file_path)
+    Model::Model(const std::string& file_path, bool allow_vbo)
     {
         std::ifstream file(file_path);
         ASSERT(file.is_open() && file.good());
@@ -152,7 +152,7 @@ namespace kvejken
                 std::string new_material = line.substr(7, -1);
                 if (current_material.length() > 0 && current_material != new_material)
                 {
-                    bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH;
+                    bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH && allow_vbo;
                     m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
                     vertices.clear();
                 }
@@ -207,7 +207,7 @@ namespace kvejken
             }
         }
 
-        bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH;
+        bool gen_vertex_buffer = vertices.size() > MAX_VERTICES_TO_BATCH && allow_vbo;
         m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
     }
 }

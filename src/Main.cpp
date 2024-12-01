@@ -6,6 +6,7 @@
 #include "ECS.h"
 #include "Components.h"
 #include "Input.h"
+#include "Collision.h"
 #include <GLFW/glfw3.h>
 
 using namespace kvejken;
@@ -23,7 +24,13 @@ int main()
     Model test_rock("../../assets/test/test_rock.obj");
     Model test_multiple("../../assets/test/test_multiple.obj");
 
-    Model terrain("../../assets/environment/terrain.obj");
+    Model terrain("../../assets/environment/terrain.obj", false);
+    collision::build_triangle_bvh(terrain, glm::vec3(0, -5, 0), glm::vec3(0, 0, 0), glm::vec3(1.0f));
+    for (auto& mesh : terrain.meshes())
+    {
+        if (mesh.vertices().size() > 1000)
+            mesh.prepare_vertex_buffer();
+    }
 
     std::vector<Model> eels;
     for (int i = 1; i <= 12; i++)
@@ -112,6 +119,18 @@ int main()
 
         int eel_index = (int)(std::fmodf(glfwGetTime(), 0.5f) / 0.5f * 12);
         renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+
+        for (auto [player, transform] : ecs::get_components<Player, Transform>())
+        {
+            if (!player.local)
+                continue;
+
+            glm::vec3 hit_pos;
+            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), &hit_pos))
+            {
+                renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+            }
+        }
 
         renderer::draw_queue();
 
