@@ -84,12 +84,31 @@ int main()
             if (!player.local)
                 continue;
 
+            constexpr float MAX_MOVE_SPEED = 6.0f;
+            constexpr float MAX_MOVE_SPEED_AIR = 9.0f;
+            constexpr float ACCELERATION = 80.0f;
+            constexpr float DECELERATION = 35.0f;
+            constexpr float ACCELERATION_AIR = ACCELERATION * 0.2f;
+            constexpr float DECELERATION_AIR = DECELERATION * 0.1f;
+
+            constexpr float BODY_RADIUS = 1.2f;
+
+            constexpr float MOUSE_SENS = 1.0f;
+
+            constexpr float CAMERA_HEIGHT = 1.0f;
+            constexpr float GROUND_CHECK_DIST = 0.3f;
+            constexpr float PLAYER_GRAVITY = -25.0f;
+            constexpr float JUMP_STRENGTH = 9.0f;
+            constexpr float COYOTE_TIME = 0.12f;
+
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
             glm::vec3 right = glm::cross(forward, glm::vec3(0, 1, 0));
             glm::vec3 move_dir = {};
             move_dir += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
             move_dir += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
             move_dir.y = 0.0f;
+
+            bool grounded = (game_time <= player.jump_allowed_time);
 
             bool moving = false;
             if (move_dir != glm::vec3(0, 0, 0))
@@ -99,25 +118,28 @@ int main()
                 float dist = 100.0f;
                 // TODO: check wider
                 collision::raycast(transform.position, move_dir, nullptr, &dist);
-                if (dist > 0.5f)
+                if (dist > BODY_RADIUS)
                 {
-                    player.move_velocity += glm::vec2(move_dir.x, move_dir.z) * 70.0f * delta_time;
+                    float accel = (grounded) ? ACCELERATION : ACCELERATION_AIR;
+                    player.move_velocity += glm::vec2(move_dir.x, move_dir.z) * accel * delta_time;
                     moving = true;
                 }
             }
 
             if (moving == false)
             {
-                if (glm::length(player.move_velocity) < 40.0f * delta_time)
-                    player.move_velocity = glm::vec2(0, 0);
+                float decel = (grounded) ? DECELERATION : DECELERATION_AIR;
+                if (glm::length(player.move_velocity) > decel * delta_time)
+                    player.move_velocity -= glm::normalize(player.move_velocity) * decel * delta_time;
                 else
-                    player.move_velocity -= glm::normalize(player.move_velocity) * 40.0f * delta_time;
+                    player.move_velocity = glm::vec2(0, 0);
             }
 
+            float max_velocity = (grounded) ? MAX_MOVE_SPEED : MAX_MOVE_SPEED_AIR;
             float move_velocity = glm::length(player.move_velocity);
-            if (move_velocity > 6.0f)
+            if (move_velocity > max_velocity)
             {
-                player.move_velocity = player.move_velocity / move_velocity * 6.0f;
+                player.move_velocity = player.move_velocity / move_velocity * max_velocity;
             }
 
             transform.position += glm::vec3(player.move_velocity.x, 0.0f, player.move_velocity.y) * delta_time;
@@ -125,26 +147,28 @@ int main()
             if (input::is_mouse_locked())
             {
                 glm::vec2 mouse_delta = input::mouse_delta();
-                transform.rotation = glm::angleAxis(-mouse_delta.x / 1000.0f, glm::vec3(0, 1, 0)) * transform.rotation;
-                transform.rotation = glm::angleAxis(-mouse_delta.y / 1000.0f, right) * transform.rotation;
+                transform.rotation = glm::angleAxis(-mouse_delta.x * MOUSE_SENS / 1000.0f, glm::vec3(0, 1, 0)) * transform.rotation;
+                transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
             }
 
             float dist = 100.0f;
-            collision::raycast(transform.position, glm::vec3(0, -1, 0), nullptr, &dist);
-            if (dist > 1.0f)
+            glm::vec3 ground_check_origin = transform.position - glm::vec3(0, CAMERA_HEIGHT - GROUND_CHECK_DIST, 0);
+            collision::raycast(ground_check_origin, glm::vec3(0, -1, 0), nullptr, &dist);
+            if (dist > GROUND_CHECK_DIST)
             {
-                player.velocity_y -= 25.0f * delta_time;
+                player.velocity_y += PLAYER_GRAVITY * delta_time;
             }
             else
             {
-                transform.position.y += 1.0f - dist;
+                transform.position.y += GROUND_CHECK_DIST - dist;
                 player.velocity_y = -0.01f;
-                player.jump_allowed_time = game_time + 0.12f;
+                player.jump_allowed_time = game_time + COYOTE_TIME;
             }
 
             if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
             {
-                player.velocity_y += 9.0f;
+                player.velocity_y += JUMP_STRENGTH;
+                player.jump_allowed_time = -1.0f;
             }
 
             transform.position.y += player.velocity_y * delta_time;
@@ -175,7 +199,7 @@ int main()
             glm::vec3 hit_pos;
             if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), &hit_pos, nullptr))
             {
-                renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.5f));
+                renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.1f));
             }
         }
 
