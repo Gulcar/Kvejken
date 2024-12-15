@@ -42,7 +42,7 @@ int main()
         Entity entity = ecs::create_entity();
 
         Transform transform = {};
-        transform.position = glm::vec3(0, 1.5f, 0);
+        transform.position = glm::vec3(0, 2, 0);
         transform.rotation = glm::quat(1, 0, 0, 0);
         transform.scale = 1.0f;
         ecs::add_component(transform, entity);
@@ -53,7 +53,7 @@ int main()
         ecs::add_component(player, entity);
 
         Camera camera = {};
-        camera.position = glm::vec3(0, 0, 0);
+        camera.position = glm::vec3(0, 0.45f, 0);
         camera.direction = glm::vec3(0, 0, -1);
         camera.up = glm::vec3(0, 1, 0);
         camera.fovy = 50.0f;
@@ -96,13 +96,10 @@ int main()
             constexpr float ACCELERATION_AIR = ACCELERATION * 0.2f;
             constexpr float DECELERATION_AIR = DECELERATION * 0.1f;
 
-            constexpr float BODY_RADIUS = 1.2f;
-
             constexpr float MOUSE_SENS = 1.0f;
 
-            constexpr float CAMERA_HEIGHT = 1.0f;
-            constexpr float GROUND_CHECK_DIST = 0.5f;
             constexpr float PLAYER_GRAVITY = -25.0f;
+            constexpr float MAX_Y_VELOCITY = -PLAYER_GRAVITY * 5.0f;
             constexpr float JUMP_STRENGTH = 9.0f;
             constexpr float COYOTE_TIME = 0.12f;
 
@@ -115,23 +112,14 @@ int main()
 
             bool grounded = (game_time <= player.jump_allowed_time);
 
-            bool moving = false;
             if (move_dir != glm::vec3(0, 0, 0))
             {
                 move_dir = glm::normalize(move_dir);
 
-                float dist = 100.0f;
-                // TODO: check wider
-                collision::raycast(transform.position, move_dir, 100.0f, nullptr, &dist);
-                if (dist > BODY_RADIUS)
-                {
-                    float accel = (grounded) ? ACCELERATION : ACCELERATION_AIR;
-                    player.move_velocity += glm::vec2(move_dir.x, move_dir.z) * accel * delta_time;
-                    moving = true;
-                }
+                float accel = (grounded) ? ACCELERATION : ACCELERATION_AIR;
+                player.move_velocity += glm::vec2(move_dir.x, move_dir.z) * accel * delta_time;
             }
-
-            if (moving == false)
+            else
             {
                 float decel = (grounded) ? DECELERATION : DECELERATION_AIR;
                 if (glm::length(player.move_velocity) > decel * delta_time)
@@ -156,16 +144,8 @@ int main()
                 transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
             }
 
-            glm::vec3 ground_check_origin = transform.position - glm::vec3(0, CAMERA_HEIGHT - GROUND_CHECK_DIST, 0);
-            float dist = 999.0f;
-            collision::raycast(ground_check_origin, glm::vec3(0, -1, 0), dist, nullptr, &dist);
-            //collision::raycast(ground_check_origin + glm::vec3(0.25f, 0, 0), glm::vec3(0, -1, 0), dist, nullptr, &dist);
-            //collision::raycast(ground_check_origin - glm::vec3(0.25f, 0, 0), glm::vec3(0, -1, 0), dist, nullptr, &dist);
-            //collision::raycast(ground_check_origin + glm::vec3(0, 0, 0.25f), glm::vec3(0, -1, 0), dist, nullptr, &dist);
-            //collision::raycast(ground_check_origin - glm::vec3(0, 0, 0.25f), glm::vec3(0, -1, 0), dist, nullptr, &dist);
-            if (dist <= GROUND_CHECK_DIST)
+            if (player.velocity_y <= 0.0f && collision::sphere_collision(transform.position - glm::vec3(0, 0.2f, 0), 0.32f, nullptr, nullptr, nullptr))
             {
-                transform.position.y += GROUND_CHECK_DIST - dist;
                 player.velocity_y = 0.0f;
                 player.jump_allowed_time = game_time + COYOTE_TIME;
             }
@@ -181,7 +161,14 @@ int main()
                 player.jump_allowed_time = -1.0f;
             }
 
+            player.velocity_y = glm::clamp(player.velocity_y, -MAX_Y_VELOCITY, MAX_Y_VELOCITY);
             transform.position.y += player.velocity_y * delta_time;
+
+            collision::sphere_collision(transform.position, 0.5f, nullptr, nullptr, &transform.position);
+            collision::sphere_collision(transform.position, 0.5f, nullptr, nullptr, &transform.position);
+
+            if (transform.position.y < -150.0f)
+                transform.position.y = 150.0f;
         }
 
         renderer::clear_screen();
