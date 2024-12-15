@@ -37,9 +37,9 @@ namespace kvejken::collision
         }
     }
 
-    bool raycast(glm::vec3 position, glm::vec3 direction, glm::vec3* out_hit_position, float *out_dist)
+    bool raycast(glm::vec3 position, glm::vec3 direction, float max_dist, glm::vec3* out_hit_position, float* out_dist)
     {
-        float closest_dist = 9999.0f;
+        float closest_dist = max_dist;
 
         for (const auto& tri : m_triangles)
         {
@@ -54,7 +54,7 @@ namespace kvejken::collision
             }
         }
 
-        if (closest_dist != 9999.0f)
+        if (closest_dist < max_dist)
         {
             if (out_hit_position) *out_hit_position = position + direction * closest_dist;
             if (out_dist) *out_dist = closest_dist;
@@ -64,5 +64,15 @@ namespace kvejken::collision
         {
             return false;
         }
+    }
+
+    static bool test_overlap(float min_a, float max_a, float min_b, float max_b)
+    {
+        return max_a >= min_b && max_b >= min_a;
+    }
+
+    static bool test_axis_projection(glm::vec3 axis, glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3 aabb_min, glm::vec3 aabb_max)
+    {
+
     }
 }

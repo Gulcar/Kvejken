@@ -72,7 +72,12 @@ int main()
 
         float game_time = glfwGetTime();
         float delta_time = game_time - prev_time;
-        prev_time = game_time;
+        if (delta_time > 1.0f / 15.0f)
+        {
+            printf("WARNING: high delta_time (%.2f ms)\n", delta_time * 1000.0f);
+            delta_time = 1.0f / 15.0f;
+        }
+        prev_time += delta_time;
 
         if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
             input::lock_mouse();
@@ -117,7 +122,7 @@ int main()
 
                 float dist = 100.0f;
                 // TODO: check wider
-                collision::raycast(transform.position, move_dir, nullptr, &dist);
+                collision::raycast(transform.position, move_dir, 100.0f, nullptr, &dist);
                 if (dist > BODY_RADIUS)
                 {
                     float accel = (grounded) ? ACCELERATION : ACCELERATION_AIR;
@@ -151,18 +156,22 @@ int main()
                 transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
             }
 
-            float dist = 100.0f;
             glm::vec3 ground_check_origin = transform.position - glm::vec3(0, CAMERA_HEIGHT - GROUND_CHECK_DIST, 0);
-            collision::raycast(ground_check_origin, glm::vec3(0, -1, 0), nullptr, &dist);
-            if (dist > GROUND_CHECK_DIST)
+            float dist = 999.0f;
+            collision::raycast(ground_check_origin, glm::vec3(0, -1, 0), dist, nullptr, &dist);
+            //collision::raycast(ground_check_origin + glm::vec3(0.25f, 0, 0), glm::vec3(0, -1, 0), dist, nullptr, &dist);
+            //collision::raycast(ground_check_origin - glm::vec3(0.25f, 0, 0), glm::vec3(0, -1, 0), dist, nullptr, &dist);
+            //collision::raycast(ground_check_origin + glm::vec3(0, 0, 0.25f), glm::vec3(0, -1, 0), dist, nullptr, &dist);
+            //collision::raycast(ground_check_origin - glm::vec3(0, 0, 0.25f), glm::vec3(0, -1, 0), dist, nullptr, &dist);
+            if (dist <= GROUND_CHECK_DIST)
             {
-                player.velocity_y += PLAYER_GRAVITY * delta_time;
+                transform.position.y += GROUND_CHECK_DIST - dist;
+                player.velocity_y = 0.0f;
+                player.jump_allowed_time = game_time + COYOTE_TIME;
             }
             else
             {
-                transform.position.y += GROUND_CHECK_DIST - dist;
-                player.velocity_y = -0.01f;
-                player.jump_allowed_time = game_time + COYOTE_TIME;
+                player.velocity_y += PLAYER_GRAVITY * delta_time;
             }
 
             if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
@@ -198,7 +207,7 @@ int main()
                 continue;
 
             glm::vec3 hit_pos;
-            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), &hit_pos, nullptr))
+            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), 100.0f, &hit_pos, nullptr))
             {
                 renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.1f));
             }
