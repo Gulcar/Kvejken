@@ -69,19 +69,21 @@ namespace kvejken::renderer
         std::unique_ptr<Model> m_skybox = nullptr;
     }
 
-    static uint32_t load_shader(std::string_view source, GLenum type)
+    static uint32_t load_shader(const char* source, GLenum type)
     {
         uint32_t shader = glCreateShader(type);
-        const char* char_source = source.data();
-        glShaderSource(shader, 1, &char_source, 0);
+        glShaderSource(shader, 1, &source, 0);
         glCompileShader(shader);
         return shader;
     }
 
-    static uint32_t load_shader_program(std::string_view vertex_src_file, std::string_view fragment_src_file)
+    static uint32_t load_shader_program(const char* vertex_src_file, const char* fragment_src_file)
     {
-        uint32_t vertex_shader = load_shader(utils::read_file_to_string(vertex_src_file), GL_VERTEX_SHADER);
-        uint32_t fragment_shader = load_shader(utils::read_file_to_string(fragment_src_file), GL_FRAGMENT_SHADER);
+        std::string vertex_src = utils::read_file_to_string(vertex_src_file);
+        std::string fragment_src = utils::read_file_to_string(fragment_src_file);
+
+        uint32_t vertex_shader = load_shader(vertex_src.c_str(), GL_VERTEX_SHADER);
+        uint32_t fragment_shader = load_shader(fragment_src.c_str(), GL_FRAGMENT_SHADER);
 
         uint32_t program = glCreateProgram();
         glAttachShader(program, vertex_shader);

@@ -38,9 +38,9 @@ namespace kvejken::utils
         return strncmp(str_end, check.data(), check.size()) == 0;
     }
 
-    inline std::string read_file_to_string(std::string_view file_path)
+    inline std::string read_file_to_string(const char* file_path)
     {
-        std::ifstream file(file_path.data());
+        std::ifstream file(file_path);
 
         file.seekg(0, std::ios::end);
         size_t size = file.tellg();

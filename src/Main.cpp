@@ -144,7 +144,7 @@ int main()
                 transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
             }
 
-            if (player.velocity_y <= 0.0f && collision::sphere_collision(transform.position - glm::vec3(0, 0.2f, 0), 0.32f, nullptr, nullptr, nullptr))
+            if (player.velocity_y <= 0.0f && collision::sphere_collision(transform.position - glm::vec3(0, 0.2f, 0), 0.32f))
             {
                 player.velocity_y = 0.0f;
                 player.jump_allowed_time = game_time + COYOTE_TIME;
@@ -164,8 +164,14 @@ int main()
             player.velocity_y = glm::clamp(player.velocity_y, -MAX_Y_VELOCITY, MAX_Y_VELOCITY);
             transform.position.y += player.velocity_y * delta_time;
 
-            collision::sphere_collision(transform.position, 0.5f, nullptr, nullptr, &transform.position);
-            collision::sphere_collision(transform.position, 0.5f, nullptr, nullptr, &transform.position);
+            glm::vec3 velocity = glm::vec3(player.move_velocity.x, player.velocity_y, player.move_velocity.y);
+            auto res = collision::sphere_collision(transform.position, 0.5f, velocity);
+            if (res)
+            {
+                transform.position = res->new_center;
+
+                // TODO: resetiraj velocity ce se zaletis v strop ali pa skocis v zid
+            }
 
             if (transform.position.y < -150.0f)
                 transform.position.y = 150.0f;
@@ -193,10 +199,10 @@ int main()
             if (!player.local)
                 continue;
 
-            glm::vec3 hit_pos;
-            if (collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1), 100.0f, &hit_pos, nullptr))
+            auto hit = collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1));
+            if (hit)
             {
-                renderer::draw_model(&test_cube, hit_pos, glm::vec3(0, 0, 0), glm::vec3(0.1f));
+                renderer::draw_model(&test_cube, hit->position, glm::vec3(0, 0, 0), glm::vec3(0.1f));
             }
         }
 

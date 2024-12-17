@@ -39,7 +39,7 @@ namespace kvejken::collision
         }
     }
 
-    bool raycast(glm::vec3 position, glm::vec3 direction, float max_dist, glm::vec3* out_hit_position, float* out_dist)
+    std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist)
     {
         float closest_dist = max_dist;
 
@@ -58,14 +58,12 @@ namespace kvejken::collision
 
         if (closest_dist < max_dist)
         {
-            if (out_hit_position) *out_hit_position = position + direction * closest_dist;
-            if (out_dist) *out_dist = closest_dist;
-            return true;
+            RaycastHit hit;
+            hit.position = position + direction * closest_dist;
+            hit.distance = closest_dist;
+            return hit;
         }
-        else
-        {
-            return false;
-        }
+        return std::nullopt;
     }
 
     glm::vec3 closest_point_on_line(glm::vec3 a, glm::vec3 b, glm::vec3 p)
@@ -76,13 +74,13 @@ namespace kvejken::collision
     }
 
     // https://wickedengine.net/2020/04/capsule-collision-detection/
-    bool sphere_triangle_intersection(glm::vec3 center, float radius, glm::vec3 a, glm::vec3 b, glm::vec3 c, glm::vec3* out_pen_normal, float* out_pen_depth)
+    std::optional<Intersection> sphere_triangle_intersection(glm::vec3 center, float radius, glm::vec3 a, glm::vec3 b, glm::vec3 c)
     {
         glm::vec3 tri_normal = glm::normalize(glm::cross(b - a, c - a));
         float dist = glm::dot(center - a, tri_normal);
 
         if (dist < -radius || dist > radius)
-            return false;
+            return std::nullopt;
 
         glm::vec3 p = center - tri_normal * dist;
 
@@ -130,48 +128,46 @@ namespace kvejken::collision
             }
             else
             {
-                return false;
+                return std::nullopt;
             }
         }
 
         float len = glm::length(intersection_vec);
-        if (out_pen_normal) *out_pen_normal = intersection_vec / len;
-        if (out_pen_depth) *out_pen_depth = radius - len;
-        return true;
+
+        Intersection out;
+        out.normal = intersection_vec / len;
+        out.depth = radius - len;
+        return out;
     }
 
-    bool sphere_collision(glm::vec3 center, float radius, std::vector<glm::vec3>* out_penetrations, glm::vec3* out_biggest_pen, glm::vec3* out_new_center)
+    std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity)
     {
-        float biggest = 0.0f;
         bool any = false;
+
+        velocity = glm::normalize(velocity);
+        float hit_dot = 0.0f;
 
         for (const auto& tri : m_triangles)
         {
-            glm::vec3 normal;
-            float depth;
-            if (sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3, &normal, &depth))
+            auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
+            if (intersection)
             {
                 any = true;
-                glm::vec3 pen = normal * depth;
 
-                if (out_penetrations)
-                    out_penetrations->push_back(pen);
+                center += intersection->normal * intersection->depth;
 
-                if (depth > biggest)
-                {
-                    biggest = depth;
-                    if (out_biggest_pen)
-                        *out_biggest_pen = pen;
-                }
-
-                if (out_new_center)
-                    center += pen;
+                float dot = glm::dot(velocity, -intersection->normal);
+                hit_dot = std::max(hit_dot, dot);
             }
         }
 
-        if (out_new_center)
-            *out_new_center = center;
-
-        return any;
+        if (any)
+        {
+            ResolvedCollision out;
+            out.new_center = center;
+            out.hit_dot = hit_dot;
+            return out;
+        }
+        return std::nullopt;
     }
 }
