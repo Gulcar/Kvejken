@@ -143,9 +143,7 @@ namespace kvejken::collision
     std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity)
     {
         bool any = false;
-
-        velocity = glm::normalize(velocity);
-        float hit_dot = 0.0f;
+        bool ground_collison = false;
 
         for (const auto& tri : m_triangles)
         {
@@ -156,8 +154,10 @@ namespace kvejken::collision
 
                 center += intersection->normal * intersection->depth;
 
-                float dot = glm::dot(velocity, -intersection->normal);
-                hit_dot = std::max(hit_dot, dot);
+                if (intersection->normal.y > 0.8f)
+                    ground_collison = true;
+
+                velocity -= glm::dot(velocity, intersection->normal) * intersection->normal;
             }
         }
 
@@ -165,7 +165,8 @@ namespace kvejken::collision
         {
             ResolvedCollision out;
             out.new_center = center;
-            out.hit_dot = hit_dot;
+            out.new_velocity = velocity;
+            out.ground_collision = ground_collison;
             return out;
         }
         return std::nullopt;

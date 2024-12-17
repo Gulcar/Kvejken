@@ -42,7 +42,7 @@ int main()
         Entity entity = ecs::create_entity();
 
         Transform transform = {};
-        transform.position = glm::vec3(0, 2, 0);
+        transform.position = glm::vec3(0, 3, 0);
         transform.rotation = glm::quat(1, 0, 0, 0);
         transform.scale = 1.0f;
         ecs::add_component(transform, entity);
@@ -144,22 +144,14 @@ int main()
                 transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
             }
 
-            if (player.velocity_y <= 0.0f && collision::sphere_collision(transform.position - glm::vec3(0, 0.2f, 0), 0.32f))
-            {
-                player.velocity_y = 0.0f;
-                player.jump_allowed_time = game_time + COYOTE_TIME;
-            }
-            else
-            {
-                player.velocity_y += PLAYER_GRAVITY * delta_time;
-            }
-
             if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
             {
                 player.velocity_y += JUMP_STRENGTH;
                 player.move_velocity = player.move_velocity * MAX_MOVE_SPEED_AIR / MAX_MOVE_SPEED;
                 player.jump_allowed_time = -1.0f;
             }
+
+            player.velocity_y += PLAYER_GRAVITY * delta_time;
 
             player.velocity_y = glm::clamp(player.velocity_y, -MAX_Y_VELOCITY, MAX_Y_VELOCITY);
             transform.position.y += player.velocity_y * delta_time;
@@ -170,7 +162,15 @@ int main()
             {
                 transform.position = res->new_center;
 
-                // TODO: resetiraj velocity ce se zaletis v strop ali pa skocis v zid
+                player.velocity_y = res->new_velocity.y;
+                player.move_velocity.x = res->new_velocity.x;
+                player.move_velocity.y = res->new_velocity.z;
+
+                if (res->ground_collision)
+                {
+                    player.velocity_y = 0.0f;
+                    player.jump_allowed_time = game_time + COYOTE_TIME;
+                }
             }
 
             if (transform.position.y < -150.0f)

@@ -26,7 +26,8 @@ namespace kvejken::collision
     struct ResolvedCollision
     {
         glm::vec3 new_center;
-        float hit_dot;
+        glm::vec3 new_velocity;
+        bool ground_collision;
     };
     std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity = glm::vec3(0.0f));
 }

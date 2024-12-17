@@ -192,7 +192,7 @@ namespace kvejken::renderer
         * - bloom
         */
 
-        glfwSwapInterval(0);
+        glfwSwapInterval(1);
 
         stbi_set_flip_vertically_on_load(true);
     }
