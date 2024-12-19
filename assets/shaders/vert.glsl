@@ -19,3 +19,4 @@ void main()
     v_uv = a_uv * 3 - 1;
     v_texture_index = a_texture_index;
 }
+

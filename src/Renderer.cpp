@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <cstring>
 #include "ECS.h"
 #include "Components.h"
 
@@ -192,13 +193,14 @@ namespace kvejken::renderer
         * - bloom
         */
 
-        glfwSwapInterval(1);
+        glfwSwapInterval(0);
 
         stbi_set_flip_vertically_on_load(true);
     }
 
     void terminate()
     {
+        m_skybox = nullptr;
         glfwTerminate();
         m_window = nullptr;
     }

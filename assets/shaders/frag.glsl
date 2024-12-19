@@ -10,7 +10,7 @@ uniform sampler2D u_textures[16];
 uniform float u_shading;
 
 const vec3 sun_dir = normalize(vec3(15, 100, 45));
-const vec4 sun_color = vec4(1.0, 0.9, 0.9, 1.0);
+const vec4 sun_color = vec4(1.0, 0.7, 0.7, 1.0);
 
 void main()
 {

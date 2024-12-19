@@ -4,6 +4,7 @@
 #include <string_view>
 #include <stdint.h>
 #include <fstream>
+#include <cstring>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/common.hpp>
@@ -41,6 +42,7 @@ namespace kvejken::utils
     inline std::string read_file_to_string(const char* file_path)
     {
         std::ifstream file(file_path);
+        ASSERT(file.is_open() && file.good());
 
         file.seekg(0, std::ios::end);
         size_t size = file.tellg();
