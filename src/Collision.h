@@ -29,5 +29,6 @@ namespace kvejken::collision
         glm::vec3 new_velocity;
         bool ground_collision;
     };
-    std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity = glm::vec3(0.0f), float slide_threshold = 0.01f);
+    std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity = glm::vec3(0.0f),
+        float max_ground_angle = 35.0f, float slide_threshold = 0.01f);
 }

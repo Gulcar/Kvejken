@@ -140,12 +140,13 @@ namespace kvejken::collision
         return out;
     }
 
-    std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity, float slide_threshold)
+    std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity, float max_ground_angle, float slide_threshold)
     {
         bool any = false;
         bool ground_collison = false;
 
         bool only_y_movement = glm::length(glm::vec2(velocity.x, velocity.z)) < slide_threshold;
+        float ground_normal_y = std::cos(max_ground_angle);
 
         for (const auto& tri : m_triangles)
         {
@@ -165,7 +166,7 @@ namespace kvejken::collision
                     center += intersection->normal * intersection->depth;
                 }
 
-                if (intersection->normal.y > 0.8f)
+                if (intersection->normal.y > ground_normal_y)
                     ground_collison = true;
 
                 float vel_on_normal = glm::dot(velocity, -intersection->normal);

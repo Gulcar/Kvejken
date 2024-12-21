@@ -96,7 +96,7 @@ int main()
             constexpr float ACCELERATION_AIR = ACCELERATION * 0.2f;
             constexpr float DECELERATION_AIR = DECELERATION * 0.1f;
 
-            constexpr float MOUSE_SENS = 1.0f;
+            constexpr float MOUSE_SENS = 1.0f / 1000.0f;
 
             constexpr float PLAYER_GRAVITY = -25.0f;
             constexpr float MAX_Y_VELOCITY = -PLAYER_GRAVITY * 5.0f;
@@ -104,7 +104,7 @@ int main()
             constexpr float COYOTE_TIME = 0.12f;
 
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
-            glm::vec3 right = glm::cross(forward, glm::vec3(0, 1, 0));
+            glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
             glm::vec3 move_dir = {};
             move_dir += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
             move_dir += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
@@ -140,8 +140,10 @@ int main()
             if (input::is_mouse_locked())
             {
                 glm::vec2 mouse_delta = input::mouse_delta();
-                transform.rotation = glm::angleAxis(-mouse_delta.x * MOUSE_SENS / 1000.0f, glm::vec3(0, 1, 0)) * transform.rotation;
-                transform.rotation = glm::angleAxis(-mouse_delta.y * MOUSE_SENS / 1000.0f, right) * transform.rotation;
+                player.look_yaw -= mouse_delta.x * MOUSE_SENS;
+                player.look_pitch -= mouse_delta.y * MOUSE_SENS;
+                player.look_pitch = glm::clamp(player.look_pitch, -PI / 2.0f + 0.01f, PI / 2.0f - 0.01f);
+                transform.rotation = glm::quat(glm::vec3(player.look_pitch, player.look_yaw, 0.0f));
             }
 
             if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
@@ -157,7 +159,7 @@ int main()
             transform.position.y += player.velocity_y * delta_time;
 
             glm::vec3 velocity = glm::vec3(player.move_velocity.x, player.velocity_y, player.move_velocity.y);
-            auto res = collision::sphere_collision(transform.position, 0.5f, velocity, 0.01f);
+            auto res = collision::sphere_collision(transform.position, 0.5f, velocity, 35.0f, 0.01f);
             if (res)
             {
                 transform.position = res->new_center;
