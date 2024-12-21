@@ -157,7 +157,7 @@ int main()
             transform.position.y += player.velocity_y * delta_time;
 
             glm::vec3 velocity = glm::vec3(player.move_velocity.x, player.velocity_y, player.move_velocity.y);
-            auto res = collision::sphere_collision(transform.position, 0.5f, velocity);
+            auto res = collision::sphere_collision(transform.position, 0.5f, velocity, 0.01f);
             if (res)
             {
                 transform.position = res->new_center;
@@ -168,7 +168,9 @@ int main()
 
                 if (res->ground_collision)
                 {
-                    player.velocity_y = 0.0f;
+                    if (player.velocity_y < 0.0f)
+                        player.velocity_y = 0.0f;
+
                     player.jump_allowed_time = game_time + COYOTE_TIME;
                 }
             }
