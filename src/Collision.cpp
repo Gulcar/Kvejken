@@ -157,9 +157,7 @@ namespace kvejken::collision
 
                 if (only_y_movement)
                 {
-                    glm::vec3 a = intersection->normal * intersection->depth;
-                    a = glm::dot(a, glm::vec3(0, 1, 0)) * glm::vec3(0, 1, 0);
-                    center += a;
+                    center.y += (intersection->normal * intersection->depth).y;
                 }
                 else
                 {

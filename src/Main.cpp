@@ -84,6 +84,7 @@ int main()
         if (input::key_pressed(GLFW_KEY_ESCAPE))
             input::unlock_mouse();
 
+        // TODO: premakni playerja v vecih stepih da ne bo padel skozi tla
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
             if (!player.local)
