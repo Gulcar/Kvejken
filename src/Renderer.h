@@ -44,7 +44,7 @@ namespace kvejken::renderer
     void draw_queue();
     void swap_buffers();
 
-    Texture load_texture(const char* file_path);
+    Texture load_texture(const char* file_path, bool srgb = true);
 
     void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
     void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale);

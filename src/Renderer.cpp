@@ -183,6 +183,7 @@ namespace kvejken::renderer
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
         // glEnable(GL_BLEND);
+        glEnable(GL_FRAMEBUFFER_SRGB);
 
         /*
         * renderer todo:
@@ -369,7 +370,7 @@ namespace kvejken::renderer
         glfwSwapBuffers(m_window);
     }
 
-    Texture load_texture(const char* file_path)
+    Texture load_texture(const char* file_path, bool srgb)
     {
         auto it = m_textures.find(file_path);
         if (it != m_textures.end())
@@ -390,15 +391,28 @@ namespace kvejken::renderer
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        GLenum internal_format, format;
-        switch (num_components)
+        GLenum internal_format, format = 0;
+        if (srgb)
         {
-        case 1: internal_format = GL_R8;    format = GL_RED; break;
-        case 3: internal_format = GL_RGB8;  format = GL_RGB; break;
-        case 4: internal_format = GL_RGBA8; format = GL_RGBA; break;
-        default:
-            ERROR_EXIT("Invalid number of channels on image (%d)", num_components);
+            switch (num_components)
+            {
+            case 1: internal_format = GL_R8;            format = GL_RED; break;
+            case 3: internal_format = GL_SRGB8;         format = GL_RGB; break;
+            case 4: internal_format = GL_SRGB8_ALPHA8;  format = GL_RGBA; break;
+            }
         }
+        else
+        {
+            switch (num_components)
+            {
+            case 1: internal_format = GL_R8;    format = GL_RED; break;
+            case 3: internal_format = GL_RGB8;  format = GL_RGB; break;
+            case 4: internal_format = GL_RGBA8; format = GL_RGBA; break;
+            }
+        }
+
+        if (format == 0)
+            ERROR_EXIT("Invalid number of channels on image (%d)", num_components);
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tex.width, tex.height, 0, format, GL_UNSIGNED_BYTE, data);
         stbi_image_free(data);
