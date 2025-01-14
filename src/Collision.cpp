@@ -74,6 +74,8 @@ namespace kvejken::collision
     }
 
     // https://wickedengine.net/2020/04/capsule-collision-detection/
+    // TODO: mogoce bi lahko forsiral da se collision lahko resi samo v tisto smer kamor je trikotnik obrnjen,
+    // da bi tezje clipal cez tla ali pa sel v steno, ker so vsi trikotnik ze pravilno obrneni za GL_CULL_FACE
     std::optional<Intersection> sphere_triangle_intersection(glm::vec3 center, float radius, glm::vec3 a, glm::vec3 b, glm::vec3 c)
     {
         glm::vec3 tri_normal = glm::normalize(glm::cross(b - a, c - a));
