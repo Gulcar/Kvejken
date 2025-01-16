@@ -148,7 +148,7 @@ namespace kvejken::collision
         bool ground_collison = false;
 
         bool only_y_movement = glm::length(glm::vec2(velocity.x, velocity.z)) < slide_threshold;
-        float ground_normal_y = std::cos(max_ground_angle);
+        float ground_normal_y = std::cos(glm::radians(max_ground_angle));
 
         for (const auto& tri : m_triangles)
         {

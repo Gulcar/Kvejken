@@ -9,6 +9,7 @@ add_executable(${PROJECT_NAME}
     src/ECS.cpp
     src/Input.cpp
     src/Collision.cpp
+    src/Player.cpp
     libs/glad/src/glad.c
     libs/stb/stb_image.cpp
 )
