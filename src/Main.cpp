@@ -63,6 +63,22 @@ int main()
         ecs::add_component(camera, entity);
     }
 
+    {
+        Entity e0 = ecs::create_entity();
+        Entity e1 = ecs::create_entity();
+
+        struct A {};
+        struct B {};
+        ecs::add_component(A{}, e0);
+        ecs::add_component(A{}, e1);
+        ecs::add_component(B{}, e1);
+
+        for (auto& [a, b] : ecs::get_components<A, B>())
+        {
+            printf("test");
+        }
+    }
+
     int frame_count = 0;
     float prev_time = glfwGetTime();
 

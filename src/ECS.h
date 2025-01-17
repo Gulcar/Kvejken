@@ -301,4 +301,9 @@ namespace kvejken
             return ComponentPoolCollection3(p1, p2, p3);
         }
     }
+
+    // chatgpt mi je dal idejo kako bi z vecimi threadi hkrati updatal komponente
+    // in sicer bi grupiral sisteme glede na to katere komponente potrebujejo
+    // (to bi ugotovil z bit maskami) in potem vse neodvisne skupine izvedel na svojem threadu
+    // mimogrede koncno razumem kaj dela std::bind
 }
