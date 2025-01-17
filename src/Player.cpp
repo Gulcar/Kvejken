@@ -7,11 +7,16 @@
 namespace kvejken
 {
     constexpr float MAX_MOVE_SPEED = 6.0f;
-    constexpr float MAX_MOVE_SPEED_AIR = 9.0f;
     constexpr float ACCELERATION = 80.0f;
     constexpr float DECELERATION = 35.0f;
+
+    constexpr float MAX_MOVE_SPEED_AIR = 9.0f;
     constexpr float ACCELERATION_AIR = ACCELERATION * 0.2f;
     constexpr float DECELERATION_AIR = DECELERATION * 0.1f;
+
+    constexpr float MAX_MOVE_SPEED_SLIDE = 16.0f;
+    constexpr float DECELERATION_SLIDE = DECELERATION * 0.1f;
+    constexpr float SLIDE_BOOST = 1.2f;
 
     constexpr float MOUSE_SENS = 1.0f / 1000.0f;
 
@@ -35,8 +40,9 @@ namespace kvejken
             move_dir.y = 0.0f;
 
             bool grounded = (game_time <= player.jump_allowed_time);
+            bool sliding = input::key_held(GLFW_KEY_LEFT_SHIFT);
 
-            if (move_dir != glm::vec3(0, 0, 0))
+            if (move_dir != glm::vec3(0, 0, 0) && !sliding)
             {
                 move_dir = glm::normalize(move_dir);
 
@@ -46,6 +52,7 @@ namespace kvejken
             else
             {
                 float decel = (grounded) ? DECELERATION : DECELERATION_AIR;
+                decel = (sliding) ? DECELERATION_SLIDE : decel;
                 if (glm::length(player.move_velocity) > decel * delta_time)
                     player.move_velocity -= glm::normalize(player.move_velocity) * decel * delta_time;
                 else
@@ -53,6 +60,7 @@ namespace kvejken
             }
 
             float max_velocity = (grounded) ? MAX_MOVE_SPEED : MAX_MOVE_SPEED_AIR;
+            max_velocity = (sliding) ? MAX_MOVE_SPEED_SLIDE : max_velocity;
             float move_velocity = glm::length(player.move_velocity);
             if (move_velocity > max_velocity)
             {
@@ -116,6 +124,26 @@ namespace kvejken
                 player.velocity_y += JUMP_STRENGTH;
                 player.move_velocity = player.move_velocity * MAX_MOVE_SPEED_AIR / MAX_MOVE_SPEED;
                 player.jump_allowed_time = -1.0f;
+            }
+        }
+
+        for (auto [player, camera] : ecs::get_components<Player, Camera>())
+        {
+            if (!player.local)
+                continue;
+
+            if (input::key_held(GLFW_KEY_LEFT_SHIFT))
+            {
+                camera.position.y = 0.30f;
+            }
+            else
+            {
+                camera.position.y = 0.45f;
+            }
+
+            if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
+            {
+                player.move_velocity *= SLIDE_BOOST;
             }
         }
     }
