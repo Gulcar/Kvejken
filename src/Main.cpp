@@ -103,6 +103,12 @@ int main()
 
         update_players(delta_time, game_time);
 
+        ecs::destroy_queued_entities();
+        /*
+        for (const auto& pool : ecs::component_pools())
+            printf("component pool %s size %d\n", pool->component_name(), (int)pool->size());
+        */
+
         renderer::clear_screen();
 
         /*

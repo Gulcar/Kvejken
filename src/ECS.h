@@ -1,15 +1,25 @@
 #pragma once
 #include "Utils.h"
 #include <vector>
+#include <bitset>
+#include <unordered_map>
 
 namespace kvejken
 {
     using Entity = uint32_t;
 
-    class IComponentPool {};
+    class IComponentPool
+    {
+    public:
+        virtual bool has_component(Entity entity) const = 0;
+        virtual void remove_component(Entity entity) = 0;
+
+        virtual size_t size() const = 0;
+        virtual const char* component_name() const = 0;
+    };
 
     template<typename T>
-    class ComponentPool : IComponentPool
+    class ComponentPool : public IComponentPool
     {
     public:
         ComponentPool() {}
@@ -40,12 +50,12 @@ namespace kvejken
             return &m_components[it->second];
         }
 
-        bool has_component(Entity entity)
+        bool has_component(Entity entity) const override
         {
             return m_entity_to_index.count(entity) > 0;
         }
 
-        void remove_component(Entity entity)
+        void remove_component(Entity entity) override
         {
             auto it = m_entity_to_index.find(entity);
             ASSERT(it != m_entity_to_index.end());
@@ -65,12 +75,69 @@ namespace kvejken
 
         Entity entity_at(size_t index) { return m_index_to_entity[index]; }
         T& component_at(size_t index) { return m_components[index]; }
-        size_t size() const { return m_components.size(); }
+        size_t size() const override { return m_components.size(); }
+
+        const char* component_name() const override { return typeid(T).name(); }
 
     private:
         std::unordered_map<Entity, uint32_t> m_entity_to_index;
         std::vector<Entity> m_index_to_entity;
         std::vector<T> m_components;
+    };
+
+    template<typename T1>
+    class ComponentPoolCollectionIds1
+    {
+    public:
+        ComponentPoolCollectionIds1(ComponentPool<T1>* p1)
+        {
+            m_p1 = p1;
+        }
+
+        class Iterator
+        {
+        public:
+            using value_type = std::pair<Entity, T1&>;
+
+            Iterator(ComponentPool<T1>* p1, size_t i)
+            {
+                m_p1 = p1;
+                m_i = i;
+            }
+
+            value_type operator*()
+            {
+                return { m_p1->entity_at(m_i), m_p1->component_at(m_i) };
+            }
+
+            Iterator& operator++()
+            {
+                if (m_i < m_p1->size())
+                    m_i++;
+                return *this;
+            }
+
+            bool operator==(const Iterator& b)
+            {
+                return m_p1 == b.m_p1
+                    && m_i == b.m_i;
+            }
+
+            bool operator!=(const Iterator& b)
+            {
+                return !(*this == b);
+            }
+
+        private:
+            ComponentPool<T1>* m_p1;
+            size_t m_i;
+        };
+
+        Iterator begin() { return Iterator(m_p1, 0); }
+        Iterator end() { return Iterator(m_p1, m_p1->size()); }
+
+    private:
+        ComponentPool<T1>* m_p1;
     };
 
     template<typename T1, typename T2>
@@ -93,12 +160,90 @@ namespace kvejken
                 m_p1 = p1;
                 m_p2 = p2;
                 m_i = i;
+
+                while (m_i < m_p1->size() && m_p2->try_get_component(m_p1->entity_at(m_i)) == nullptr)
+                {
+                    m_i++;
+                }
             }
 
             value_type operator*()
             {
                 Entity e = m_p1->entity_at(m_i);
                 return { m_p1->component_at(m_i), m_p2->get_component(e) };
+            }
+
+            Iterator& operator++()
+            {
+                T2* t;
+                do {
+                    m_i++;
+                    if (m_i == m_p1->size())
+                        return *this;
+                    Entity e = m_p1->entity_at(m_i);
+                    t = m_p2->try_get_component(e);
+                } while (t == nullptr);
+
+                return *this;
+            }
+
+            bool operator==(const Iterator& b)
+            {
+                return m_p1 == b.m_p1
+                    && m_p2 == b.m_p2
+                    && m_i == b.m_i;
+            }
+
+            bool operator!=(const Iterator& b)
+            {
+                return !(*this == b);
+            }
+
+        private:
+            ComponentPool<T1>* m_p1;
+            ComponentPool<T2>* m_p2;
+            size_t m_i;
+        };
+
+        Iterator begin() { return Iterator(m_p1, m_p2, 0); }
+        Iterator end() { return Iterator(m_p1, m_p2, m_p1->size()); }
+
+    private:
+        ComponentPool<T1>* m_p1;
+        ComponentPool<T2>* m_p2;
+    };
+
+    template<typename T1, typename T2>
+    class ComponentPoolCollectionIds2
+    {
+    public:
+        ComponentPoolCollectionIds2(ComponentPool<T1>* p1, ComponentPool<T2>* p2)
+        {
+            m_p1 = p1;
+            m_p2 = p2;
+        }
+
+        class Iterator
+        {
+        public:
+            using value_type = std::tuple<Entity, T1&, T2&>;
+
+            Iterator(ComponentPool<T1>* p1, ComponentPool<T2>* p2, size_t i)
+            {
+                m_p1 = p1;
+                m_p2 = p2;
+                m_i = i;
+
+                while (m_i < m_p1->size() && m_p2->try_get_component(m_p1->entity_at(m_i)) == nullptr)
+                {
+                    m_i++;
+                }
+            }
+
+            value_type operator*()
+            {
+                Entity e = m_p1->entity_at(m_i);
+                return { e, m_p1->component_at(m_i), m_p2->get_component(e) };
             }
 
             Iterator& operator++()
@@ -163,6 +308,13 @@ namespace kvejken
                 m_p2 = p2;
                 m_p3 = p3;
                 m_i = i;
+
+                while (m_i < m_p1->size() && (
+                    m_p2->try_get_component(m_p1->entity_at(m_i)) == nullptr ||
+                    m_p3->try_get_component(m_p1->entity_at(m_i)) == nullptr))
+                {
+                    m_i++;
+                }
             }
 
             value_type operator*()
@@ -213,9 +365,90 @@ namespace kvejken
         ComponentPool<T3>* m_p3;
     };
 
+    template<typename T1, typename T2, typename T3>
+    class ComponentPoolCollectionIds3
+    {
+    public:
+        ComponentPoolCollectionIds3(ComponentPool<T1>* p1, ComponentPool<T2>* p2, ComponentPool<T3>* p3)
+        {
+            m_p1 = p1;
+            m_p2 = p2;
+            m_p3 = p3;
+        }
+
+        class Iterator
+        {
+        public:
+            using value_type = std::tuple<Entity, T1&, T2&, T3&>;
+
+            Iterator(ComponentPool<T1>* p1, ComponentPool<T2>* p2, ComponentPool<T3>* p3, size_t i)
+            {
+                m_p1 = p1;
+                m_p2 = p2;
+                m_p3 = p3;
+                m_i = i;
+
+                while (m_i < m_p1->size() && (
+                    m_p2->try_get_component(m_p1->entity_at(m_i)) == nullptr ||
+                    m_p3->try_get_component(m_p1->entity_at(m_i)) == nullptr))
+                {
+                    m_i++;
+                }
+            }
+
+            value_type operator*()
+            {
+                Entity e = m_p1->entity_at(m_i);
+                return { e, m_p1->component_at(m_i), m_p2->get_component(e), m_p3->get_component(e) };
+            }
+
+            Iterator& operator++()
+            {
+                Entity e;
+                do {
+                    m_i++;
+                    if (m_i == m_p1->size())
+                        return *this;
+                    e = m_p1->entity_at(m_i);
+                } while (m_p2->try_get_component(e) == nullptr || m_p3->try_get_component(e) == nullptr);
+
+                return *this;
+            }
+
+            bool operator==(const Iterator& b)
+            {
+                return m_p1 == b.m_p1
+                    && m_p2 == b.m_p2
+                    && m_p3 == b.m_p3
+                    && m_i == b.m_i;
+            }
+
+            bool operator!=(const Iterator& b)
+            {
+                return !(*this == b);
+            }
+
+        private:
+            ComponentPool<T1>* m_p1;
+            ComponentPool<T2>* m_p2;
+            ComponentPool<T3>* m_p3;
+            size_t m_i;
+        };
+
+        Iterator begin() { return Iterator(m_p1, m_p2, m_p3, 0); }
+        Iterator end() { return Iterator(m_p1, m_p2, m_p3, m_p1->size()); }
+
+    private:
+        ComponentPool<T1>* m_p1;
+        ComponentPool<T2>* m_p2;
+        ComponentPool<T3>* m_p3;
+    };
+
     namespace ecs
     {
         std::vector<IComponentPool*>& component_pools();
+        std::unordered_map<Entity, std::bitset<32>>& signatures();
+        std::vector<Entity>& to_destroy();
 
         inline uint32_t new_component_id()
         {
@@ -234,6 +467,39 @@ namespace kvejken
         {
             static uint32_t entity_id = 1;
             return entity_id++;
+        }
+
+        inline void destroy_entity(Entity entity)
+        {
+            auto it = signatures().find(entity);
+            ASSERT(it != signatures().end());
+            std::bitset<32> signature = it->second;
+            signatures().erase(it);
+
+            for (int i = 0; i < 32 && signature.any(); i++)
+            {
+                if (signature[0] == true)
+                {
+                    uint32_t comp_id = i;
+                    auto pool = component_pools()[comp_id];
+                    pool->remove_component(entity);
+
+                    signature >>= 1;
+                }
+            }
+        }
+
+        inline void queue_destroy_entity(Entity entity)
+        {
+            to_destroy().push_back(entity);
+        }
+
+        inline void destroy_queued_entities()
+        {
+            for (const auto& entity : to_destroy())
+            {
+                destroy_entity(entity);
+            }
         }
 
         template<typename T>
@@ -262,6 +528,20 @@ namespace kvejken
                 auto pool = (ComponentPool<T>*)(component_pools()[comp_id]);
                 pool->add_component(comp, entity);
             }
+
+            signatures()[entity][comp_id] = true;
+        }
+
+        template<typename T>
+        inline void remove_component(Entity entity)
+        {
+            uint32_t comp_id = component_id<T>();
+            ASSERT(comp_id < component_pools().size());
+
+            auto pool = (ComponentPool<T>*)(component_pools()[comp_id]);
+            pool->remove_component(entity);
+
+            signatures()[entity][comp_id] = false;
         }
 
         template<typename T>
@@ -299,6 +579,45 @@ namespace kvejken
             auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
             auto p3 = (ComponentPool<T3>*)(component_pools()[comp_id3]);
             return ComponentPoolCollection3(p1, p2, p3);
+        }
+
+        template<typename T>
+        inline ComponentPoolCollectionIds1<T>& get_components_ids()
+        {
+            uint32_t comp_id = component_id<T>();
+            ASSERT(comp_id < component_pools().size());
+
+            auto p1 = *(ComponentPool<T>*)(component_pools()[comp_id]);
+            return ComponentPoolCollectionIds1(p1);
+        }
+
+        template<typename T1, typename T2>
+        inline ComponentPoolCollectionIds2<T1, T2> get_components_ids()
+        {
+            uint32_t comp_id1 = component_id<T1>();
+            ASSERT(comp_id1 < component_pools().size());
+            uint32_t comp_id2 = component_id<T2>();
+            ASSERT(comp_id2 < component_pools().size());
+
+            auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
+            auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
+            return ComponentPoolCollectionIds2(p1, p2);
+        }
+
+        template<typename T1, typename T2, typename T3>
+        inline ComponentPoolCollectionIds3<T1, T2, T3> get_components_ids()
+        {
+            uint32_t comp_id1 = component_id<T1>();
+            ASSERT(comp_id1 < component_pools().size());
+            uint32_t comp_id2 = component_id<T2>();
+            ASSERT(comp_id2 < component_pools().size());
+            uint32_t comp_id3 = component_id<T3>();
+            ASSERT(comp_id3 < component_pools().size());
+
+            auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
+            auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
+            auto p3 = (ComponentPool<T3>*)(component_pools()[comp_id3]);
+            return ComponentPoolCollectionIds3(p1, p2, p3);
         }
     }
 

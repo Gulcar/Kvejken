@@ -229,7 +229,9 @@ namespace kvejken::renderer
 
     float aspect_ratio()
     {
-        return m_window_width / (float)m_window_height;
+        if (m_window_height > 0)
+            return m_window_width / (float)m_window_height;
+        return 1;
     }
 
     void poll_events()

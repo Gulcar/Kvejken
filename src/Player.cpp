@@ -99,6 +99,9 @@ namespace kvejken
 
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
+            if (!player.local)
+                continue;
+
             if (input::is_mouse_locked())
             {
                 glm::vec2 mouse_delta = input::mouse_delta();
