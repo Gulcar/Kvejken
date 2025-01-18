@@ -5,6 +5,7 @@
 #include <glm/gtx/intersect.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
+#include "Utils.h"
 
 namespace kvejken::collision
 {
@@ -13,15 +14,96 @@ namespace kvejken::collision
         struct Triangle
         {
             glm::vec3 v1, v2, v3;
+            glm::vec3 center;
         };
 
+        struct BVHNode
+        {
+            glm::vec3 bounds_min, bounds_max;
+            uint32_t left_child, right_child;
+            bool is_leaf;
+        };
+
+        std::vector<BVHNode> m_bvh_nodes;
         std::vector<Triangle> m_triangles;
+    }
+
+    static void update_node_bounds(uint32_t node_index)
+    {
+        BVHNode& node = m_bvh_nodes[node_index];
+        ASSERT(node.is_leaf);
+        node.bounds_min = glm::vec3(1e30f);
+        node.bounds_max = glm::vec3(-1e30f);
+
+        for (int i = node.left_child; i <= node.right_child; i++)
+        {
+            node.bounds_min = glm::min(node.bounds_min, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+            node.bounds_max = glm::max(node.bounds_max, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+        }
+    }
+
+    // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+    static void subdivide_node(uint32_t node_index)
+    {
+        BVHNode& node = m_bvh_nodes[node_index];
+        ASSERT(node.is_leaf);
+
+        constexpr int MAX_TRI_PER_NODE = 4;
+        if (node.right_child - node.left_child + 1 <= MAX_TRI_PER_NODE)
+            return;
+
+        glm::vec3 size = node.bounds_max - node.bounds_min;
+        int axis = 0;
+        if (size.y > size.x) axis = 1;
+        if (size.z > size[axis]) axis = 2;
+        
+        float split_pos = node.bounds_min[axis] + size[axis] * 0.5f;
+
+        // partition
+        int i = node.left_child;
+        int j = node.right_child;
+        while (i <= j)
+        {
+            if (m_triangles[i].center[axis] > split_pos)
+            {
+                std::swap(m_triangles[i], m_triangles[j]);
+                j--;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        if (i == node.left_child || j == node.right_child)
+            return;
+
+        BVHNode left, right;
+        left.left_child = node.left_child;
+        left.right_child = i - 1;
+        left.is_leaf = true;
+
+        right.left_child = i;
+        right.right_child = node.right_child;
+        right.is_leaf = true;
+
+        node.is_leaf = false;
+        uint32_t left_index = m_bvh_nodes.size();
+        uint32_t right_index = m_bvh_nodes.size() + 1;
+        node.left_child = left_index;
+        node.right_child = right_index;
+        m_bvh_nodes.push_back(left); // pazi invalidejta node reference
+        m_bvh_nodes.push_back(right);
+
+        update_node_bounds(left_index);
+        update_node_bounds(right_index);
+
+        subdivide_node(left_index);
+        subdivide_node(right_index);
     }
 
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
-        // TODO: bvh
-
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
@@ -30,31 +112,82 @@ namespace kvejken::collision
         {
             for (int i = 0; i < mesh.vertices().size(); i += 3)
             {
+                glm::vec3 v1 = transform * glm::vec4(mesh.vertices()[i].position, 1.0f);
+                glm::vec3 v2 = transform * glm::vec4(mesh.vertices()[i + 1].position, 1.0f);
+                glm::vec3 v3 = transform * glm::vec4(mesh.vertices()[i + 2].position, 1.0f);
                 m_triangles.push_back(Triangle{
-                    transform * glm::vec4(mesh.vertices()[i].position, 1.0f),
-                    transform * glm::vec4(mesh.vertices()[i + 1].position, 1.0f),
-                    transform * glm::vec4(mesh.vertices()[i + 2].position, 1.0f)
+                    v1, v2, v3,
+                    (v1 + v2 + v3) / 3.0f
                 });
             }
         }
+
+        m_bvh_nodes.clear();
+
+        BVHNode root;
+        root.left_child = 0;
+        root.right_child = m_triangles.size() - 1;
+        root.is_leaf = true;
+        m_bvh_nodes.push_back(root);
+        update_node_bounds(0);
+
+        subdivide_node(0);
+    }
+
+    // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
+    bool ray_aabb_intersection(glm::vec3 bmin, glm::vec3 bmax, glm::vec3 position, glm::vec3 direction, float max_dist)
+    {
+        float tx1 = (bmin.x - position.x) / direction.x, tx2 = (bmax.x - position.x) / direction.x;
+        float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
+        float ty1 = (bmin.y - position.y) / direction.y, ty2 = (bmax.y - position.y) / direction.y;
+        tmin = std::max(tmin, std::min(ty1, ty2)), tmax = std::min(tmax, std::max(ty1, ty2));
+        float tz1 = (bmin.z - position.z) / direction.z, tz2 = (bmax.z - position.z) / direction.z;
+        tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
+        return tmax >= tmin && tmin <= max_dist && tmax > 0;
+    }
+
+    static float raycast_bvh(uint32_t node_index, const glm::vec3& position, const glm::vec3& direction, float max_dist)
+    {
+        BVHNode& node = m_bvh_nodes[node_index];
+
+        if (node.is_leaf)
+        {
+            for (int i = node.left_child; i <= node.right_child; i++)
+            {
+                Triangle& tri = m_triangles[i];
+
+                glm::vec2 bary_coords;
+                float distance;
+                if (glm::intersectRayTriangle(position, direction, tri.v1, tri.v2, tri.v3, bary_coords, distance))
+                {
+                    if (distance > 0.0f && distance < max_dist)
+                    {
+                        max_dist = distance;
+                    }
+                }
+            }
+        }
+        else
+        {
+            BVHNode& left = m_bvh_nodes[node.left_child];
+            BVHNode& right = m_bvh_nodes[node.right_child];
+
+            if (ray_aabb_intersection(left.bounds_min, left.bounds_max, position, direction, max_dist))
+            {
+                max_dist = raycast_bvh(node.left_child, position, direction, max_dist);
+            }
+            if (ray_aabb_intersection(right.bounds_min, right.bounds_max, position, direction, max_dist))
+            {
+                max_dist = raycast_bvh(node.right_child, position, direction, max_dist);
+            }
+        }
+
+        return max_dist;
     }
 
     std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist)
     {
-        float closest_dist = max_dist;
-
-        for (const auto& tri : m_triangles)
-        {
-            glm::vec2 bary_coords;
-            float distance;
-            if (glm::intersectRayTriangle(position, direction, tri.v1, tri.v2, tri.v3, bary_coords, distance))
-            {
-                if (distance > 0.0f && distance < closest_dist)
-                {
-                    closest_dist = distance;
-                }
-            }
-        }
+        float closest_dist = raycast_bvh(0, position, direction, max_dist);
 
         if (closest_dist < max_dist)
         {
