@@ -129,19 +129,21 @@ int main()
         int eel_index = (int)(std::fmodf(glfwGetTime(), 0.5f) / 0.5f * 12);
         renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0.5f));
 
-        /*
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
             if (!player.local)
                 continue;
 
-            auto hit = collision::raycast(transform.position, transform.rotation * glm::vec3(0, 0, -1));
-            if (hit)
+            for (int i = 0; i < 300; i++)
             {
-                renderer::draw_model(&test_cube, hit->position, glm::vec3(0, 0, 0), glm::vec3(0.1f));
+                glm::vec3 dir = glm::normalize(glm::vec3(utils::randf(-0.2f, 0.2f), utils::randf(-0.2f, 0.2f), -1.0f));
+                auto hit = collision::raycast(transform.position, transform.rotation * dir);
+                if (hit)
+                {
+                    renderer::draw_model(&test_cube, hit->position, glm::vec3(0, 0, 0), glm::vec3(0.1f));
+                }
             }
         }
-        */
 
         renderer::draw_queue();
 

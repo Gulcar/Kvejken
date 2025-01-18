@@ -5,6 +5,7 @@
 #include <stdint.h>
 #include <fstream>
 #include <cstring>
+#include <random>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/common.hpp>
@@ -101,5 +102,19 @@ namespace kvejken::utils
             b->y += 1.0f;
             c->y += 1.0f;
         }
+    }
+
+    inline int rand(int min, int max)
+    {
+        static std::mt19937 generator;
+        std::uniform_int_distribution<int> distribution(min, max);
+        return distribution(generator);
+    }
+
+    inline float randf(float min, float max)
+    {
+        static std::mt19937 generator;
+        std::uniform_real_distribution<float> distribution(min, max);
+        return distribution(generator);
     }
 }
