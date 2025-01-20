@@ -17,9 +17,15 @@ namespace kvejken::collision
             glm::vec3 center;
         };
 
+        struct AABB
+        {
+            glm::vec3 min;
+            glm::vec3 max;
+        };
+
         struct BVHNode
         {
-            glm::vec3 bounds_min, bounds_max;
+            AABB bounds;
             uint32_t left_child, right_child;
             bool is_leaf;
         };
@@ -28,18 +34,80 @@ namespace kvejken::collision
         std::vector<Triangle> m_triangles;
     }
 
-    static void update_node_bounds(uint32_t node_index)
+    static void update_node_bounds(BVHNode& node)
     {
-        BVHNode& node = m_bvh_nodes[node_index];
         ASSERT(node.is_leaf);
-        node.bounds_min = glm::vec3(1e30f);
-        node.bounds_max = glm::vec3(-1e30f);
+        node.bounds.min = glm::vec3(1e30f);
+        node.bounds.max = glm::vec3(-1e30f);
 
         for (int i = node.left_child; i <= node.right_child; i++)
         {
-            node.bounds_min = glm::min(node.bounds_min, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
-            node.bounds_max = glm::max(node.bounds_max, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+            node.bounds.min = glm::min(node.bounds.min, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+            node.bounds.max = glm::max(node.bounds.max, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
         }
+    }
+
+    float evaluate_sah(BVHNode& node, float split_pos, int axis)
+    {
+        ASSERT(node.is_leaf);
+
+        AABB left_bounds = { glm::vec3(1e30f), glm::vec3(-1e30f) };
+        AABB right_bounds = { glm::vec3(1e30f), glm::vec3(-1e30f) };
+        int left_count = 0;
+        int right_count = 0;
+
+        for (int i = node.left_child; i <= node.right_child; i++)
+        {
+            if (m_triangles[i].center[axis] > split_pos)
+            {
+                right_count++;
+                right_bounds.min = glm::min(right_bounds.min, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+                right_bounds.max = glm::max(right_bounds.max, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+            }
+            else
+            {
+                left_count++;
+                left_bounds.min = glm::min(left_bounds.min, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+                left_bounds.max = glm::max(left_bounds.max, m_triangles[i].v1, m_triangles[i].v2, m_triangles[i].v3);
+            }
+        }
+
+        glm::vec3 l_ext = left_bounds.max - left_bounds.min;
+        glm::vec3 r_ext = right_bounds.max - right_bounds.min;
+        return left_count * (l_ext.x * l_ext.y + l_ext.y * l_ext.z + l_ext.x * l_ext.z)
+            + right_count * (r_ext.x * r_ext.y + r_ext.y * r_ext.z + r_ext.x * r_ext.z);
+    }
+
+    void find_best_split(BVHNode& node, float* out_sah, float* out_split_pos, int* out_axis)
+    {
+        ASSERT(node.is_leaf);
+        float best_sah = 1e30f;
+        float best_split_pos = 0;
+        int best_axis = 0;
+
+        glm::vec3 size = node.bounds.max - node.bounds.min;
+
+        constexpr int NUM_SAH_TESTS = 50;
+        for (int i = 0; i < NUM_SAH_TESTS; i++)
+        {
+            float t = (i + 1) / (float)(NUM_SAH_TESTS + 1);
+
+            for (int j = 0; j < 3; j++)
+            {
+                float split_pos = node.bounds.min[j] + size[j] * t;
+                float sah = evaluate_sah(node, split_pos, j);
+                if (sah < best_sah)
+                {
+                    best_sah = sah;
+                    best_split_pos = split_pos;
+                    best_axis = j;
+                }
+            }
+        }
+
+        *out_sah = best_sah;
+        *out_split_pos = best_split_pos;
+        *out_axis = best_axis;
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
@@ -48,16 +116,15 @@ namespace kvejken::collision
         BVHNode& node = m_bvh_nodes[node_index];
         ASSERT(node.is_leaf);
 
-        constexpr int MAX_TRI_PER_NODE = 4;
-        if (node.right_child - node.left_child + 1 <= MAX_TRI_PER_NODE)
-            return;
-
-        glm::vec3 size = node.bounds_max - node.bounds_min;
+        float sah = 0;
+        float split_pos = 0;
         int axis = 0;
-        if (size.y > size.x) axis = 1;
-        if (size.z > size[axis]) axis = 2;
-        
-        float split_pos = node.bounds_min[axis] + size[axis] * 0.5f;
+        find_best_split(node, &sah, &split_pos, &axis);
+
+        glm::vec3 exts = node.bounds.max - node.bounds.min;
+        float parent_sah = (node.right_child - node.left_child + 1) * (exts.x * exts.y + exts.y * exts.z + exts.x * exts.z);
+        if (sah > parent_sah)
+            return;
 
         // partition
         int i = node.left_child;
@@ -95,8 +162,8 @@ namespace kvejken::collision
         m_bvh_nodes.push_back(left); // pazi invalidejta node reference
         m_bvh_nodes.push_back(right);
 
-        update_node_bounds(left_index);
-        update_node_bounds(right_index);
+        update_node_bounds(m_bvh_nodes[left_index]);
+        update_node_bounds(m_bvh_nodes[right_index]);
 
         subdivide_node(left_index);
         subdivide_node(right_index);
@@ -129,19 +196,19 @@ namespace kvejken::collision
         root.right_child = m_triangles.size() - 1;
         root.is_leaf = true;
         m_bvh_nodes.push_back(root);
-        update_node_bounds(0);
+        update_node_bounds(m_bvh_nodes[0]);
 
         subdivide_node(0);
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
-    bool ray_aabb_intersection(glm::vec3 bmin, glm::vec3 bmax, glm::vec3 position, glm::vec3 direction, float max_dist)
+    bool ray_aabb_intersection(const AABB& aabb, glm::vec3 position, glm::vec3 direction, float max_dist)
     {
-        float tx1 = (bmin.x - position.x) / direction.x, tx2 = (bmax.x - position.x) / direction.x;
+        float tx1 = (aabb.min.x - position.x) / direction.x, tx2 = (aabb.max.x - position.x) / direction.x;
         float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
-        float ty1 = (bmin.y - position.y) / direction.y, ty2 = (bmax.y - position.y) / direction.y;
+        float ty1 = (aabb.min.y - position.y) / direction.y, ty2 = (aabb.max.y - position.y) / direction.y;
         tmin = std::max(tmin, std::min(ty1, ty2)), tmax = std::min(tmax, std::max(ty1, ty2));
-        float tz1 = (bmin.z - position.z) / direction.z, tz2 = (bmax.z - position.z) / direction.z;
+        float tz1 = (aabb.min.z - position.z) / direction.z, tz2 = (aabb.max.z - position.z) / direction.z;
         tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
         return tmax >= tmin && tmin <= max_dist && tmax > 0;
     }
@@ -172,11 +239,11 @@ namespace kvejken::collision
             BVHNode& left = m_bvh_nodes[node.left_child];
             BVHNode& right = m_bvh_nodes[node.right_child];
 
-            if (ray_aabb_intersection(left.bounds_min, left.bounds_max, position, direction, max_dist))
+            if (ray_aabb_intersection(left.bounds, position, direction, max_dist))
             {
                 max_dist = raycast_bvh(node.left_child, position, direction, max_dist);
             }
-            if (ray_aabb_intersection(right.bounds_min, right.bounds_max, position, direction, max_dist))
+            if (ray_aabb_intersection(right.bounds, position, direction, max_dist))
             {
                 max_dist = raycast_bvh(node.right_child, position, direction, max_dist);
             }
