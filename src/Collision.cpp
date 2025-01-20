@@ -202,7 +202,7 @@ namespace kvejken::collision
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
-    bool ray_aabb_intersection(const AABB& aabb, glm::vec3 position, glm::vec3 direction, float max_dist)
+    std::optional<float> ray_aabb_intersection(const AABB& aabb, glm::vec3 position, glm::vec3 direction, float max_dist)
     {
         float tx1 = (aabb.min.x - position.x) / direction.x, tx2 = (aabb.max.x - position.x) / direction.x;
         float tmin = std::min(tx1, tx2), tmax = std::max(tx1, tx2);
@@ -210,42 +210,82 @@ namespace kvejken::collision
         tmin = std::max(tmin, std::min(ty1, ty2)), tmax = std::min(tmax, std::max(ty1, ty2));
         float tz1 = (aabb.min.z - position.z) / direction.z, tz2 = (aabb.max.z - position.z) / direction.z;
         tmin = std::max(tmin, std::min(tz1, tz2)), tmax = std::min(tmax, std::max(tz1, tz2));
-        return tmax >= tmin && tmin <= max_dist && tmax > 0;
+        if (tmax >= tmin && tmin <= max_dist && tmax > 0)
+            return tmin;
+        return std::nullopt;
     }
 
     static float raycast_bvh(uint32_t node_index, const glm::vec3& position, const glm::vec3& direction, float max_dist)
     {
-        BVHNode& node = m_bvh_nodes[node_index];
+        BVHNode* node = &m_bvh_nodes[node_index];
+        static std::vector<BVHNode*> stack;
+        stack.clear();
 
-        if (node.is_leaf)
+        while (node != nullptr)
         {
-            for (int i = node.left_child; i <= node.right_child; i++)
+            if (node->is_leaf)
             {
-                Triangle& tri = m_triangles[i];
-
-                glm::vec2 bary_coords;
-                float distance;
-                if (glm::intersectRayTriangle(position, direction, tri.v1, tri.v2, tri.v3, bary_coords, distance))
+                for (int i = node->left_child; i <= node->right_child; i++)
                 {
-                    if (distance > 0.0f && distance < max_dist)
+                    Triangle& tri = m_triangles[i];
+
+                    glm::vec2 bary_coords;
+                    float distance;
+                    if (glm::intersectRayTriangle(position, direction, tri.v1, tri.v2, tri.v3, bary_coords, distance))
                     {
-                        max_dist = distance;
+                        if (distance > 0.0f && distance < max_dist)
+                            max_dist = distance;
                     }
                 }
-            }
-        }
-        else
-        {
-            BVHNode& left = m_bvh_nodes[node.left_child];
-            BVHNode& right = m_bvh_nodes[node.right_child];
 
-            if (ray_aabb_intersection(left.bounds, position, direction, max_dist))
-            {
-                max_dist = raycast_bvh(node.left_child, position, direction, max_dist);
+                if (stack.size() > 0)
+                {
+                    node = stack.back();
+                    stack.pop_back();
+                }
+                else
+                {
+                    node = nullptr;
+                }
             }
-            if (ray_aabb_intersection(right.bounds, position, direction, max_dist))
+            else
             {
-                max_dist = raycast_bvh(node.right_child, position, direction, max_dist);
+                BVHNode* left = &m_bvh_nodes[node->left_child];
+                BVHNode* right = &m_bvh_nodes[node->right_child];
+
+                std::optional<float> left_dist = ray_aabb_intersection(left->bounds, position, direction, max_dist);
+                std::optional<float> right_dist = ray_aabb_intersection(right->bounds, position, direction, max_dist);
+
+                if (left_dist && right_dist)
+                {
+                    if (*left_dist < *right_dist)
+                    {
+                        node = left;
+                        stack.push_back(right);
+                    }
+                    else
+                    {
+                        node = right;
+                        stack.push_back(left);
+                    }
+                }
+                else if (left_dist)
+                {
+                    node = left;
+                }
+                else if (right_dist)
+                {
+                    node = right;
+                }
+                else if (stack.size() > 0)
+                {
+                    node = stack.back();
+                    stack.pop_back();
+                }
+                else
+                {
+                    node = nullptr;
+                }
             }
         }
 
