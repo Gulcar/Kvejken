@@ -548,7 +548,14 @@ namespace kvejken
         inline ComponentPool<T>& get_components()
         {
             uint32_t comp_id = component_id<T>();
-            ASSERT(comp_id < component_pools().size());
+
+            ASSERT(comp_id <= component_pools().size());
+            if (comp_id == component_pools().size())
+            {
+                auto pool = new ComponentPool<T>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             return *(ComponentPool<T>*)(component_pools()[comp_id]);
         }
 
@@ -556,9 +563,22 @@ namespace kvejken
         inline ComponentPoolCollection2<T1, T2> get_components()
         {
             uint32_t comp_id1 = component_id<T1>();
-            ASSERT(comp_id1 < component_pools().size());
+
+            ASSERT(comp_id1 <= component_pools().size());
+            if (comp_id1 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T1>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id2 = component_id<T2>();
-            ASSERT(comp_id2 < component_pools().size());
+
+            ASSERT(comp_id2 <= component_pools().size());
+            if (comp_id2 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T2>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
 
             auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
             auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
@@ -569,11 +589,31 @@ namespace kvejken
         inline ComponentPoolCollection3<T1, T2, T3> get_components()
         {
             uint32_t comp_id1 = component_id<T1>();
-            ASSERT(comp_id1 < component_pools().size());
+
+            ASSERT(comp_id1 <= component_pools().size());
+            if (comp_id1 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T1>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id2 = component_id<T2>();
-            ASSERT(comp_id2 < component_pools().size());
+
+            ASSERT(comp_id2 <= component_pools().size());
+            if (comp_id2 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T2>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id3 = component_id<T3>();
-            ASSERT(comp_id3 < component_pools().size());
+
+            ASSERT(comp_id3 <= component_pools().size());
+            if (comp_id3 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T3>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
 
             auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
             auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
@@ -585,7 +625,13 @@ namespace kvejken
         inline ComponentPoolCollectionIds1<T>& get_components_ids()
         {
             uint32_t comp_id = component_id<T>();
-            ASSERT(comp_id < component_pools().size());
+
+            ASSERT(comp_id <= component_pools().size());
+            if (comp_id == component_pools().size())
+            {
+                auto pool = new ComponentPool<T>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
 
             auto p1 = *(ComponentPool<T>*)(component_pools()[comp_id]);
             return ComponentPoolCollectionIds1(p1);
@@ -595,9 +641,22 @@ namespace kvejken
         inline ComponentPoolCollectionIds2<T1, T2> get_components_ids()
         {
             uint32_t comp_id1 = component_id<T1>();
-            ASSERT(comp_id1 < component_pools().size());
+
+            ASSERT(comp_id1 <= component_pools().size());
+            if (comp_id1 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T1>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id2 = component_id<T2>();
-            ASSERT(comp_id2 < component_pools().size());
+
+            ASSERT(comp_id2 <= component_pools().size());
+            if (comp_id2 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T2>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
 
             auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
             auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);
@@ -608,11 +667,31 @@ namespace kvejken
         inline ComponentPoolCollectionIds3<T1, T2, T3> get_components_ids()
         {
             uint32_t comp_id1 = component_id<T1>();
-            ASSERT(comp_id1 < component_pools().size());
+
+            ASSERT(comp_id1 <= component_pools().size());
+            if (comp_id1 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T1>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id2 = component_id<T2>();
-            ASSERT(comp_id2 < component_pools().size());
+
+            ASSERT(comp_id2 <= component_pools().size());
+            if (comp_id2 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T2>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
+
             uint32_t comp_id3 = component_id<T3>();
-            ASSERT(comp_id3 < component_pools().size());
+
+            ASSERT(comp_id3 <= component_pools().size());
+            if (comp_id3 == component_pools().size())
+            {
+                auto pool = new ComponentPool<T3>();
+                component_pools().push_back((IComponentPool*)pool);
+            }
 
             auto p1 = (ComponentPool<T1>*)(component_pools()[comp_id1]);
             auto p2 = (ComponentPool<T2>*)(component_pools()[comp_id2]);

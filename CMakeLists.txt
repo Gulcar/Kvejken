@@ -10,6 +10,7 @@ add_executable(${PROJECT_NAME}
     src/Input.cpp
     src/Collision.cpp
     src/Player.cpp
+    src/Enemy.cpp
     libs/glad/src/glad.c
     libs/stb/stb_image.cpp
 )

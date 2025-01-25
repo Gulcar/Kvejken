@@ -9,6 +9,7 @@
 #include "Collision.h"
 #include <GLFW/glfw3.h>
 #include "Player.h"
+#include "Enemy.h"
 
 using namespace kvejken;
 
@@ -21,21 +22,19 @@ int main()
     
     input::init(renderer::window_ptr());
 
+    init_enemies();
+
     Model test_cube("../../assets/test/test_cube.obj");
     Model test_rock("../../assets/test/test_rock.obj");
     Model test_multiple("../../assets/test/test_multiple.obj");
 
     Model terrain("../../assets/environment/terrain.obj", false);
-    collision::build_triangle_bvh(terrain, glm::vec3(0, -5, 0), glm::vec3(0, 0, 0), glm::vec3(1.0f));
+    collision::build_triangle_bvh(terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
     for (auto& mesh : terrain.meshes())
     {
         if (mesh.vertices().size() > 1000)
             mesh.prepare_vertex_buffer();
     }
-
-    std::vector<Model> eels;
-    for (int i = 1; i <= 12; i++)
-        eels.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
 
     renderer::set_skybox("../../assets/environment/skybox.obj");
 
@@ -43,7 +42,7 @@ int main()
         Entity entity = ecs::create_entity();
 
         Transform transform = {};
-        transform.position = glm::vec3(0, 3, 0);
+        transform.position = glm::vec3(0, 8, 0);
         transform.rotation = glm::quat(1, 0, 0, 0);
         transform.scale = 1.0f;
         ecs::add_component(transform, entity);
@@ -101,7 +100,11 @@ int main()
         if (input::key_pressed(GLFW_KEY_ESCAPE))
             input::unlock_mouse();
 
+
         update_players(delta_time, game_time);
+
+        update_enemies(delta_time, game_time);
+
 
         ecs::destroy_queued_entities();
         /*
@@ -124,10 +127,7 @@ int main()
         renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0, -PI / 2.0f, 0), glm::vec3(0.5f));
         */
 
-        renderer::draw_model(&terrain, glm::vec3(0, -5, 0), glm::vec3(0, 0, 0), glm::vec3(1.0f));
-
-        int eel_index = (int)(std::fmodf(glfwGetTime(), 0.5f) / 0.5f * 12);
-        renderer::draw_model(&eels[eel_index], glm::vec3(-2, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        renderer::draw_model(&terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
 
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
@@ -143,6 +143,11 @@ int main()
                     renderer::draw_model(&test_cube, hit->position, glm::vec3(0, 0, 0), glm::vec3(0.1f));
                 }
             }
+        }
+
+        for (auto [model, transform] : ecs::get_components<Model*, Transform>())
+        {
+            renderer::draw_model(model, transform.position, transform.rotation, glm::vec3(transform.scale));
         }
 
         renderer::draw_queue();

@@ -6,6 +6,7 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include "Utils.h"
+#include <chrono>
 
 namespace kvejken::collision
 {
@@ -87,7 +88,11 @@ namespace kvejken::collision
 
         glm::vec3 size = node.bounds.max - node.bounds.min;
 
+#ifdef NDEBUG
         constexpr int NUM_SAH_TESTS = 50;
+#else
+        constexpr int NUM_SAH_TESTS = 5;
+#endif
         for (int i = 0; i < NUM_SAH_TESTS; i++)
         {
             float t = (i + 1) / (float)(NUM_SAH_TESTS + 1);
@@ -171,6 +176,9 @@ namespace kvejken::collision
 
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
+        printf("building triangle bvh\n");
+        auto start_time = std::chrono::steady_clock::now();
+
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
@@ -199,6 +207,9 @@ namespace kvejken::collision
         update_node_bounds(m_bvh_nodes[0]);
 
         subdivide_node(0);
+
+        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - start_time;
+        printf("bvh done %fs", duration.count());
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/

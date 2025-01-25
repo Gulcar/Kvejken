@@ -8,6 +8,7 @@
 #include <random>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <glm/common.hpp>
 
 #ifdef WIN32
@@ -116,5 +117,24 @@ namespace kvejken::utils
         static std::mt19937 generator;
         std::uniform_real_distribution<float> distribution(min, max);
         return distribution(generator);
+    }
+
+    inline glm::quat dir_to_quat(glm::vec3 direction)
+    {
+        constexpr glm::vec3 ref = glm::vec3(0, 1, 0);
+
+        if (glm::dot(direction, ref) < -0.99999f) {
+            glm::vec3 orthogonal = glm::cross(ref, glm::vec3(0.0f, 1.0f, 0.0f));
+            if (glm::length(orthogonal) < 0.00001f) {
+                orthogonal = glm::cross(ref, glm::vec3(1.0f, 0.0f, 0.0f));
+            }
+            orthogonal = glm::normalize(orthogonal);
+            return glm::angleAxis(glm::pi<float>(), orthogonal);
+        }
+
+        glm::vec3 rotation_axis = glm::cross(ref, direction);
+        float rotation_angle = glm::acos(glm::clamp(glm::dot(ref, direction), -1.0f, 1.0f));
+
+        return glm::angleAxis(rotation_angle, glm::normalize(rotation_axis));
     }
 }
