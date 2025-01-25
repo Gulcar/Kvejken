@@ -1,10 +1,10 @@
 # Kvejken
 ### TODO
-- [ ] basic renderer
-- [ ] ECS
-- [ ] collision detection
+- [x] basic renderer
+- [x] ECS
+- [x] collision detection
 - [ ] world
-- [ ] player movement
+- [x] player movement
 - [ ] weapons
 - [ ] enemies
 - [ ] ...
