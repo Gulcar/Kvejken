@@ -18,12 +18,6 @@ namespace kvejken::collision
             glm::vec3 center;
         };
 
-        struct AABB
-        {
-            glm::vec3 min;
-            glm::vec3 max;
-        };
-
         struct BVHNode
         {
             AABB bounds;
@@ -226,6 +220,12 @@ namespace kvejken::collision
         return std::nullopt;
     }
 
+    bool sphere_aabb_intersection(const AABB& aabb, glm::vec3 center, float radius)
+    {
+        glm::vec3 closest_in_aabb = glm::clamp(center, aabb.min, aabb.max);
+        return glm::distance2(closest_in_aabb, center) < radius * radius;
+    }
+
     static float raycast_bvh(uint32_t node_index, const glm::vec3& position, const glm::vec3& direction, float max_dist)
     {
         BVHNode* node = &m_bvh_nodes[node_index];
@@ -401,27 +401,80 @@ namespace kvejken::collision
         bool only_y_movement = glm::length(glm::vec2(velocity.x, velocity.z)) < slide_threshold;
         float ground_normal_y = std::cos(glm::radians(max_ground_angle));
 
-        for (const auto& tri : m_triangles)
-        {
-            auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
-            if (intersection)
-            {
-                any = true;
+        BVHNode* node = &m_bvh_nodes[0];
+        static std::vector<BVHNode*> stack;
+        stack.clear();
 
-                if (only_y_movement)
+        while (node != nullptr)
+        {
+            if (node->is_leaf)
+            {
+                for (int i = node->left_child; i <= node->right_child; i++)
                 {
-                    center.y += (intersection->normal * intersection->depth).y;
+                    Triangle& tri = m_triangles[i];
+
+                    auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
+                    if (intersection)
+                    {
+                        any = true;
+
+                        if (only_y_movement)
+                        {
+                            center.y += (intersection->normal * intersection->depth).y;
+                        }
+                        else
+                        {
+                            center += intersection->normal * intersection->depth;
+                        }
+
+                        if (intersection->normal.y > ground_normal_y)
+                            ground_collison = true;
+
+                        float vel_on_normal = glm::dot(velocity, -intersection->normal);
+                        velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
+                    }
+                }
+
+                if (stack.size() > 0)
+                {
+                    node = stack.back();
+                    stack.pop_back();
                 }
                 else
                 {
-                    center += intersection->normal * intersection->depth;
+                    node = nullptr;
                 }
+            }
+            else
+            {
+                BVHNode* left = &m_bvh_nodes[node->left_child];
+                BVHNode* right = &m_bvh_nodes[node->right_child];
 
-                if (intersection->normal.y > ground_normal_y)
-                    ground_collison = true;
+                bool left_inside = sphere_aabb_intersection(left->bounds, center, radius * 1.25f); // malo vecji radij ker se center premika
+                bool right_inside = sphere_aabb_intersection(right->bounds, center, radius * 1.25f);
 
-                float vel_on_normal = glm::dot(velocity, -intersection->normal);
-                velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
+                if (left_inside && right_inside)
+                {
+                    node = left;
+                    stack.push_back(right);
+                }
+                else if (left_inside)
+                {
+                    node = left;
+                }
+                else if (right_inside)
+                {
+                    node = right;
+                }
+                else if (stack.size() > 0)
+                {
+                    node = stack.back();
+                    stack.pop_back();
+                }
+                else
+                {
+                    node = nullptr;
+                }
             }
         }
 

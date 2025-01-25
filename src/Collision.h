@@ -7,7 +7,13 @@ namespace kvejken::collision
 {
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
 
-    bool ray_aabb_intersection(glm::vec3 min, glm::vec3 max, glm::vec3 position, glm::vec3 direction, float max_dist);
+    struct AABB
+    {
+        glm::vec3 min;
+        glm::vec3 max;
+    };
+    std::optional<float> ray_aabb_intersection(const AABB& aabb, glm::vec3 position, glm::vec3 direction, float max_dist);
+    bool sphere_aabb_intersection(const AABB& aabb, glm::vec3 center, float radius);
 
     struct RaycastHit
     {
