@@ -51,7 +51,8 @@ namespace kvejken
     float time_btw_spawns(float game_time)
     {
         // TODO: balance
-        if (game_time < 30.0f)  return 9915.0f;
+        return 2.0f;
+        if (game_time < 30.0f)  return 15.0f;
         if (game_time < 60.0f)  return 10.0f;
         if (game_time < 90.0f)  return 5.0f;
         if (game_time < 120.0f)  return 3.0f;
@@ -90,7 +91,7 @@ namespace kvejken
         Transform transform;
         transform.position = position;
         transform.rotation = glm::quatLookAt(glm::normalize(-rot_dir), glm::vec3(0, 1, 0));
-        transform.scale = 0.7f;
+        transform.scale = 0.57f;
 
         Entity entity = ecs::create_entity();
         ecs::add_component(enemy, entity);
@@ -146,14 +147,29 @@ namespace kvejken
                 if (hit)
                 {
                     float danger01 = (1.0f - (hit->distance / RAYCAST_DIST));
-                    steering_map[i] -= 404 * std::pow(danger01, 2.5f);
+                    steering_map[i] -= 280 * std::pow(danger01, 2.5f);
                 }
             }
 
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
-            add_dir_to_steering_map(steering_map, transform.rotation, forward, 20.0f);
+            add_dir_to_steering_map(steering_map, transform.rotation, forward, 10.0f);
 
-            add_dir_to_steering_map(steering_map, transform.rotation, player_transform.position - transform.position, 100.0f);
+            float player_dist = glm::distance(player_transform.position, transform.position);
+            float player_follow_strength = 50.0f * (1.0f - glm::smoothstep(2.0f, 15.0f, player_dist)) + 50.0f;
+            add_dir_to_steering_map(steering_map, transform.rotation, player_transform.position - transform.position, player_follow_strength);
+
+            for (auto& [enemy2, transform2] : ecs::get_components<Enemy, Transform>())
+            {
+                if (transform.position != transform2.position)
+                {
+                    float dist2 = glm::distance2(transform.position, transform2.position);
+                    if (dist2 < 6.0f * 6.0f)
+                    {
+                        float danger01 = (1.0f - (std::sqrt(dist2) / 6.0f));
+                        add_dir_to_steering_map(steering_map, transform.rotation, transform2.position - transform.position, -80 * danger01 * danger01);
+                    }
+                }
+            }
 
             glm::vec3 best_direction(0);
             for (int i = 0; i < steering_map.size(); i++)
@@ -170,7 +186,18 @@ namespace kvejken
             transform.rotation = glm::slerp(transform.rotation, new_rotation, TURN_SPEED * delta_time);
 
             forward = transform.rotation * glm::vec3(0, 0, 1);
-            transform.position += forward * MOVE_SPEED * delta_time;
+            float speed_mult = 1.0f;
+
+            auto hit = collision::raycast(transform.position, forward, 2.0f);
+            if (hit)
+            {
+                if (hit->distance < 1.1f)
+                    speed_mult = 0.1f;
+                else
+                    speed_mult = hit->distance - 1.0f;
+            }
+
+            transform.position += forward * MOVE_SPEED * speed_mult * delta_time;
 
             /*
             for (auto point : raycast_dirs)
