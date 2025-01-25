@@ -17,7 +17,9 @@ namespace kvejken
         constexpr float ENEMY_ANIM_TIME = 0.5f;
         std::vector<Model> enemy_model_anim;
 
-        constexpr float MOVE_SPEED = 2.0f;
+        constexpr float MOVE_SPEED = 4.0f;
+        constexpr float TURN_SPEED = 8.0f;
+        constexpr float RAYCAST_DIST = 4.0f;
         std::vector<glm::vec3> raycast_dirs;
     }
 
@@ -140,11 +142,11 @@ namespace kvejken
 
             for (int i = 0; i < raycast_dirs.size(); i++)
             {
-                auto hit = collision::raycast(transform.position, transform.rotation * raycast_dirs[i], 10.0f);
+                auto hit = collision::raycast(transform.position, transform.rotation * raycast_dirs[i], RAYCAST_DIST);
                 if (hit)
                 {
-                    float danger01 = (1.0f - (hit->distance / 10.0f));
-                    steering_map[i] -= 500 * danger01 * danger01;
+                    float danger01 = (1.0f - (hit->distance / RAYCAST_DIST));
+                    steering_map[i] -= 404 * std::pow(danger01, 2.5f);
                 }
             }
 
@@ -153,9 +155,19 @@ namespace kvejken
 
             add_dir_to_steering_map(steering_map, transform.rotation, player_transform.position - transform.position, 100.0f);
 
-            auto best = std::max_element(steering_map.begin(), steering_map.end());
-            int best_index = best - steering_map.begin();
-            transform.rotation = glm::quatLookAt(transform.rotation * (-raycast_dirs[best_index]), glm::vec3(0, 1, 0));
+            glm::vec3 best_direction(0);
+            for (int i = 0; i < steering_map.size(); i++)
+            {
+                best_direction += steering_map[i] * (transform.rotation * raycast_dirs[i]);
+            }
+
+            if (best_direction != glm::vec3(0))
+                best_direction = glm::normalize(best_direction);
+            else
+                best_direction = -forward;
+
+            glm::quat new_rotation = glm::quatLookAt(-best_direction, glm::vec3(0, 1, 0));
+            transform.rotation = glm::slerp(transform.rotation, new_rotation, TURN_SPEED * delta_time);
 
             forward = transform.rotation * glm::vec3(0, 0, 1);
             transform.position += forward * MOVE_SPEED * delta_time;
