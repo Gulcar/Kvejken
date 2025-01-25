@@ -129,6 +129,7 @@ int main()
 
         renderer::draw_model(&terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
 
+        /*
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
             if (!player.local)
@@ -144,6 +145,7 @@ int main()
                 }
             }
         }
+        */
 
         for (auto [model, transform] : ecs::get_components<Model*, Transform>())
         {

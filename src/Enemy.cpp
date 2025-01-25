@@ -11,7 +11,9 @@ namespace kvejken
 {
     namespace
     {
-        float time_to_spawn = 10.0f;
+        float time_to_spawn = 0.0f;
+
+        constexpr float ENEMY_ANIM_TIME = 0.5f;
         std::vector<Model> enemy_model_anim;
     }
 
@@ -24,10 +26,10 @@ namespace kvejken
     float time_btw_spawns(float game_time)
     {
         // TODO: balance
-        if (game_time < 30.0f)  return 10.0f;
-        if (game_time < 60.0f)  return 5.0f;
-        if (game_time < 90.0f)  return 3.0f;
-        if (game_time < 120.0f)  return 2.0f;
+        if (game_time < 30.0f)  return 15.0f;
+        if (game_time < 60.0f)  return 10.0f;
+        if (game_time < 90.0f)  return 5.0f;
+        if (game_time < 120.0f)  return 3.0f;
         return 1.0f;
     }
 
@@ -62,8 +64,8 @@ namespace kvejken
 
         Transform transform;
         transform.position = position;
-        transform.rotation = utils::dir_to_quat(rot_dir);
-        transform.scale = 1.0f;
+        transform.rotation = glm::quatLookAt(glm::normalize(-rot_dir), glm::vec3(0, 1, 0));
+        transform.scale = 0.7f;
 
         Entity entity = ecs::create_entity();
         ecs::add_component(enemy, entity);
@@ -75,16 +77,31 @@ namespace kvejken
 
     void update_enemies(float delta_time, float game_time)
     {
+        const Transform& player_transform = (*ecs::get_components<Player, Transform>().begin()).second;
+
         time_to_spawn -= delta_time;
         if (time_to_spawn <= 0.0f)
         {
             time_to_spawn = time_btw_spawns(game_time);
 
-            Transform& player_transform = (*ecs::get_components<Player, Transform>().begin()).second;
-
             glm::vec3 spawn_point = closest_spawn_point(player_transform.position);
             glm::vec3 direction = player_transform.position - spawn_point;
             spawn_enemy(spawn_point, direction);
+        }
+
+        for (auto& [enemy, model, transform] : ecs::get_components<Enemy, Model*, Transform>())
+        {
+            enemy.animation_time += delta_time;
+            if (enemy.animation_time >= ENEMY_ANIM_TIME)
+                enemy.animation_time -= ENEMY_ANIM_TIME;
+
+            int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * enemy_model_anim.size());
+            model = &enemy_model_anim[anim];
+
+            transform.rotation = glm::quatLookAt(glm::normalize(transform.position - player_transform.position), glm::vec3(0, 1, 0));
+
+            glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
+            transform.position += forward * delta_time;
         }
     }
 }
