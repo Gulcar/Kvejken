@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "Renderer.h"
 #include "Model.h"
+#include "Collision.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -15,18 +16,40 @@ namespace kvejken
 
         constexpr float ENEMY_ANIM_TIME = 0.5f;
         std::vector<Model> enemy_model_anim;
+
+        constexpr float MOVE_SPEED = 2.0f;
+        std::vector<glm::vec3> raycast_dirs;
     }
 
     void init_enemies()
     {
         for (int i = 1; i <= 12; i++)
             enemy_model_anim.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
+
+        constexpr int NUM_POINTS_ON_SPHERE = 18;
+        constexpr float MIN_POINT_Z = -0.3f;
+
+        // https://stackoverflow.com/a/44164075
+        for (int i = 0; i < NUM_POINTS_ON_SPHERE; i++)
+        {
+            float phi = std::acos(1.0f - 2.0f * i / (float)NUM_POINTS_ON_SPHERE);
+            float theta = PI * (1.0f + std::sqrt(5.0f)) * i;
+
+            float z = std::cos(phi);
+            if (z < MIN_POINT_Z)
+                continue;
+
+            float x = std::cos(theta) * std::sin(phi);
+            float y = std::sin(theta) * std::sin(phi);
+
+            raycast_dirs.emplace_back(x, y, z);
+        }
     }
 
     float time_btw_spawns(float game_time)
     {
         // TODO: balance
-        if (game_time < 30.0f)  return 15.0f;
+        if (game_time < 30.0f)  return 9915.0f;
         if (game_time < 60.0f)  return 10.0f;
         if (game_time < 90.0f)  return 5.0f;
         if (game_time < 120.0f)  return 3.0f;
@@ -75,6 +98,17 @@ namespace kvejken
         printf("spawn_enemy\n");
     }
 
+    static void add_dir_to_steering_map(std::vector<float>& steering_map, glm::quat rotation, glm::vec3 direction, float strength)
+    {
+        direction = glm::normalize(direction);
+
+        for (int i = 0; i < steering_map.size(); i++)
+        {
+            float d = glm::dot(rotation * raycast_dirs[i], direction);
+            steering_map[i] += glm::max(d, 0.0f) * strength;
+        }
+    }
+
     void update_enemies(float delta_time, float game_time)
     {
         const Transform& player_transform = (*ecs::get_components<Player, Transform>().begin()).second;
@@ -98,10 +132,41 @@ namespace kvejken
             int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * enemy_model_anim.size());
             model = &enemy_model_anim[anim];
 
-            transform.rotation = glm::quatLookAt(glm::normalize(transform.position - player_transform.position), glm::vec3(0, 1, 0));
+            //transform.rotation = glm::quatLookAt(glm::normalize(transform.position - player_transform.position), glm::vec3(0, 1, 0));
+
+            static std::vector<float> steering_map;
+            steering_map.clear();
+            steering_map.resize(raycast_dirs.size(), 0.0f);
+
+            for (int i = 0; i < raycast_dirs.size(); i++)
+            {
+                auto hit = collision::raycast(transform.position, transform.rotation * raycast_dirs[i], 10.0f);
+                if (hit)
+                {
+                    float danger01 = (1.0f - (hit->distance / 10.0f));
+                    steering_map[i] -= 500 * danger01 * danger01;
+                }
+            }
 
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
-            transform.position += forward * delta_time;
+            add_dir_to_steering_map(steering_map, transform.rotation, forward, 20.0f);
+
+            add_dir_to_steering_map(steering_map, transform.rotation, player_transform.position - transform.position, 100.0f);
+
+            auto best = std::max_element(steering_map.begin(), steering_map.end());
+            int best_index = best - steering_map.begin();
+            transform.rotation = glm::quatLookAt(transform.rotation * (-raycast_dirs[best_index]), glm::vec3(0, 1, 0));
+
+            forward = transform.rotation * glm::vec3(0, 0, 1);
+            transform.position += forward * MOVE_SPEED * delta_time;
+
+            /*
+            for (auto point : raycast_dirs)
+            {
+                point = transform.rotation * (point * 2.0f) + transform.position;
+                renderer::draw_model(&enemy_model_anim[0], point, glm::vec3(0), glm::vec3(0.05f));
+            }
+            */
         }
     }
 }
