@@ -25,6 +25,31 @@ namespace kvejken
     constexpr float JUMP_STRENGTH = 9.0f;
     constexpr float COYOTE_TIME = 0.12f;
 
+    void spawn_local_player(glm::vec3 position)
+    {
+        Player player = {};
+        player.health = 100;
+        player.local = true;
+
+        Camera camera = {};
+        camera.position = glm::vec3(0, 0.44f, 0);
+        camera.direction = glm::vec3(0, 0, -1);
+        camera.up = glm::vec3(0, 1, 0);
+        camera.fovy = 50.0f;
+        camera.z_near = 0.05f;
+        camera.z_far = 150.0f;
+
+        Transform transform = {};
+        transform.position = position;
+        transform.rotation = glm::quat(1, 0, 0, 0);
+        transform.scale = 1.0f;
+
+        Entity entity = ecs::create_entity();
+        ecs::add_component(player, entity);
+        ecs::add_component(camera, entity);
+        ecs::add_component(transform, entity);
+    }
+
     void update_players_movement(float delta_time, float game_time)
     {
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
@@ -134,11 +159,11 @@ namespace kvejken
 
             if (input::key_held(GLFW_KEY_LEFT_SHIFT))
             {
-                camera.position.y = 0.30f;
+                camera.position.y = 0.29f;
             }
             else
             {
-                camera.position.y = 0.45f;
+                camera.position.y = 0.44f;
             }
 
             if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))

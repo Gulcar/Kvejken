@@ -24,6 +24,8 @@ int main()
 
     init_enemies();
 
+    spawn_local_player(glm::vec3(0, 8, 0));
+
     Model test_cube("../../assets/test/test_cube.obj");
     Model test_rock("../../assets/test/test_rock.obj");
     Model test_multiple("../../assets/test/test_multiple.obj");
@@ -37,46 +39,6 @@ int main()
     }
 
     renderer::set_skybox("../../assets/environment/skybox.obj");
-
-    {
-        Entity entity = ecs::create_entity();
-
-        Transform transform = {};
-        transform.position = glm::vec3(0, 8, 0);
-        transform.rotation = glm::quat(1, 0, 0, 0);
-        transform.scale = 1.0f;
-        ecs::add_component(transform, entity);
-
-        Player player = {};
-        player.health = 100;
-        player.local = true;
-        ecs::add_component(player, entity);
-
-        Camera camera = {};
-        camera.position = glm::vec3(0, 0.45f, 0);
-        camera.direction = glm::vec3(0, 0, -1);
-        camera.up = glm::vec3(0, 1, 0);
-        camera.fovy = 50.0f;
-        camera.z_near = 0.1f;
-        camera.z_far = 150.0f;
-        ecs::add_component(camera, entity);
-    }
-
-    {
-        Entity e0 = ecs::create_entity();
-        Entity e1 = ecs::create_entity();
-
-        struct A {};
-        struct B {};
-        ecs::add_component(A{}, e0);
-        ecs::add_component(A{}, e1);
-        ecs::add_component(B{}, e1);
-
-        for (auto& [a, b] : ecs::get_components<A, B>())
-        {
-            printf("test");
-        }
-    }
 
     int frame_count = 0;
     float prev_time = glfwGetTime();

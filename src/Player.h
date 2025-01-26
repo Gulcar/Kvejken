@@ -1,6 +1,7 @@
 #pragma once
 
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
 namespace kvejken
 {
@@ -16,6 +17,8 @@ namespace kvejken
         float look_yaw;
         float look_pitch;
     };
+
+    void spawn_local_player(glm::vec3 position);
 
     void update_players(float delta_time, float game_time);
 }
