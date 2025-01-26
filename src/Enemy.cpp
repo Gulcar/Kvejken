@@ -12,21 +12,21 @@ namespace kvejken
 {
     namespace
     {
-        float time_to_spawn = time_btw_spawns(0.0f);
+        float m_time_to_spawn = time_btw_spawns(0.0f);
 
         constexpr float ENEMY_ANIM_TIME = 0.5f;
-        std::vector<Model> enemy_model_anim;
+        std::vector<Model> m_model_anim;
 
         constexpr float MOVE_SPEED = 4.0f;
         constexpr float TURN_SPEED = 8.0f;
         constexpr float RAYCAST_DIST = 4.0f;
-        std::vector<glm::vec3> raycast_dirs;
+        std::vector<glm::vec3> m_raycast_dirs;
     }
 
     void init_enemies()
     {
         for (int i = 1; i <= 12; i++)
-            enemy_model_anim.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
+            m_model_anim.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
 
         constexpr int NUM_POINTS_ON_SPHERE = 18;
         constexpr float MIN_POINT_Z = -0.3f;
@@ -44,7 +44,7 @@ namespace kvejken
             float x = std::cos(theta) * std::sin(phi);
             float y = std::sin(theta) * std::sin(phi);
 
-            raycast_dirs.emplace_back(x, y, z);
+            m_raycast_dirs.emplace_back(x, y, z);
         }
     }
 
@@ -104,7 +104,7 @@ namespace kvejken
         Entity entity = ecs::create_entity();
         ecs::add_component(enemy, entity);
         ecs::add_component(transform, entity);
-        ecs::add_component(&enemy_model_anim[0], entity);
+        ecs::add_component(&m_model_anim[0], entity);
     }
 
     static void add_dir_to_steering_map(std::vector<float>& steering_map, glm::quat rotation, glm::vec3 direction, float strength)
@@ -113,7 +113,7 @@ namespace kvejken
 
         for (int i = 0; i < steering_map.size(); i++)
         {
-            float d = glm::dot(rotation * raycast_dirs[i], direction);
+            float d = glm::dot(rotation * m_raycast_dirs[i], direction);
             steering_map[i] += glm::max(d, 0.0f) * strength;
         }
     }
@@ -122,10 +122,10 @@ namespace kvejken
     {
         const Transform& player_transform = (*ecs::get_components<Player, Transform>().begin()).second;
 
-        time_to_spawn -= delta_time;
-        if (time_to_spawn <= 0.0f)
+        m_time_to_spawn -= delta_time;
+        if (m_time_to_spawn <= 0.0f)
         {
-            time_to_spawn = time_btw_spawns(game_time);
+            m_time_to_spawn = time_btw_spawns(game_time);
 
             glm::vec3 spawn_point = get_spawn_point(player_transform.position, player_transform.rotation * glm::vec3(0, 0, -1));
             glm::vec3 direction = player_transform.position - spawn_point;
@@ -138,18 +138,18 @@ namespace kvejken
             if (enemy.animation_time >= ENEMY_ANIM_TIME)
                 enemy.animation_time -= ENEMY_ANIM_TIME;
 
-            int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * enemy_model_anim.size());
-            model = &enemy_model_anim[anim];
+            int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * m_model_anim.size());
+            model = &m_model_anim[anim];
 
             //transform.rotation = glm::quatLookAt(glm::normalize(transform.position - player_transform.position), glm::vec3(0, 1, 0));
 
             static std::vector<float> steering_map;
             steering_map.clear();
-            steering_map.resize(raycast_dirs.size(), 0.0f);
+            steering_map.resize(m_raycast_dirs.size(), 0.0f);
 
-            for (int i = 0; i < raycast_dirs.size(); i++)
+            for (int i = 0; i < m_raycast_dirs.size(); i++)
             {
-                auto hit = collision::raycast(transform.position, transform.rotation * raycast_dirs[i], RAYCAST_DIST);
+                auto hit = collision::raycast(transform.position, transform.rotation * m_raycast_dirs[i], RAYCAST_DIST);
                 if (hit)
                 {
                     float danger01 = (1.0f - (hit->distance / RAYCAST_DIST));
@@ -180,7 +180,7 @@ namespace kvejken
             glm::vec3 best_direction(0);
             for (int i = 0; i < steering_map.size(); i++)
             {
-                best_direction += steering_map[i] * (transform.rotation * raycast_dirs[i]);
+                best_direction += steering_map[i] * (transform.rotation * m_raycast_dirs[i]);
             }
 
             if (best_direction != glm::vec3(0))
@@ -206,10 +206,10 @@ namespace kvejken
             transform.position += forward * MOVE_SPEED * speed_mult * delta_time;
 
             /*
-            for (auto point : raycast_dirs)
+            for (auto point : m_raycast_dirs)
             {
                 point = transform.rotation * (point * 2.0f) + transform.position;
-                renderer::draw_model(&enemy_model_anim[0], point, glm::vec3(0), glm::vec3(0.05f));
+                renderer::draw_model(&m_model_anim[0], point, glm::vec3(0), glm::vec3(0.05f));
             }
             */
         }

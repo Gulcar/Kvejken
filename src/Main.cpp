@@ -30,6 +30,8 @@ int main()
     Model test_rock("../../assets/test/test_rock.obj");
     Model test_multiple("../../assets/test/test_multiple.obj");
 
+    Model axe_model("../../assets/weapons/axe.obj");
+
     Model terrain("../../assets/environment/terrain.obj", false);
     collision::build_triangle_bvh(terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
     for (auto& mesh : terrain.meshes())
@@ -113,6 +115,7 @@ int main()
         {
             renderer::draw_model(model, transform.position, transform.rotation, glm::vec3(transform.scale));
         }
+        renderer::draw_model(&axe_model, glm::vec3(0, 8, 0), glm::vec3(0), glm::vec3(1.0f));
 
         renderer::draw_queue();
 
