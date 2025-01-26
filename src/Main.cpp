@@ -10,6 +10,7 @@
 #include <GLFW/glfw3.h>
 #include "Player.h"
 #include "Enemy.h"
+#include "Assets.h"
 
 using namespace kvejken;
 
@@ -22,19 +23,15 @@ int main()
     
     input::init(renderer::window_ptr());
 
+    assets::load();
+    atexit(assets::unload);
+
     init_enemies();
 
     spawn_local_player(glm::vec3(0, 8, 0));
 
-    Model test_cube("assets/test/test_cube.obj");
-    Model test_rock("assets/test/test_rock.obj");
-    Model test_multiple("assets/test/test_multiple.obj");
-
-    Model axe_model("assets/weapons/axe.obj");
-
-    Model terrain("assets/environment/terrain.obj", false);
-    collision::build_triangle_bvh(terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
-    for (auto& mesh : terrain.meshes())
+    collision::build_triangle_bvh(*assets::terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
+    for (auto& mesh : assets::terrain->meshes())
     {
         if (mesh.vertices().size() > 1000)
             mesh.prepare_vertex_buffer();
@@ -79,19 +76,19 @@ int main()
         renderer::clear_screen();
 
         /*
-        renderer::draw_model(&test_cube, glm::vec3(std::sin(glfwGetTime()), 0, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
-        renderer::draw_model(&test_cube, glm::vec3(3, 0.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
-        renderer::draw_model(&test_cube, glm::vec3(2, 0, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
+        renderer::draw_model(assets::test_cube.get(), glm::vec3(3, 5.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+        renderer::draw_model(assets::test_cube.get(), glm::vec3(2, 5, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
         for (int i = 0; i < 100; i++)
         {
-            renderer::draw_model(&test_cube, glm::vec3(i, 0, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
+            renderer::draw_model(assets::test_cube.get(), glm::vec3(i, 5, -3), glm::vec3(0, 0, 0), glm::vec3(0.5f));
         }
 
-        renderer::draw_model(&test_rock, glm::vec3(4, 0, 0), glm::vec3(0, -glfwGetTime(), 0), glm::vec3(1.0f));
-        renderer::draw_model(&test_multiple, glm::vec3(-2, 0, -2), glm::vec3(0, -PI / 2.0f, 0), glm::vec3(0.5f));
+        renderer::draw_model(assets::test_rock.get(), glm::vec3(4, 5, 0), glm::vec3(0, -glfwGetTime(), 0), glm::vec3(1.0f));
+        renderer::draw_model(assets::test_multiple.get(), glm::vec3(-2, 5, -2), glm::vec3(0, -PI / 2.0f, 0), glm::vec3(0.5f));
         */
 
-        renderer::draw_model(&terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
+        renderer::draw_model(assets::terrain.get(), glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
 
         /*
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
@@ -115,7 +112,8 @@ int main()
         {
             renderer::draw_model(model, transform.position, transform.rotation, glm::vec3(transform.scale));
         }
-        renderer::draw_model(&axe_model, glm::vec3(0, 8, 0), glm::vec3(0), glm::vec3(1.0f));
+
+        renderer::draw_model(assets::axe.get(), glm::vec3(0, 8, 0), glm::vec3(0), glm::vec3(1.0f));
 
         renderer::draw_queue();
 

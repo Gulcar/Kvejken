@@ -5,6 +5,7 @@
 #include "Renderer.h"
 #include "Model.h"
 #include "Collision.h"
+#include "Assets.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -15,7 +16,6 @@ namespace kvejken
         float m_time_to_spawn = time_btw_spawns(0.0f);
 
         constexpr float ENEMY_ANIM_TIME = 0.5f;
-        std::vector<Model> m_model_anim;
 
         constexpr float MOVE_SPEED = 4.0f;
         constexpr float TURN_SPEED = 8.0f;
@@ -25,9 +25,6 @@ namespace kvejken
 
     void init_enemies()
     {
-        for (int i = 1; i <= 12; i++)
-            m_model_anim.emplace_back("assets/enemies/eel" + std::to_string(i) + ".obj");
-
         constexpr int NUM_POINTS_ON_SPHERE = 18;
         constexpr float MIN_POINT_Z = -0.3f;
 
@@ -104,7 +101,7 @@ namespace kvejken
         Entity entity = ecs::create_entity();
         ecs::add_component(enemy, entity);
         ecs::add_component(transform, entity);
-        ecs::add_component(&m_model_anim[0], entity);
+        ecs::add_component(&assets::eel_anim[0], entity);
     }
 
     static void add_dir_to_steering_map(std::vector<float>& steering_map, glm::quat rotation, glm::vec3 direction, float strength)
@@ -134,12 +131,12 @@ namespace kvejken
 
         for (auto& [enemy, model, transform] : ecs::get_components<Enemy, Model*, Transform>())
         {
-            enemy.animation_time += delta_time;
+            enemy.animation_time += delta_time * utils::randf(0.9f, 1.1f);
             if (enemy.animation_time >= ENEMY_ANIM_TIME)
                 enemy.animation_time -= ENEMY_ANIM_TIME;
 
-            int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * m_model_anim.size());
-            model = &m_model_anim[anim];
+            int anim = (int)(enemy.animation_time / ENEMY_ANIM_TIME * assets::eel_anim.size());
+            model = &assets::eel_anim[anim];
 
             //transform.rotation = glm::quatLookAt(glm::normalize(transform.position - player_transform.position), glm::vec3(0, 1, 0));
 
