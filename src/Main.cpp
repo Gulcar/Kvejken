@@ -69,6 +69,7 @@ int main()
 
         ecs::destroy_queued_entities();
         /*
+        printf("ecs components:\n");
         for (const auto& pool : ecs::component_pools())
             printf("component pool %s size %d\n", pool->component_name(), (int)pool->size());
         */
@@ -112,8 +113,6 @@ int main()
         {
             renderer::draw_model(model, transform.position, transform.rotation, glm::vec3(transform.scale));
         }
-
-        renderer::draw_model(assets::axe.get(), glm::vec3(0, 8, 0), glm::vec3(0), glm::vec3(1.0f));
 
         renderer::draw_queue();
 

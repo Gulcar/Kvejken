@@ -48,6 +48,10 @@ namespace kvejken::renderer
 
     void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
     void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
+
+    void draw_model(const Model* model, const glm::mat4& transform);
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform);
+
     //void draw_sprite();
 
     void set_skybox(const std::string& skybox_obj_path);

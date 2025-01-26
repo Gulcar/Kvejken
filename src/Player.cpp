@@ -3,6 +3,10 @@
 #include "Components.h"
 #include "Input.h"
 #include "Collision.h"
+#include "Assets.h"
+#include <glm/mat4x4.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 namespace kvejken
 {
@@ -30,6 +34,8 @@ namespace kvejken
         Player player = {};
         player.health = 100;
         player.local = true;
+
+        player.right_hand_item = ItemType::Axe;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
@@ -130,7 +136,7 @@ namespace kvejken
         for (int i = 0; i < substeps; i++)
             update_players_movement(sub_delta, game_time);
 
-        for (auto [player, transform] : ecs::get_components<Player, Transform>())
+        for (auto [player, camera, transform] : ecs::get_components<Player, Camera, Transform>())
         {
             if (!player.local)
                 continue;
@@ -150,12 +156,6 @@ namespace kvejken
                 player.move_velocity = player.move_velocity * MAX_MOVE_SPEED_AIR / MAX_MOVE_SPEED;
                 player.jump_allowed_time = -1.0f;
             }
-        }
-
-        for (auto [player, camera] : ecs::get_components<Player, Camera>())
-        {
-            if (!player.local)
-                continue;
 
             if (input::key_held(GLFW_KEY_LEFT_SHIFT))
             {
@@ -169,6 +169,21 @@ namespace kvejken
             if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
             {
                 player.move_velocity *= SLIDE_BOOST;
+            }
+
+            glm::vec3 hand_position = transform.position + camera.position;
+            hand_position.y += glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 300.0f;
+            player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
+
+            switch (player.right_hand_item)
+            {
+            case ItemType::Axe:
+                glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
+                    * glm::toMat4(player.right_hand_rotation)
+                    * glm::translate(glm::mat4(1.0f), glm::vec3(0.3f, -0.5f, -0.5f))
+                    * glm::scale(glm::mat4(1.0f), glm::vec3(0.3f));
+
+                renderer::draw_model(assets::axe.get(), t);
             }
         }
     }

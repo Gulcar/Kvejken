@@ -2,9 +2,20 @@
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace kvejken
 {
+    enum class ItemType
+    {
+        None,
+        Axe,
+        Hammer,
+        SpikedClub,
+        Fireball,
+        Crossbow,
+    };
+
     struct Player
     {
         int health;
@@ -16,6 +27,9 @@ namespace kvejken
 
         float look_yaw;
         float look_pitch;
+
+        ItemType left_hand_item, right_hand_item;
+        glm::quat left_hand_rotation, right_hand_rotation;
     };
 
     void spawn_local_player(glm::vec3 position);

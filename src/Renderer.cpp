@@ -431,13 +431,34 @@ namespace kvejken::renderer
 
     void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+            * glm::toMat4(rotation)
+            * glm::scale(glm::mat4(1.0f), scale);
+
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), position, rotation, scale);
+            draw_mesh(&(model->meshes()[i]), transform);
         }
     }
 
     void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
+    {
+        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
+            * glm::toMat4(rotation)
+            * glm::scale(glm::mat4(1.0f), scale);
+
+        draw_mesh(mesh, transform);
+    }
+
+    void draw_model(const Model* model, const glm::mat4& transform)
+    {
+        for (int i = 0; i < model->meshes().size(); i++)
+        {
+            draw_mesh(&(model->meshes()[i]), transform);
+        }
+    }
+
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform)
     {
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
@@ -446,16 +467,14 @@ namespace kvejken::renderer
         order.shader_id = 0;
         order.texture_id = mesh->diffuse_texture().id % (1 << 5);
 
+        glm::vec3 position = transform[3];
+
         float distance01 = glm::distance2(position, m_camera.position) / (m_camera.z_far * m_camera.z_far);
         if (distance01 > 1.0f) distance01 = 1.0f;
         if (!order.transparency)
             distance01 = 1.0f - distance01;
         constexpr int max_depth = (1 << 22) - 1; // for 22 bits
         order.depth = (int)(distance01 * max_depth);
-
-        glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
-            * glm::toMat4(rotation)
-            * glm::scale(glm::mat4(1.0f), scale);
 
         m_draw_queue.push_back({ order, mesh, transform });
     }
