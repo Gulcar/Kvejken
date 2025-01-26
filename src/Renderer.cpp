@@ -170,7 +170,7 @@ namespace kvejken::renderer
 
         m_batched_vertices.reserve(VERTICES_PER_BATCH);
 
-        m_shader = load_shader_program("../../assets/shaders/vert.glsl", "../../assets/shaders/frag.glsl");
+        m_shader = load_shader_program("assets/shaders/vert.glsl", "assets/shaders/frag.glsl");
         glUseProgram(m_shader);
 
         int texture_indices[TEXTURES_PER_BATCH];
@@ -381,6 +381,12 @@ namespace kvejken::renderer
         Texture tex = {};
         int num_components;
         uint8_t* data = stbi_load(file_path, &tex.width, &tex.height, &num_components, 0);
+        if (data == nullptr)
+        {
+            std::string new_path = "../../" + std::string(file_path);
+            data = stbi_load(new_path.c_str(), &tex.width, &tex.height, &num_components, 0);
+        }
+
         if (data == nullptr)
             ERROR_EXIT("Failed to load texture '%s' (%s)", file_path, stbi_failure_reason());
         if (tex.width % 4 != 0 || tex.height % 4 != 0)

@@ -43,6 +43,8 @@ namespace kvejken::utils
     inline std::string read_file_to_string(const char* file_path)
     {
         std::ifstream file(file_path);
+        if (!file.is_open() || !file.good())
+            file = std::ifstream("../../" + std::string(file_path));
         ASSERT(file.is_open() && file.good());
 
         file.seekg(0, std::ios::end);

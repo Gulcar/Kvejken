@@ -26,7 +26,7 @@ namespace kvejken
     void init_enemies()
     {
         for (int i = 1; i <= 12; i++)
-            m_model_anim.emplace_back("../../assets/enemies/eel" + std::to_string(i) + ".obj");
+            m_model_anim.emplace_back("assets/enemies/eel" + std::to_string(i) + ".obj");
 
         constexpr int NUM_POINTS_ON_SPHERE = 18;
         constexpr float MIN_POINT_Z = -0.3f;

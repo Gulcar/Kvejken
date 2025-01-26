@@ -91,6 +91,8 @@ namespace kvejken
     static std::map<std::string, Texture> load_materials(const std::string& directory, const std::string& file_path)
     {
         std::ifstream file(directory + file_path);
+        if (!file.is_open() || !file.good())
+            file = std::ifstream("../../" + directory + file_path);
         ASSERT(file.is_open() && file.good());
 
         std::map<std::string, Texture> materials;
@@ -116,6 +118,8 @@ namespace kvejken
     Model::Model(const std::string& file_path, bool allow_vbo)
     {
         std::ifstream file(file_path);
+        if (!file.is_open() || !file.good())
+            file = std::ifstream("../../" + file_path);
         ASSERT(file.is_open() && file.good());
 
         std::string directory = "./";

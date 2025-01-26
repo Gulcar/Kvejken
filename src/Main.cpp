@@ -26,13 +26,13 @@ int main()
 
     spawn_local_player(glm::vec3(0, 8, 0));
 
-    Model test_cube("../../assets/test/test_cube.obj");
-    Model test_rock("../../assets/test/test_rock.obj");
-    Model test_multiple("../../assets/test/test_multiple.obj");
+    Model test_cube("assets/test/test_cube.obj");
+    Model test_rock("assets/test/test_rock.obj");
+    Model test_multiple("assets/test/test_multiple.obj");
 
-    Model axe_model("../../assets/weapons/axe.obj");
+    Model axe_model("assets/weapons/axe.obj");
 
-    Model terrain("../../assets/environment/terrain.obj", false);
+    Model terrain("assets/environment/terrain.obj", false);
     collision::build_triangle_bvh(terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
     for (auto& mesh : terrain.meshes())
     {
@@ -40,7 +40,7 @@ int main()
             mesh.prepare_vertex_buffer();
     }
 
-    renderer::set_skybox("../../assets/environment/skybox.obj");
+    renderer::set_skybox("assets/environment/skybox.obj");
 
     int frame_count = 0;
     float prev_time = glfwGetTime();
