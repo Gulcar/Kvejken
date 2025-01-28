@@ -34,8 +34,39 @@ namespace kvejken
     {
         struct WeaponInfo
         {
+            float range;
+            float attack_time;
 
+            Model* model;
+            float model_scale;
+            glm::vec3 model_offset;
         };
+
+        std::unordered_map<RightHandItem, WeaponInfo> m_weapon_infos;
+    }
+
+    void init_weapons()
+    {
+        WeaponInfo& axe = m_weapon_infos[RightHandItem::Axe];
+        axe.range = 2.0f;
+        axe.attack_time = 0.5f;
+        axe.model = assets::axe.get();
+        axe.model_scale = 0.3f;
+        axe.model_offset = glm::vec3(0.3f, -0.5f, -0.5f);
+
+        WeaponInfo& hammer = m_weapon_infos[RightHandItem::Hammer];
+        hammer.range = 2.4f;
+        hammer.attack_time = 0.6f;
+        hammer.model = assets::hammer.get();
+        hammer.model_scale = 0.2f;
+        hammer.model_offset = glm::vec3(0.35f, -0.4f, -0.5f);
+
+        WeaponInfo& spiked_club = m_weapon_infos[RightHandItem::SpikedClub];
+        spiked_club.range = 1.66f;
+        spiked_club.attack_time = 0.4f;
+        spiked_club.model = assets::spiked_club.get();
+        spiked_club.model_scale = 0.15f;
+        spiked_club.model_offset = glm::vec3(0.3f, -0.35f, -0.5f);
     }
 
     void spawn_local_player(glm::vec3 position)
@@ -200,67 +231,62 @@ namespace kvejken
                 player.move_velocity *= SLIDE_BOOST;
             }
 
-            player.time_since_attack += delta_time;
-            if (player.right_hand_item != RightHandItem::None
-                && input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT)
-                && player.time_since_attack > 0.5f)
-            {
-                player.time_since_attack = 0.0f;
-                glm::vec3 attack_center = transform.position + camera.position + transform.rotation * glm::vec3(0, 0, -1);
-                attack(attack_center, 2.0f);
-            }
+            // TODO: remove to je samo za debug
+            if (input::key_pressed(GLFW_KEY_1)) player.right_hand_item = RightHandItem::Axe;
+            if (input::key_pressed(GLFW_KEY_2)) player.right_hand_item = RightHandItem::Hammer;
+            if (input::key_pressed(GLFW_KEY_3)) player.right_hand_item = RightHandItem::SpikedClub;
 
-            glm::vec3 hand_position = transform.position + camera.position;
-            hand_position.y += glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 300.0f;
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
 
-            glm::vec3 weapon_offset = glm::vec3(0.3f, -0.5f, -0.5f);
-            glm::mat4 weapon_rotation(1.0f);
-            glm::vec3 weapon_pivot = glm::vec3(0, -1.375f, 0);
-            if (player.time_since_attack < 0.5f)
+            if (player.right_hand_item != RightHandItem::None)
             {
-                float t = player.time_since_attack / 0.5f;
-                t = 1 - std::pow(1 - t, 3.0f);
-                //t = 0.0f;
-                weapon_offset += glm::mix(glm::vec3(0, 0.8f, 0.3f), glm::vec3(0, 0.4f, 0.7f), t);
+                const WeaponInfo& weapon = m_weapon_infos[player.right_hand_item];
 
-                glm::quat rot1 = glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
-                glm::quat rot2 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
-                    * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
-                weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
-            }
-            else if (player.time_since_attack < 0.7f)
-            {
-                float t = (player.time_since_attack - 0.5f) / 0.2f;
-                t = 1 - std::pow(1 - t, 3.0f);
-                weapon_offset += glm::mix(glm::vec3(0, 0.4f, 0.7f), glm::vec3(0, 0, 0), t);
+                player.time_since_attack += delta_time;
+                if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && player.time_since_attack > weapon.attack_time)
+                {
+                    player.time_since_attack = 0.0f;
+                    glm::vec3 attack_center = transform.position + camera.position + transform.rotation * glm::vec3(0, 0, -1);
+                    attack(attack_center, weapon.range);
+                }
 
-                glm::quat rot1 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
-                    * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
-                glm::quat rot2 = glm::quat(1, 0, 0, 0);
-                weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
-            }
+                glm::vec3 hand_position = transform.position + camera.position;
+                hand_position.y += glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 300.0f;
 
-            glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
-                * glm::toMat4(player.right_hand_rotation)
-                * glm::translate(glm::mat4(1.0f), weapon_offset + weapon_pivot)
-                * weapon_rotation
-                * glm::translate(glm::mat4(1.0f), -weapon_pivot)
-                * glm::scale(glm::mat4(1.0f), glm::vec3(0.3f));
+                glm::vec3 weapon_offset = weapon.model_offset;
+                glm::mat4 weapon_rotation(1.0f);
+                glm::vec3 weapon_pivot = glm::vec3(0, -1.375f, 0);
+                if (player.time_since_attack < weapon.attack_time)
+                {
+                    float t = player.time_since_attack / weapon.attack_time;
+                    t = 1 - std::pow(1 - t, 3.0f);
+                    weapon_offset += glm::mix(glm::vec3(0, 0.8f, 0.3f), glm::vec3(0, 0.4f, 0.7f), t);
 
-            switch (player.right_hand_item)
-            {
-            case RightHandItem::Axe:
-                renderer::draw_model(assets::axe.get(), t);
-                break;
+                    glm::quat rot1 = glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
+                    glm::quat rot2 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
+                        * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
+                    weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
+                }
+                else if (player.time_since_attack < weapon.attack_time + 0.2f)
+                {
+                    float t = (player.time_since_attack - weapon.attack_time) / 0.2f;
+                    t = 1 - std::pow(1 - t, 3.0f);
+                    weapon_offset += glm::mix(glm::vec3(0, 0.4f, 0.7f), glm::vec3(0, 0, 0), t);
 
-            case RightHandItem::Hammer:
-                renderer::draw_model(assets::hammer.get(), t);
-                break;
+                    glm::quat rot1 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
+                        * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
+                    glm::quat rot2 = glm::quat(1, 0, 0, 0);
+                    weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
+                }
 
-            case RightHandItem::SpikedClub:
-                renderer::draw_model(assets::spiked_club.get(), t);
-                break;
+                glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
+                    * glm::toMat4(player.right_hand_rotation)
+                    * glm::translate(glm::mat4(1.0f), weapon_offset + weapon_pivot)
+                    * weapon_rotation
+                    * glm::translate(glm::mat4(1.0f), -weapon_pivot)
+                    * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale));
+
+                renderer::draw_model(weapon.model, t);
             }
         }
     }

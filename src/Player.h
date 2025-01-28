@@ -43,6 +43,8 @@ namespace kvejken
         float time_since_attack;
     };
 
+    void init_weapons();
+
     void spawn_local_player(glm::vec3 position);
 
     void update_players(float delta_time, float game_time);

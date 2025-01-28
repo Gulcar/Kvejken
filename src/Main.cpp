@@ -27,6 +27,7 @@ int main()
     atexit(assets::unload);
 
     init_enemies();
+    init_weapons();
 
     spawn_local_player(glm::vec3(0, 8, 0));
 
