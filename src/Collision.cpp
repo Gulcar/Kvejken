@@ -203,7 +203,7 @@ namespace kvejken::collision
         subdivide_node(0);
 
         std::chrono::duration<float> duration = std::chrono::steady_clock::now() - start_time;
-        printf("bvh done %fs", duration.count());
+        printf("bvh done %fs\n", duration.count());
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/

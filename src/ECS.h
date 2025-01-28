@@ -483,9 +483,9 @@ namespace kvejken
                     uint32_t comp_id = i;
                     auto pool = component_pools()[comp_id];
                     pool->remove_component(entity);
-
-                    signature >>= 1;
                 }
+
+                signature >>= 1;
             }
         }
 
@@ -500,6 +500,7 @@ namespace kvejken
             {
                 destroy_entity(entity);
             }
+            to_destroy().clear();
         }
 
         template<typename T>

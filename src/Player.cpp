@@ -4,6 +4,7 @@
 #include "Input.h"
 #include "Collision.h"
 #include "Assets.h"
+#include "Enemy.h"
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -28,6 +29,14 @@ namespace kvejken
     constexpr float MAX_Y_VELOCITY = -PLAYER_GRAVITY * 5.0f;
     constexpr float JUMP_STRENGTH = 9.0f;
     constexpr float COYOTE_TIME = 0.12f;
+
+    namespace
+    {
+        struct WeaponInfo
+        {
+
+        };
+    }
 
     void spawn_local_player(glm::vec3 position)
     {
@@ -130,6 +139,25 @@ namespace kvejken
         }
     }
 
+    static void attack(glm::vec3 attack_position, float attack_radius)
+    {
+        Entity closest = -1;
+        float closest_dist = attack_radius * attack_radius;
+
+        for (auto [id, enemy, transform] : ecs::get_components_ids<Enemy, Transform>())
+        {
+            float dist2 = glm::distance2(attack_position, transform.position);
+            if (dist2 < closest_dist)
+            {
+                closest_dist = dist2;
+                closest = id;
+            }
+        }
+        // TODO: particles
+        if (closest != (Entity)-1)
+            ecs::queue_destroy_entity(closest);
+    }
+
     void update_players(float delta_time, float game_time)
     {
         int substeps = (int)(delta_time / 0.010f) + 1;
@@ -178,10 +206,8 @@ namespace kvejken
                 && player.time_since_attack > 0.5f)
             {
                 player.time_since_attack = 0.0f;
-            }
-            if (player.time_since_attack > 1.0f)
-            {
-                player.time_since_attack = 1.0f;
+                glm::vec3 attack_center = transform.position + camera.position + transform.rotation * glm::vec3(0, 0, -1);
+                attack(attack_center, 2.0f);
             }
 
             glm::vec3 hand_position = transform.position + camera.position;

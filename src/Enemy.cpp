@@ -54,6 +54,7 @@ namespace kvejken
     }
 
     // TODO: dodaj vec
+    // TODO: mislim da nekatere spawna v tla
     constexpr glm::vec3 SPAWN_POINTS[] = {
         glm::vec3(-34.6f, 2.5f, -1.3f),
         glm::vec3(-32.6f, 3.2f, 9.0f),
@@ -104,6 +105,7 @@ namespace kvejken
         ecs::add_component(enemy, entity);
         ecs::add_component(transform, entity);
         ecs::add_component(&assets::eel_anim[0], entity);
+        printf("spawn enemy id %u\n", entity);
     }
 
     static void add_dir_to_steering_map(std::vector<float>& steering_map, glm::quat rotation, glm::vec3 direction, float strength)
