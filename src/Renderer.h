@@ -26,6 +26,13 @@ namespace kvejken
         int width;
         int height;
     };
+
+    enum Layer
+    {
+        Layer_World = 3,
+        Layer_FirstPerson = 2,
+        Layer_UserInterface = 0,
+    };
 }
 
 namespace kvejken::renderer
@@ -46,11 +53,11 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path, bool srgb = true);
 
-    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer_World);
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer_World);
 
-    void draw_model(const Model* model, const glm::mat4& transform);
-    void draw_mesh(const Mesh* mesh, const glm::mat4& transform);
+    void draw_model(const Model* model, const glm::mat4& transform, Layer layer = Layer_World);
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer_World);
 
     //void draw_sprite();
 

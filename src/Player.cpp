@@ -286,7 +286,7 @@ namespace kvejken
                     * glm::translate(glm::mat4(1.0f), -weapon_pivot)
                     * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale));
 
-                renderer::draw_model(weapon.model, t);
+                renderer::draw_model(weapon.model, t, Layer_FirstPerson);
             }
         }
     }

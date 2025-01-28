@@ -29,11 +29,11 @@ namespace kvejken::renderer
         struct DrawOrderKey
         {
             // bits are defined from LSB to MSB
-            uint32_t depth : 22; // closer to camera is a higher number (backwards if transparent)
+            uint32_t depth : 21; // closer to camera is a higher number (backwards if transparent)
             uint32_t texture_id : 5;
             uint32_t shader_id : 3;
             uint32_t transparency : 1;
-            uint32_t layer : 1; // hud or world
+            uint32_t layer : 2; // from enum Layer
         };
         static_assert(sizeof(DrawOrderKey) == sizeof(uint32_t));
 
@@ -307,6 +307,7 @@ namespace kvejken::renderer
         if (m_draw_queue.size() == 0)
             return;
 
+        // sortiraj tako da bodo DrawOrderKey po vrednosti padajoci
         std::sort(m_draw_queue.begin(), m_draw_queue.end(), draw_sort_predicate);
 
         uint32_t shader_id = m_draw_queue[0].order.shader_id;
@@ -314,6 +315,24 @@ namespace kvejken::renderer
         for (int i = 0; i < m_draw_queue.size(); i++)
         {
             const Mesh* mesh = m_draw_queue[i].mesh;
+
+            if (i == 0 || m_draw_queue[i - 1].order.layer != m_draw_queue[i].order.layer)
+            {
+                draw_batch();
+
+                switch (m_draw_queue[i].order.layer)
+                {
+                case Layer_World:
+                    break;
+
+                case Layer_FirstPerson:
+                    glClear(GL_DEPTH_BUFFER_BIT);
+                    break;
+
+                case Layer_UserInterface:
+                    break;
+                }
+            }
 
             if (mesh->has_vertex_buffer())
             {
@@ -429,7 +448,7 @@ namespace kvejken::renderer
         return tex;
     }
 
-    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer)
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
@@ -437,32 +456,32 @@ namespace kvejken::renderer
 
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), transform);
+            draw_mesh(&(model->meshes()[i]), transform, layer);
         }
     }
 
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer)
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
 
-        draw_mesh(mesh, transform);
+        draw_mesh(mesh, transform, layer);
     }
 
-    void draw_model(const Model* model, const glm::mat4& transform)
+    void draw_model(const Model* model, const glm::mat4& transform, Layer layer)
     {
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), transform);
+            draw_mesh(&(model->meshes()[i]), transform, layer);
         }
     }
 
-    void draw_mesh(const Mesh* mesh, const glm::mat4& transform)
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer)
     {
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
-        order.layer = 1;
+        order.layer = (int)layer;
         order.transparency = 0;
         order.shader_id = 0;
         order.texture_id = mesh->diffuse_texture().id % (1 << 5);
@@ -473,7 +492,7 @@ namespace kvejken::renderer
         if (distance01 > 1.0f) distance01 = 1.0f;
         if (!order.transparency)
             distance01 = 1.0f - distance01;
-        constexpr int max_depth = (1 << 22) - 1; // for 22 bits
+        constexpr int max_depth = (1 << 21) - 1; // for 21 bits
         order.depth = (int)(distance01 * max_depth);
 
         m_draw_queue.push_back({ order, mesh, transform });
