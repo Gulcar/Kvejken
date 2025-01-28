@@ -45,6 +45,8 @@ namespace kvejken
         }
     }
 
+    // TODO: lahko bi namesto (ali pa ce bi oboje gledal) casa gledal
+    // koliko sob je ze odprl oz. kako dalec je v igri
     float time_btw_spawns(float game_time)
     {
         // cas pada zaradi e na -x in valovi zaradi sinusa

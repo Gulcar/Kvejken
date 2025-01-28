@@ -6,7 +6,7 @@
 
 namespace kvejken
 {
-    enum class ItemType
+    enum class RightHandItem : uint8_t
     {
         None,
         Axe,
@@ -14,6 +14,14 @@ namespace kvejken
         SpikedClub,
         Fireball,
         Crossbow,
+    };
+
+    enum class LeftHandItem : uint8_t
+    {
+        None,
+        Key,
+        Torch,
+        Skull,
     };
 
     struct Player
@@ -28,8 +36,11 @@ namespace kvejken
         float look_yaw;
         float look_pitch;
 
-        ItemType left_hand_item, right_hand_item;
+        LeftHandItem left_hand_item;
+        RightHandItem right_hand_item;
         glm::quat left_hand_rotation, right_hand_rotation;
+
+        float time_since_attack;
     };
 
     void spawn_local_player(glm::vec3 position);

@@ -10,6 +10,8 @@ namespace kvejken::assets
     inline std::vector<Model> eel_anim;
 
     inline std::unique_ptr<Model> axe;
+    inline std::unique_ptr<Model> hammer;
+    inline std::unique_ptr<Model> spiked_club;
 
     inline std::unique_ptr<Model> test_cube;
     inline std::unique_ptr<Model> test_rock;
@@ -23,6 +25,8 @@ namespace kvejken::assets
             eel_anim.emplace_back("assets/enemies/eel" + std::to_string(i) + ".obj");
 
         axe = std::make_unique<Model>("assets/weapons/axe.obj");
+        hammer = std::make_unique<Model>("assets/weapons/hammer.obj");
+        spiked_club = std::make_unique<Model>("assets/weapons/spiked_club.obj");
 
         test_cube = std::make_unique<Model>("assets/test/test_cube.obj");
         test_rock = std::make_unique<Model>("assets/test/test_rock.obj");
@@ -36,6 +40,8 @@ namespace kvejken::assets
         eel_anim.clear();
         
         axe.reset();
+        hammer.reset();
+        spiked_club.reset();
 
         test_cube.reset();
         test_rock.reset();

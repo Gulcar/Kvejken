@@ -49,7 +49,7 @@ namespace kvejken::renderer
         {
             glm::vec3 position;
             uint32_t normal;
-            glm::u16vec2 texture_coords;
+            glm::u16vec2 texture_coords; // TODO: mislim da tole ni dovolj dobro
             uint8_t texture_index;
         };
         constexpr size_t VERTICES_PER_BATCH = 4128;
