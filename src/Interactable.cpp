@@ -3,6 +3,7 @@
 #include "Components.h"
 #include "Model.h"
 #include "Assets.h"
+#include "Player.h"
 
 namespace kvejken
 {
@@ -15,7 +16,6 @@ namespace kvejken
         Interactable inter;
         inter.max_player_dist = 5.0f;
         inter.cost = cost;
-        inter.enabled = true;
         inter.player_close = false;
         inter.player_interacted = false;
 
@@ -43,22 +43,26 @@ namespace kvejken
 
     void update_interactables(float delta_time, float game_time)
     {
-        for (auto [gate, interactable, transform] : ecs::get_components<Gate, Interactable, Transform>())
+        for (auto [gate, transform] : ecs::get_components<Gate, Transform>())
         {
-            if (gate.opened)
+            constexpr float GATE_OPEN_SPEED = 1.0f;
+            constexpr float GATE_OPEN_TIME = 4.5f;
+            if (gate.opened && gate.anim_progress < GATE_OPEN_TIME)
             {
                 gate.anim_progress += delta_time;
-
-                constexpr float GATE_OPEN_SPEED = 1.0f;
-                constexpr float GATE_OPEN_TIME = 2.0f;
-                if (gate.anim_progress > GATE_OPEN_TIME)
-                    gate.anim_progress = GATE_OPEN_TIME;
                 transform.position.y += GATE_OPEN_SPEED * delta_time;
             }
-            else if (interactable.player_interacted)
+        }
+
+        static std::vector<Entity> remove_interactable;
+        remove_interactable.clear();
+
+        for (auto [id, gate, interactable] : ecs::get_components_ids<Gate, Interactable>())
+        {
+            if (interactable.player_interacted)
             {
                 gate.opened = true;
-                interactable.enabled = false;
+                remove_interactable.push_back(id);
             }
             else if (interactable.player_close)
             {
@@ -67,6 +71,11 @@ namespace kvejken
 
             interactable.player_close = false;
             interactable.player_interacted = false;
+        }
+
+        for (const auto& entity : remove_interactable)
+        {
+            ecs::remove_component<Interactable>(entity);
         }
     }
 }

@@ -6,7 +6,6 @@ namespace kvejken
     {
         float max_player_dist;
         int cost;
-        bool enabled;
 
         bool player_close;
         bool player_interacted;

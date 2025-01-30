@@ -5,6 +5,7 @@
 #include "Collision.h"
 #include "Assets.h"
 #include "Enemy.h"
+#include "Interactable.h"
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -291,6 +292,28 @@ namespace kvejken
                     * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale));
 
                 renderer::draw_model(weapon.model, t, Layer_FirstPerson);
+            }
+
+            Interactable* closest_interactable = nullptr;
+            float closest_dist = 1e30f;
+            for (auto [interactable, interactable_transform] : ecs::get_components<Interactable, Transform>())
+            {
+                float dist = glm::distance2(interactable_transform.position, transform.position);
+                if (dist < closest_dist && dist < interactable.max_player_dist)
+                {
+                    closest_interactable = &interactable;
+                    closest_dist = dist;
+                }
+            }
+            if (closest_interactable != nullptr)
+            {
+                closest_interactable->player_close = true;
+                // TODO: preveri se cost
+                if (input::key_pressed(GLFW_KEY_E) && (player.points >= closest_interactable->cost || true))
+                {
+                    closest_interactable->player_interacted = true;
+                    player.points -= closest_interactable->cost;
+                }
             }
         }
     }

@@ -70,6 +70,8 @@ int main()
 
         update_enemies(delta_time, game_time);
 
+        update_interactables(delta_time, game_time);
+
 
         ecs::destroy_queued_entities();
         /*

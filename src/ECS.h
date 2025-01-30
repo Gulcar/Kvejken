@@ -63,6 +63,7 @@ namespace kvejken
 
             Entity last = m_index_to_entity[m_components.size() - 1];
             m_entity_to_index[last] = index;
+            m_index_to_entity[index] = last;
             m_entity_to_index.erase(entity);
 
             m_components[index] = m_components.back();
