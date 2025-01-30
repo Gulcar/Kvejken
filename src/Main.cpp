@@ -11,6 +11,7 @@
 #include "Player.h"
 #include "Enemy.h"
 #include "Assets.h"
+#include "Interactable.h"
 
 using namespace kvejken;
 
@@ -30,6 +31,8 @@ int main()
     init_weapons();
 
     spawn_local_player(glm::vec3(0, 8, 0));
+
+    spawn_gates();
 
     collision::build_triangle_bvh(*assets::terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
     for (auto& mesh : assets::terrain->meshes())

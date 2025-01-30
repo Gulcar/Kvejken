@@ -41,6 +41,8 @@ namespace kvejken
         glm::quat left_hand_rotation, right_hand_rotation;
 
         float time_since_attack;
+
+        int points;
     };
 
     void init_weapons();

@@ -11,6 +11,7 @@ add_executable(${PROJECT_NAME}
     src/Collision.cpp
     src/Player.cpp
     src/Enemy.cpp
+    src/Interactable.cpp
     libs/glad/src/glad.c
     libs/stb/stb_image.cpp
 )

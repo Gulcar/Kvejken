@@ -170,7 +170,7 @@ namespace kvejken
         }
     }
 
-    static void attack(glm::vec3 attack_position, float attack_radius)
+    static void attack(glm::vec3 attack_position, float attack_radius, int* out_points)
     {
         Entity closest = -1;
         float closest_dist = attack_radius * attack_radius;
@@ -185,8 +185,12 @@ namespace kvejken
             }
         }
         // TODO: particles
+
         if (closest != (Entity)-1)
+        {
             ecs::queue_destroy_entity(closest);
+            *out_points += 10;
+        }
     }
 
     void update_players(float delta_time, float game_time)
@@ -247,7 +251,7 @@ namespace kvejken
                 {
                     player.time_since_attack = 0.0f;
                     glm::vec3 attack_center = transform.position + camera.position + transform.rotation * glm::vec3(0, 0, -1);
-                    attack(attack_center, weapon.range);
+                    attack(attack_center, weapon.range, &player.points);
                 }
 
                 glm::vec3 hand_position = transform.position + camera.position;
