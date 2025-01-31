@@ -10,7 +10,7 @@ uniform sampler2D u_textures[16];
 uniform float u_shading;
 
 const vec3 sun_dir = normalize(vec3(-15, 100, -45));
-const vec4 sun_color = vec4(0.8, 0.5, 0.5, 1.0);
+const vec4 sun_color = vec4(0.8, 0.45, 0.45, 1.0);
 
 void main()
 {
@@ -37,7 +37,7 @@ void main()
     case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
 
-    float light = max(dot(sun_dir, v_normal), 0.0) + 0.1;
+    float light = max(dot(sun_dir, v_normal), 0.0) * 0.8 + 0.2;
     light = mix(1.0f, light, u_shading);
     vec4 light_vec = vec4(light, light, light, 1.0);
 

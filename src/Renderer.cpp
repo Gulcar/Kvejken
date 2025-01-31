@@ -48,8 +48,8 @@ namespace kvejken::renderer
         struct BatchVertex
         {
             glm::vec3 position;
-            uint32_t normal;
-            glm::u16vec2 texture_coords; // TODO: mislim da tole ni dovolj dobro
+            glm::vec3 normal;
+            glm::u16vec2 texture_coords;
             uint8_t texture_index;
         };
         constexpr size_t VERTICES_PER_BATCH = 4128;
@@ -162,7 +162,7 @@ namespace kvejken::renderer
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, position));
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 4, GL_INT_2_10_10_10_REV, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, normal));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, normal));
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_coords));
         glEnableVertexAttribArray(3);
@@ -373,7 +373,7 @@ namespace kvejken::renderer
 
                 BatchVertex bv;
                 bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
-                bv.normal = utils::pack_normals(normal_matrix * glm::vec4(vertex.normal, 1.0f));
+                bv.normal = normal_matrix * glm::vec4(vertex.normal, 1.0f);
                 bv.texture_coords = vertex.texture_coords;
                 bv.texture_index = texture_index;
                 m_batched_vertices.push_back(bv);

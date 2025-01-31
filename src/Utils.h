@@ -58,7 +58,7 @@ namespace kvejken::utils
     }
 
     // GL_INT_2_10_10_10_REV
-    inline uint32_t pack_normals(glm::vec3 v)
+    inline uint32_t pack_vec3_to_32b(glm::vec3 v)
     {
         const uint32_t xs = v.x < 0;
         const uint32_t ys = v.y < 0;
