@@ -11,6 +11,8 @@ namespace kvejken
         bool player_interacted;
     };
 
+    constexpr int COST_KEY = -99;
+
     struct Gate
     {
         bool opened;

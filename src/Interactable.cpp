@@ -42,10 +42,10 @@ namespace kvejken
 
     void spawn_gates()
     {
-        spawn_gate(glm::vec3(11.91f, 3.22f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), 100);
-        spawn_gate(glm::vec3(34.36f, 3.22f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), 100);
-        spawn_gate(glm::vec3(10.85f, 3.22f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 100);
-        spawn_gate(glm::vec3(6.138f, -0.9f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), 100);
+        spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), 100);
+        spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), 500);
+        spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 700);
+        spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), COST_KEY);
     }
 
     void update_interactables(float delta_time, float game_time)

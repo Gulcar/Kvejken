@@ -43,7 +43,17 @@ namespace kvejken
             glm::vec3 model_offset;
         };
 
+        struct ItemInfo
+        {
+            int cost;
+
+            Model* model;
+            float model_scale;
+            glm::vec3 model_offset;
+        };
+
         std::unordered_map<RightHandItem, WeaponInfo> m_weapon_infos;
+        std::unordered_map<LeftHandItem, ItemInfo> m_item_infos;
     }
 
     void init_weapons()
@@ -68,6 +78,13 @@ namespace kvejken
         spiked_club.model = assets::spiked_club.get();
         spiked_club.model_scale = 0.15f;
         spiked_club.model_offset = glm::vec3(0.3f, -0.35f, -0.5f);
+
+
+        ItemInfo& key = m_item_infos[LeftHandItem::Key];
+        key.cost = COST_KEY;
+        key.model = assets::key.get();
+        key.model_scale = 0.3f;
+        key.model_offset = glm::vec3(-0.4f, -0.4f, -1.1f);
     }
 
     void spawn_local_player(glm::vec3 position)
@@ -75,9 +92,11 @@ namespace kvejken
         Player player = {};
         player.health = 100;
         player.local = true;
+        player.points = 800; // TODO: nazaj na 0
 
         player.right_hand_item = RightHandItem::Axe;
         player.time_since_attack = 99.0f;
+        player.left_hand_item = LeftHandItem::Key;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
@@ -242,6 +261,7 @@ namespace kvejken
             if (input::key_pressed(GLFW_KEY_3)) player.right_hand_item = RightHandItem::SpikedClub;
 
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
+            player.left_hand_rotation = glm::slerp(player.left_hand_rotation, transform.rotation, 40.0f * delta_time);
 
             if (player.right_hand_item != RightHandItem::None)
             {
@@ -294,6 +314,18 @@ namespace kvejken
                 renderer::draw_model(weapon.model, t, Layer_FirstPerson);
             }
 
+            if (player.left_hand_item != LeftHandItem::None)
+            {
+                ItemInfo& item = m_item_infos[player.left_hand_item];
+
+                glm::mat4 t = glm::translate(glm::mat4(1.0f), transform.position + camera.position)
+                    * glm::toMat4(player.left_hand_rotation)
+                    * glm::translate(glm::mat4(1.0f), item.model_offset)
+                    * glm::scale(glm::mat4(1.0f), glm::vec3(item.model_scale));
+
+                renderer::draw_model(item.model, t, Layer_FirstPerson);
+            }
+
             Interactable* closest_interactable = nullptr;
             float closest_dist = 1e30f;
             for (auto [interactable, interactable_transform] : ecs::get_components<Interactable, Transform>())
@@ -308,11 +340,19 @@ namespace kvejken
             if (closest_interactable != nullptr)
             {
                 closest_interactable->player_close = true;
-                // TODO: preveri se cost
-                if (input::key_pressed(GLFW_KEY_E) && (player.points >= closest_interactable->cost || true))
+
+                if (input::key_pressed(GLFW_KEY_E))
                 {
-                    closest_interactable->player_interacted = true;
-                    player.points -= closest_interactable->cost;
+                    if (closest_interactable->cost >= 0 && player.points >= closest_interactable->cost)
+                    {
+                        closest_interactable->player_interacted = true;
+                        player.points -= closest_interactable->cost;
+                    }
+                    else if (player.left_hand_item != LeftHandItem::None && m_item_infos[player.left_hand_item].cost == closest_interactable->cost)
+                    {
+                        closest_interactable->player_interacted = true;
+                        player.left_hand_item = LeftHandItem::None;
+                    }
                 }
             }
         }
