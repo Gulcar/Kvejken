@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "Assets.h"
 #include "Player.h"
+#include "Collision.h"
 
 namespace kvejken
 {
@@ -26,11 +27,17 @@ namespace kvejken
 
         Model* model = assets::gate.get();
 
+        collision::RectCollider collider;
+        collider.center_offset = glm::vec3(0, 2, 0);
+        collider.width = 4.0f;
+        collider.height = 5.8f;
+
         Entity e = ecs::create_entity();
         ecs::add_component(gate, e);
         ecs::add_component(inter, e);
         ecs::add_component(transform, e);
         ecs::add_component(model, e);
+        ecs::add_component(collider, e);
     }
 
     void spawn_gates()

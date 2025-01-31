@@ -7,6 +7,12 @@ namespace kvejken::collision
 {
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
 
+    struct RectCollider
+    {
+        glm::vec3 center_offset;
+        float width, height;
+    };
+
     struct AABB
     {
         glm::vec3 min;

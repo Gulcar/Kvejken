@@ -6,6 +6,8 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/mat4x4.hpp>
 #include "Utils.h"
+#include "ECS.h"
+#include "Components.h"
 #include <chrono>
 
 namespace kvejken::collision
@@ -226,6 +228,26 @@ namespace kvejken::collision
         return glm::distance2(closest_in_aabb, center) < radius * radius;
     }
 
+    static std::pair<Triangle, Triangle> rect_to_tris(const RectCollider& rect, const Transform& transform)
+    {
+        glm::vec3 right = transform.rotation * glm::vec3(1, 0, 0);
+        glm::vec3 up = transform.rotation * glm::vec3(0, 1, 0);
+        glm::vec3 center = transform.position + transform.rotation * rect.center_offset;
+
+        float hw = rect.width / 2.0f;
+        float hh = rect.height / 2.0f;
+
+        glm::vec3 v1 = center + hw * right + hh * up;
+        glm::vec3 v2 = center + hw * right - hh * up;
+        glm::vec3 v3 = center - hw * right - hh * up;
+        glm::vec3 v4 = center - hw * right + hh * up;
+
+        return {
+            Triangle{ v1, v2, v3, (v1+v2+v3)/3.0f },
+            Triangle{ v3, v4, v1, (v3+v4+v1)/3.0f }
+        };
+    }
+
     static float raycast_bvh(uint32_t node_index, const glm::vec3& position, const glm::vec3& direction, float max_dist)
     {
         BVHNode* node = &m_bvh_nodes[node_index];
@@ -306,6 +328,23 @@ namespace kvejken::collision
     std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist)
     {
         float closest_dist = raycast_bvh(0, position, direction, max_dist);
+
+        for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
+        {
+            auto [t1, t2] = rect_to_tris(rect, transform);
+            glm::vec2 bary_coords;
+            float distance;
+            if (glm::intersectRayTriangle(position, direction, t1.v1, t1.v2, t1.v3, bary_coords, distance))
+            {
+                if (distance > 0.0f && distance < max_dist)
+                    max_dist = distance;
+            }
+            if (glm::intersectRayTriangle(position, direction, t2.v1, t2.v2, t2.v3, bary_coords, distance))
+            {
+                if (distance > 0.0f && distance < max_dist)
+                    max_dist = distance;
+            }
+        }
 
         if (closest_dist < max_dist)
         {
@@ -405,34 +444,36 @@ namespace kvejken::collision
         static std::vector<BVHNode*> stack;
         stack.clear();
 
+        auto handle_triangle = [&](const Triangle& tri) {
+            auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
+            if (intersection)
+            {
+                any = true;
+
+                if (only_y_movement)
+                {
+                    center.y += (intersection->normal * intersection->depth).y;
+                }
+                else
+                {
+                    center += intersection->normal * intersection->depth;
+                }
+
+                if (intersection->normal.y > ground_normal_y)
+                    ground_collison = true;
+
+                float vel_on_normal = glm::dot(velocity, -intersection->normal);
+                velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
+            }
+        };
+
         while (node != nullptr)
         {
             if (node->is_leaf)
             {
                 for (int i = node->left_child; i <= node->right_child; i++)
                 {
-                    Triangle& tri = m_triangles[i];
-
-                    auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
-                    if (intersection)
-                    {
-                        any = true;
-
-                        if (only_y_movement)
-                        {
-                            center.y += (intersection->normal * intersection->depth).y;
-                        }
-                        else
-                        {
-                            center += intersection->normal * intersection->depth;
-                        }
-
-                        if (intersection->normal.y > ground_normal_y)
-                            ground_collison = true;
-
-                        float vel_on_normal = glm::dot(velocity, -intersection->normal);
-                        velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
-                    }
+                    handle_triangle(m_triangles[i]);
                 }
 
                 if (stack.size() > 0)
@@ -476,6 +517,13 @@ namespace kvejken::collision
                     node = nullptr;
                 }
             }
+        }
+
+        for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
+        {
+            auto [t1, t2] = rect_to_tris(rect, transform);
+            handle_triangle(t1);
+            handle_triangle(t2);
         }
 
         if (any)
