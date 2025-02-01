@@ -15,6 +15,7 @@ namespace kvejken::assets
     inline std::unique_ptr<Model> spiked_club;
 
     inline std::unique_ptr<Model> key;
+    inline std::unique_ptr<Model> torch;
 
     inline std::unique_ptr<Model> test_cube;
     inline std::unique_ptr<Model> test_rock;
@@ -33,6 +34,7 @@ namespace kvejken::assets
         spiked_club = std::make_unique<Model>("assets/weapons/spiked_club.obj");
 
         key = std::make_unique<Model>("assets/items/key.obj");
+        torch = std::make_unique<Model>("assets/items/torch.obj");
 
         test_cube = std::make_unique<Model>("assets/test/test_cube.obj");
         test_rock = std::make_unique<Model>("assets/test/test_rock.obj");
@@ -51,6 +53,7 @@ namespace kvejken::assets
         spiked_club.reset();
 
         key.reset();
+        torch.reset();
 
         test_cube.reset();
         test_rock.reset();

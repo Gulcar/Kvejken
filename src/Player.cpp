@@ -85,6 +85,12 @@ namespace kvejken
         key.model = assets::key.get();
         key.model_scale = 0.3f;
         key.model_offset = glm::vec3(-0.4f, -0.4f, -1.1f);
+
+        ItemInfo& torch = m_item_infos[LeftHandItem::Torch];
+        torch.cost = 0;
+        torch.model = assets::torch.get();
+        torch.model_scale = 0.55f;
+        torch.model_offset = glm::vec3(-0.55f, -0.8f, -1.1f);
     }
 
     void spawn_local_player(glm::vec3 position)
@@ -96,7 +102,7 @@ namespace kvejken
 
         player.right_hand_item = RightHandItem::Axe;
         player.time_since_attack = 99.0f;
-        player.left_hand_item = LeftHandItem::Key;
+        player.left_hand_item = LeftHandItem::Torch;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
