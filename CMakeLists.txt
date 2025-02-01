@@ -12,6 +12,7 @@ add_executable(${PROJECT_NAME}
     src/Player.cpp
     src/Enemy.cpp
     src/Interactable.cpp
+    src/Shader.cpp
     libs/glad/src/glad.c
     libs/stb/stb_image.cpp
 )

@@ -17,6 +17,7 @@
 #include <cstring>
 #include "ECS.h"
 #include "Components.h"
+#include "Shader.h"
 
 namespace kvejken::renderer
 {
@@ -60,7 +61,7 @@ namespace kvejken::renderer
         std::vector<uint32_t> m_batched_textures;
 
         uint32_t m_batch_vao, m_batch_vbo;
-        uint32_t m_shader;
+        Shader m_shader;
 
         std::map<std::string, Texture> m_textures;
 
@@ -68,47 +69,6 @@ namespace kvejken::renderer
         glm::mat4 m_view_proj = {};
 
         std::unique_ptr<Model> m_skybox = nullptr;
-    }
-
-    static uint32_t load_shader(const char* source, GLenum type)
-    {
-        uint32_t shader = glCreateShader(type);
-        glShaderSource(shader, 1, &source, 0);
-        glCompileShader(shader);
-        return shader;
-    }
-
-    static uint32_t load_shader_program(const char* vertex_src_file, const char* fragment_src_file)
-    {
-        std::string vertex_src = utils::read_file_to_string(vertex_src_file);
-        std::string fragment_src = utils::read_file_to_string(fragment_src_file);
-
-        uint32_t vertex_shader = load_shader(vertex_src.c_str(), GL_VERTEX_SHADER);
-        uint32_t fragment_shader = load_shader(fragment_src.c_str(), GL_FRAGMENT_SHADER);
-
-        uint32_t program = glCreateProgram();
-        glAttachShader(program, vertex_shader);
-        glAttachShader(program, fragment_shader);
-        glLinkProgram(program);
-
-        int link_status;
-        glGetProgramiv(program, GL_LINK_STATUS, &link_status);
-        if (!link_status)
-        {
-            int log_length;
-            glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
-            char* log = new char[log_length + 1];
-            glGetProgramInfoLog(program, log_length + 1, 0, log);
-            ERROR_EXIT("failed to link shader program:\n%s", log);
-        }
-
-        glDetachShader(program, vertex_shader);
-        glDetachShader(program, fragment_shader);
-
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
-
-        return program;
     }
 
     static void on_window_resize(GLFWwindow* window, int width, int height)
@@ -170,16 +130,16 @@ namespace kvejken::renderer
 
         m_batched_vertices.reserve(VERTICES_PER_BATCH);
 
-        m_shader = load_shader_program("assets/shaders/vert.glsl", "assets/shaders/frag.glsl");
-        glUseProgram(m_shader);
+        m_shader = Shader("assets/shaders/vert.glsl", "assets/shaders/frag.glsl");
+        glUseProgram(m_shader.id());
 
         int texture_indices[TEXTURES_PER_BATCH];
         for (int i = 0; i < TEXTURES_PER_BATCH; i++)
             texture_indices[i] = i;
-        glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), TEXTURES_PER_BATCH, texture_indices);
+        m_shader.set_uniform("u_textures", texture_indices, TEXTURES_PER_BATCH);
 
-        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
-        glUniform1f(glGetUniformLocation(m_shader, "u_sun_light"), 1.0f);
+        m_shader.set_uniform("u_shading", 1.0f);
+        m_shader.set_uniform("u_sun_light", 1.0f);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -267,12 +227,12 @@ namespace kvejken::renderer
             count = MAX_POINT_LIGHTS;
         }
 
-        glUniform1i(glGetUniformLocation(m_shader, "u_num_point_lights"), count);
+        m_shader.set_uniform("u_num_point_lights", count);
         if (count > 0)
         {
-            glUniform3fv(glGetUniformLocation(m_shader, "u_point_lights_pos"), count, &point_lights_pos[0][0]);
-            glUniform3fv(glGetUniformLocation(m_shader, "u_point_lights_color"), count, &point_lights_color[0][0]);
-            glUniform1fv(glGetUniformLocation(m_shader, "u_point_lights_strength"), count, &point_lights_strength[0]);
+            m_shader.set_uniform("u_point_lights_pos", point_lights_pos.data(), count);
+            m_shader.set_uniform("u_point_lights_color", point_lights_color.data(), count);
+            m_shader.set_uniform("u_point_lights_strength", point_lights_strength.data(), count);
         }
     }
 
@@ -311,10 +271,9 @@ namespace kvejken::renderer
             glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
         }
 
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
-        glm::mat4 identity_mat4 = glm::mat4(1.0f);
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &identity_mat4[0][0]);
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model"), 1, GL_FALSE, &identity_mat4[0][0]);
+        m_shader.set_uniform("u_model_view_proj", m_view_proj);
+        m_shader.set_uniform("u_normal_mat", glm::mat4(1.0f));
+        m_shader.set_uniform("u_model", glm::mat4(1.0f));
 
         glBindVertexArray(m_batch_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_batch_vbo);
@@ -329,11 +288,9 @@ namespace kvejken::renderer
     {
         glBindVertexArray(mesh->vertex_array_id());
 
-        glm::mat4 proj = m_view_proj * transform;
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &proj[0][0]);
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model"), 1, GL_FALSE, &transform[0][0]);
-        glm::mat4 normal_matrix = glm::transpose(glm::inverse(transform));
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &normal_matrix[0][0]);
+        m_shader.set_uniform("u_model_view_proj", m_view_proj * transform);
+        m_shader.set_uniform("u_model", transform);
+        m_shader.set_uniform("u_normal_mat", glm::transpose(glm::inverse(transform)));
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, mesh->diffuse_texture().id);
@@ -556,10 +513,9 @@ namespace kvejken::renderer
 
         // odstrani premik, zato da je skybox vedno centriran na kameri
         view = glm::mat4(glm::mat3(view));
-        glm::mat4 vp = proj * view;
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &vp[0][0]);
+        m_shader.set_uniform("u_model_view_proj", proj * view);
 
-        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 0.0f);
+        m_shader.set_uniform("u_shading", 0.0f);
 
         for (auto& mesh : m_skybox->meshes())
         {
@@ -572,12 +528,12 @@ namespace kvejken::renderer
             glDrawArrays(GL_TRIANGLES, 0, mesh.vertex_count());
         }
 
-        glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
+        m_shader.set_uniform("u_shading", 1.0f);
         glEnable(GL_DEPTH_TEST);
     }
 
     void set_sun_light(float strength)
     {
-        glUniform1f(glGetUniformLocation(m_shader, "u_sun_light"), strength);
+        m_shader.set_uniform("u_sun_light", strength);
     }
 }
