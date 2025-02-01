@@ -179,6 +179,7 @@ namespace kvejken::renderer
         glUniform1iv(glGetUniformLocation(m_shader, "u_textures"), TEXTURES_PER_BATCH, texture_indices);
 
         glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
+        glUniform1f(glGetUniformLocation(m_shader, "u_sun_light"), 1.0f);
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -241,6 +242,40 @@ namespace kvejken::renderer
 
     static void draw_skybox(glm::mat4 proj, glm::mat4 view);
 
+    static void update_point_lights()
+    {
+        constexpr int MAX_POINT_LIGHTS = 4;
+        static std::vector<glm::vec3> point_lights_pos;
+        static std::vector<glm::vec3> point_lights_color;
+        static std::vector<float> point_lights_strength;
+        point_lights_pos.clear();
+        point_lights_color.clear();
+        point_lights_strength.clear();
+
+        for (const auto [light, transform] : ecs::get_components<PointLight, Transform>())
+        {
+            point_lights_pos.push_back(transform.position + transform.rotation * light.offset);
+            point_lights_color.push_back(light.color);
+            point_lights_strength.push_back(light.strength);
+        }
+
+        int count = point_lights_pos.size();
+        if (count > MAX_POINT_LIGHTS)
+        {
+            // TODO: vrjetno ne bom rabil ampak ce zelim vec lightov bi moral uporabljat samo najblizje
+            printf("too many point lights (count %d)\n", count);
+            count = MAX_POINT_LIGHTS;
+        }
+
+        glUniform1i(glGetUniformLocation(m_shader, "u_num_point_lights"), count);
+        if (count > 0)
+        {
+            glUniform3fv(glGetUniformLocation(m_shader, "u_point_lights_pos"), count, &point_lights_pos[0][0]);
+            glUniform3fv(glGetUniformLocation(m_shader, "u_point_lights_color"), count, &point_lights_color[0][0]);
+            glUniform1fv(glGetUniformLocation(m_shader, "u_point_lights_strength"), count, &point_lights_strength[0]);
+        }
+    }
+
     void clear_screen()
     {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -253,6 +288,8 @@ namespace kvejken::renderer
         glm::mat4 proj = glm::perspective(glm::radians(m_camera.fovy), aspect_ratio(), m_camera.z_near, m_camera.z_far);
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.position + m_camera.direction, m_camera.up);
         m_view_proj = proj * view;
+
+        update_point_lights();
 
         if (m_skybox)
             draw_skybox(proj, view);
@@ -274,9 +311,10 @@ namespace kvejken::renderer
             glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
         }
 
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
-        glm::mat4 identity_normal = glm::mat4(1.0f);
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &identity_normal[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &m_view_proj[0][0]);
+        glm::mat4 identity_mat4 = glm::mat4(1.0f);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &identity_mat4[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model"), 1, GL_FALSE, &identity_mat4[0][0]);
 
         glBindVertexArray(m_batch_vao);
         glBindBuffer(GL_ARRAY_BUFFER, m_batch_vbo);
@@ -292,7 +330,8 @@ namespace kvejken::renderer
         glBindVertexArray(mesh->vertex_array_id());
 
         glm::mat4 proj = m_view_proj * transform;
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &proj[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &proj[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model"), 1, GL_FALSE, &transform[0][0]);
         glm::mat4 normal_matrix = glm::transpose(glm::inverse(transform));
         glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_normal_mat"), 1, GL_FALSE, &normal_matrix[0][0]);
 
@@ -518,7 +557,7 @@ namespace kvejken::renderer
         // odstrani premik, zato da je skybox vedno centriran na kameri
         view = glm::mat4(glm::mat3(view));
         glm::mat4 vp = proj * view;
-        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_view_proj"), 1, GL_FALSE, &vp[0][0]);
+        glUniformMatrix4fv(glGetUniformLocation(m_shader, "u_model_view_proj"), 1, GL_FALSE, &vp[0][0]);
 
         glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 0.0f);
 
@@ -535,5 +574,10 @@ namespace kvejken::renderer
 
         glUniform1f(glGetUniformLocation(m_shader, "u_shading"), 1.0f);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    void set_sun_light(float strength)
+    {
+        glUniform1f(glGetUniformLocation(m_shader, "u_sun_light"), strength);
     }
 }

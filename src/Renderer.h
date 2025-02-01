@@ -33,6 +33,13 @@ namespace kvejken
         Layer_FirstPerson = 2,
         Layer_UserInterface = 0,
     };
+
+    struct PointLight
+    {
+        glm::vec3 offset;
+        glm::vec3 color;
+        float strength;
+    };
 }
 
 namespace kvejken::renderer
@@ -62,4 +69,5 @@ namespace kvejken::renderer
     //void draw_sprite();
 
     void set_skybox(const std::string& skybox_obj_path);
+    void set_sun_light(float strength);
 }

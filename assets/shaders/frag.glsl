@@ -5,16 +5,24 @@ out vec4 v_frag_color;
 in vec3 v_normal;
 in vec2 v_uv;
 flat in int v_texture_index;
+in vec3 v_world_pos;
 
 uniform sampler2D u_textures[16];
+
 uniform float u_shading;
+uniform float u_sun_light;
+
+uniform int u_num_point_lights;
+uniform vec3 u_point_lights_pos[4];
+uniform vec3 u_point_lights_color[4];
+uniform float u_point_lights_strength[4];
 
 const vec3 sun_dir = normalize(vec3(-15, 100, -45));
-const vec4 sun_color = vec4(0.8, 0.45, 0.45, 1.0);
+const vec3 sun_color = vec3(0.8, 0.45, 0.45);
 
 void main()
 {
-    v_frag_color = vec4(v_uv / 2.0 + 0.5, 0.0, 1.0);
+    //v_frag_color = vec4(v_uv / 2.0 + 0.5, 0.0, 1.0);
 
     vec4 tex_color;
     switch (v_texture_index)
@@ -37,11 +45,23 @@ void main()
     case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
 
-    float light = max(dot(sun_dir, v_normal), 0.0) * 0.8 + 0.2;
-    light = mix(1.0f, light, u_shading);
-    vec4 light_vec = vec4(light, light, light, 1.0);
+    vec3 light = vec3(0);
 
-    v_frag_color = tex_color * sun_color * light_vec;
+    float sun_dot = max(dot(sun_dir, v_normal), 0.0) * 0.8 + 0.2;
+    light += u_sun_light * sun_dot * sun_color;
+
+    for (int i = 0; i < u_num_point_lights; i++)
+    {
+        vec3 dir = u_point_lights_pos[i] - v_world_pos;
+        float attenuation = u_point_lights_strength[i] / (dot(dir, dir) + 0.001);
+        float normal_dot = max(dot(normalize(dir), v_normal), 0.0);
+        light += u_point_lights_color[i] * attenuation * normal_dot;
+    }
+
+
+    light = mix(vec3(1.0), light, u_shading);
+
+    v_frag_color = tex_color * vec4(light, 1.0);
 
     //v_frag_color = vec4(v_uv, 0.0, 1.0);
     //v_frag_color = vec4(v_normal, 1.0);

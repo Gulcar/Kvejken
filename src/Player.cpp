@@ -117,10 +117,16 @@ namespace kvejken
         transform.rotation = glm::quat(1, 0, 0, 0);
         transform.scale = 1.0f;
 
+        PointLight light;
+        light.offset = camera.position;
+        light.color = glm::vec3(1, 1, 1);
+        light.strength = 0.5f;
+
         Entity entity = ecs::create_entity();
         ecs::add_component(player, entity);
         ecs::add_component(camera, entity);
         ecs::add_component(transform, entity);
+        ecs::add_component(light, entity);
     }
 
     void update_players_movement(float delta_time, float game_time)
@@ -361,6 +367,8 @@ namespace kvejken
                     }
                 }
             }
+
+            renderer::set_sun_light(glm::smoothstep(1.5f, 2.7f, transform.position.y));
         }
     }
 }
