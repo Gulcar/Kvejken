@@ -128,16 +128,20 @@ namespace kvejken
         transform.rotation = rotation;
         transform.scale = item.model_scale;
 
-        if (item_tag == ItemType::Torch)
-        {
-            // TODO: dodaj point light
-        }
-
         Entity e = ecs::create_entity();
         ecs::add_component(inter, e);
         ecs::add_component(item.model, e);
         ecs::add_component(transform, e);
         ecs::add_component(item_tag, e);
+
+        if (item_tag == ItemType::Torch)
+        {
+            PointLight light;
+            light.offset = glm::vec3(0, 0.8f, 0);
+            light.color = glm::vec3(1.0f, 0.5f, 0.5f);
+            light.strength = 10.0f;
+            ecs::add_component(light, e);
+        }
     }
 
     void spawn_interactables()

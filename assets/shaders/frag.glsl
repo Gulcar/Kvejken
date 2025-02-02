@@ -47,13 +47,13 @@ void main()
 
     vec3 light = vec3(0);
 
-    float sun_dot = max(dot(sun_dir, v_normal), 0.0) * 0.8 + 0.2;
+    float sun_dot = max(dot(sun_dir, v_normal), 0.0) + 0.2;
     light += u_sun_light * sun_dot * sun_color;
 
     for (int i = 0; i < u_num_point_lights; i++)
     {
         vec3 dir = u_point_lights_pos[i] - v_world_pos;
-        float attenuation = u_point_lights_strength[i] / (dot(dir, dir) + 0.001);
+        float attenuation = u_point_lights_strength[i] / (dot(dir, dir) + 1.0);
         float normal_dot = max(dot(normalize(dir), v_normal), 0.0);
         light += u_point_lights_color[i] * attenuation * normal_dot;
     }

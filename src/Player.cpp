@@ -55,10 +55,8 @@ namespace kvejken
         transform.rotation = glm::quat(1, 0, 0, 0);
         transform.scale = 1.0f;
 
-        PointLight light;
+        PointLight light = {}; // ostale lastnosti so posodobljene vsak frame
         light.offset = camera.position;
-        light.color = glm::vec3(1, 1, 1);
-        light.strength = 0.5f;
 
         Entity entity = ecs::create_entity();
         ecs::add_component(player, entity);
@@ -301,9 +299,28 @@ namespace kvejken
                     }
                 }
             }
+        }
 
-            // TODO: tema samo v kleti in luc prizgi ko v temi
-            renderer::set_sun_light(glm::smoothstep(1.5f, 2.7f, transform.position.y));
+        for (auto [player, light, transform] : ecs::get_components<Player, PointLight, Transform>())
+        {
+            if (!player.local)
+                continue;
+
+            float sun = glm::smoothstep(1.5f, 2.7f, transform.position.y);
+            if (transform.position.z < 50.0f)
+                sun = 1.0f;
+            renderer::set_sun_light(sun);
+
+            if (player.left_hand_item == ItemType::Torch)
+            {
+                light.color = glm::vec3(1.0f, 0.7f, 0.7f);
+                light.strength = 12.0f;
+            }
+            else
+            {
+                light.color = glm::vec3(1, 1, 1);
+                light.strength = (1.0f - sun) * 2.2f;
+            }
         }
     }
 }
