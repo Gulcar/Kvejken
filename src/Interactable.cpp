@@ -91,6 +91,26 @@ namespace kvejken
         ecs::add_component(collider, e);
     }
 
+    static void spawn_weapon(RightHandItem item_tag, glm::vec3 position, glm::quat rotation, int cost)
+    {
+        const WeaponInfo& weapon = get_weapon_info(item_tag);
+
+        Interactable inter = {};
+        inter.max_player_dist = 1.5f;
+        inter.cost = cost;
+
+        Transform transform;
+        transform.position = position;
+        transform.rotation = rotation;
+        transform.scale = weapon.model_scale;
+
+        Entity e = ecs::create_entity();
+        ecs::add_component(inter, e);
+        ecs::add_component(weapon.model, e);
+        ecs::add_component(transform, e);
+        ecs::add_component(item_tag, e);
+    }
+
     static void spawn_item(LeftHandItem item_tag, glm::vec3 position, glm::quat rotation, int cost)
     {
         const ItemInfo& item = get_item_info(item_tag);
@@ -124,6 +144,8 @@ namespace kvejken
         spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), COST_KEY);
 
         spawn_item(LeftHandItem::Key, glm::vec3(8.91f, 3.5f, 30.76f), glm::vec3(0, 0, 0), 100);
+
+        spawn_weapon(RightHandItem::SpikedClub, glm::vec3(7.91f, 3.5f, 30.76f), glm::vec3(0, 0, 0), 100);
     }
 
     static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)
@@ -158,6 +180,28 @@ namespace kvejken
 
     static void update_items()
     {
+        for (auto [id, weapon, interactable] : ecs::get_components_ids<RightHandItem, Interactable>())
+        {
+            if (interactable.player_interacted)
+            {
+                auto [player, player_transform] = *ecs::get_components<Player, Transform>().begin();
+                if (player.right_hand_item != RightHandItem::None)
+                {
+                    spawn_weapon(player.right_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0), glm::vec3(0, 0, PI/2.0f), 0);
+                }
+
+                player.right_hand_item = weapon;
+                ecs::queue_destroy_entity(id);
+            }
+            else if (interactable.player_close)
+            {
+                // TODO: napisi na zaslon: kupi predmet za x tock [E] razen ce zastonj ker sem ga ze kupil in dropal
+            }
+
+            interactable.player_close = false;
+            interactable.player_interacted = false;
+        }
+
         for (auto [id, item, interactable] : ecs::get_components_ids<LeftHandItem, Interactable>())
         {
             if (interactable.player_interacted)
