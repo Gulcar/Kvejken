@@ -31,68 +31,6 @@ namespace kvejken
     constexpr float JUMP_STRENGTH = 9.0f;
     constexpr float COYOTE_TIME = 0.12f;
 
-    namespace
-    {
-        struct WeaponInfo
-        {
-            float range;
-            float attack_time;
-
-            Model* model;
-            float model_scale;
-            glm::vec3 model_offset;
-        };
-
-        struct ItemInfo
-        {
-            int cost;
-
-            Model* model;
-            float model_scale;
-            glm::vec3 model_offset;
-        };
-
-        std::unordered_map<RightHandItem, WeaponInfo> m_weapon_infos;
-        std::unordered_map<LeftHandItem, ItemInfo> m_item_infos;
-    }
-
-    void init_weapons()
-    {
-        WeaponInfo& axe = m_weapon_infos[RightHandItem::Axe];
-        axe.range = 2.0f;
-        axe.attack_time = 0.5f;
-        axe.model = assets::axe.get();
-        axe.model_scale = 0.3f;
-        axe.model_offset = glm::vec3(0.3f, -0.5f, -0.5f);
-
-        WeaponInfo& hammer = m_weapon_infos[RightHandItem::Hammer];
-        hammer.range = 2.4f;
-        hammer.attack_time = 0.6f;
-        hammer.model = assets::hammer.get();
-        hammer.model_scale = 0.2f;
-        hammer.model_offset = glm::vec3(0.35f, -0.4f, -0.5f);
-
-        WeaponInfo& spiked_club = m_weapon_infos[RightHandItem::SpikedClub];
-        spiked_club.range = 1.66f;
-        spiked_club.attack_time = 0.4f;
-        spiked_club.model = assets::spiked_club.get();
-        spiked_club.model_scale = 0.15f;
-        spiked_club.model_offset = glm::vec3(0.3f, -0.35f, -0.5f);
-
-
-        ItemInfo& key = m_item_infos[LeftHandItem::Key];
-        key.cost = COST_KEY;
-        key.model = assets::key.get();
-        key.model_scale = 0.3f;
-        key.model_offset = glm::vec3(-0.4f, -0.4f, -1.1f);
-
-        ItemInfo& torch = m_item_infos[LeftHandItem::Torch];
-        torch.cost = 0;
-        torch.model = assets::torch.get();
-        torch.model_scale = 0.55f;
-        torch.model_offset = glm::vec3(-0.55f, -0.8f, -1.1f);
-    }
-
     void spawn_local_player(glm::vec3 position)
     {
         Player player = {};
@@ -277,7 +215,7 @@ namespace kvejken
 
             if (player.right_hand_item != RightHandItem::None)
             {
-                const WeaponInfo& weapon = m_weapon_infos[player.right_hand_item];
+                const WeaponInfo& weapon = get_weapon_info(player.right_hand_item);
 
                 player.time_since_attack += delta_time;
                 if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && player.time_since_attack > weapon.attack_time)
@@ -328,7 +266,10 @@ namespace kvejken
 
             if (player.left_hand_item != LeftHandItem::None)
             {
-                ItemInfo& item = m_item_infos[player.left_hand_item];
+                const ItemInfo& item = get_item_info(player.left_hand_item);
+
+                // TODO: torch point light
+                // TODO: item pickup drop sistem
 
                 glm::mat4 t = glm::translate(glm::mat4(1.0f), transform.position + camera.position)
                     * glm::toMat4(player.left_hand_rotation)
@@ -343,7 +284,8 @@ namespace kvejken
             for (auto [interactable, interactable_transform] : ecs::get_components<Interactable, Transform>())
             {
                 float dist = glm::distance2(interactable_transform.position, transform.position);
-                if (dist < closest_dist && dist < interactable.max_player_dist)
+                float max_dist = interactable.max_player_dist * interactable.max_player_dist;
+                if (dist < closest_dist && dist < max_dist)
                 {
                     closest_interactable = &interactable;
                     closest_dist = dist;
@@ -360,7 +302,7 @@ namespace kvejken
                         closest_interactable->player_interacted = true;
                         player.points -= closest_interactable->cost;
                     }
-                    else if (player.left_hand_item != LeftHandItem::None && m_item_infos[player.left_hand_item].cost == closest_interactable->cost)
+                    else if (player.left_hand_item != LeftHandItem::None && get_item_info(player.left_hand_item).cost == closest_interactable->cost)
                     {
                         closest_interactable->player_interacted = true;
                         player.left_hand_item = LeftHandItem::None;

@@ -28,11 +28,11 @@ int main()
     atexit(assets::unload);
 
     init_enemies();
-    init_weapons();
+    init_items();
 
     spawn_local_player(glm::vec3(0, 8, 0));
 
-    spawn_gates();
+    spawn_interactables();
 
     collision::build_triangle_bvh(*assets::terrain, glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
     for (auto& mesh : assets::terrain->meshes())

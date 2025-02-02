@@ -8,17 +8,68 @@
 
 namespace kvejken
 {
+    namespace
+    {
+        std::unordered_map<RightHandItem, WeaponInfo> m_weapon_infos;
+        std::unordered_map<LeftHandItem, ItemInfo> m_item_infos;
+    }
+
+    void init_items()
+    {
+        WeaponInfo& axe = m_weapon_infos[RightHandItem::Axe];
+        axe.range = 2.0f;
+        axe.attack_time = 0.5f;
+        axe.model = assets::axe.get();
+        axe.model_scale = 0.3f;
+        axe.model_offset = glm::vec3(0.3f, -0.5f, -0.5f);
+
+        WeaponInfo& hammer = m_weapon_infos[RightHandItem::Hammer];
+        hammer.range = 2.4f;
+        hammer.attack_time = 0.6f;
+        hammer.model = assets::hammer.get();
+        hammer.model_scale = 0.2f;
+        hammer.model_offset = glm::vec3(0.35f, -0.4f, -0.5f);
+
+        WeaponInfo& spiked_club = m_weapon_infos[RightHandItem::SpikedClub];
+        spiked_club.range = 1.66f;
+        spiked_club.attack_time = 0.4f;
+        spiked_club.model = assets::spiked_club.get();
+        spiked_club.model_scale = 0.15f;
+        spiked_club.model_offset = glm::vec3(0.3f, -0.35f, -0.5f);
+
+
+        ItemInfo& key = m_item_infos[LeftHandItem::Key];
+        key.cost = COST_KEY;
+        key.model = assets::key.get();
+        key.model_scale = 0.3f;
+        key.model_offset = glm::vec3(-0.4f, -0.4f, -1.1f);
+
+        ItemInfo& torch = m_item_infos[LeftHandItem::Torch];
+        torch.cost = 0;
+        torch.model = assets::torch.get();
+        torch.model_scale = 0.55f;
+        torch.model_offset = glm::vec3(-0.55f, -0.8f, -1.1f);
+    }
+
+    const WeaponInfo& get_weapon_info(RightHandItem item)
+    {
+        return m_weapon_infos[item];
+    }
+
+    const ItemInfo& get_item_info(LeftHandItem item)
+    {
+        return m_item_infos[item];
+    }
+
     static void spawn_gate(glm::vec3 position, glm::quat rotation, int cost)
     {
         Gate gate;
         gate.anim_progress = 0.0f;
         gate.opened = false;
 
-        Interactable inter;
-        inter.max_player_dist = 5.0f;
+        Interactable inter = {};
+        inter.max_player_dist = 2.5f;
         inter.cost = cost;
-        inter.player_close = false;
-        inter.player_interacted = false;
 
         Transform transform;
         transform.position = position;
@@ -40,15 +91,42 @@ namespace kvejken
         ecs::add_component(collider, e);
     }
 
-    void spawn_gates()
+    static void spawn_item(LeftHandItem item_tag, glm::vec3 position, glm::quat rotation, int cost)
+    {
+        const ItemInfo& item = get_item_info(item_tag);
+
+        Interactable inter = {};
+        inter.max_player_dist = 1.5f;
+        inter.cost = cost;
+
+        Transform transform;
+        transform.position = position;
+        transform.rotation = rotation;
+        transform.scale = item.model_scale;
+
+        if (item_tag == LeftHandItem::Torch)
+        {
+            // TODO: dodaj point light
+        }
+
+        Entity e = ecs::create_entity();
+        ecs::add_component(inter, e);
+        ecs::add_component(item.model, e);
+        ecs::add_component(transform, e);
+        ecs::add_component(item_tag, e);
+    }
+
+    void spawn_interactables()
     {
         spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), 100);
         spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), 500);
         spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 700);
         spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), COST_KEY);
+
+        spawn_item(LeftHandItem::Key, glm::vec3(8.91f, 3.5f, 30.76f), glm::vec3(0, 0, 0), 100);
     }
 
-    void update_interactables(float delta_time, float game_time)
+    static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)
     {
         for (auto [gate, transform] : ecs::get_components<Gate, Transform>())
         {
@@ -60,9 +138,6 @@ namespace kvejken
                 transform.position.y += GATE_OPEN_SPEED * delta_time;
             }
         }
-
-        static std::vector<Entity> remove_interactable;
-        remove_interactable.clear();
 
         for (auto [id, gate, interactable] : ecs::get_components_ids<Gate, Interactable>())
         {
@@ -79,6 +154,41 @@ namespace kvejken
             interactable.player_close = false;
             interactable.player_interacted = false;
         }
+    }
+
+    static void update_items()
+    {
+        for (auto [id, item, interactable] : ecs::get_components_ids<LeftHandItem, Interactable>())
+        {
+            if (interactable.player_interacted)
+            {
+                auto [player, player_transform] = *ecs::get_components<Player, Transform>().begin();
+                if (player.left_hand_item != LeftHandItem::None)
+                {
+                    spawn_item(player.left_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0), glm::vec3(0, 0, PI/2.0f), 0);
+                }
+
+                player.left_hand_item = item;
+                ecs::queue_destroy_entity(id);
+            }
+            else if (interactable.player_close)
+            {
+                // TODO: napisi na zaslon: kupi predmet za x tock [E] razen ce zastonj ker sem ga ze kupil in dropal
+            }
+
+            interactable.player_close = false;
+            interactable.player_interacted = false;
+        }
+    }
+
+    void update_interactables(float delta_time, float game_time)
+    {
+        static std::vector<Entity> remove_interactable;
+        remove_interactable.clear();
+
+        update_gates(remove_interactable, delta_time);
+
+        update_items();
 
         for (const auto& entity : remove_interactable)
         {

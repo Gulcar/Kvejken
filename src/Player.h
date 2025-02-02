@@ -3,27 +3,10 @@
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include "Interactable.h"
 
 namespace kvejken
 {
-    enum class RightHandItem : uint8_t
-    {
-        None,
-        Axe,
-        Hammer,
-        SpikedClub,
-        Fireball,
-        Crossbow,
-    };
-
-    enum class LeftHandItem : uint8_t
-    {
-        None,
-        Key,
-        Torch,
-        Skull,
-    };
-
     struct Player
     {
         int health;
@@ -44,8 +27,6 @@ namespace kvejken
 
         int points;
     };
-
-    void init_weapons();
 
     void spawn_local_player(glm::vec3 position);
 
