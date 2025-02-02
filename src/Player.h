@@ -19,8 +19,8 @@ namespace kvejken
         float look_yaw;
         float look_pitch;
 
-        LeftHandItem left_hand_item;
-        RightHandItem right_hand_item;
+        ItemType left_hand_item;
+        WeaponType right_hand_item;
         glm::quat left_hand_rotation, right_hand_rotation;
 
         float time_since_attack;

@@ -21,7 +21,7 @@ namespace kvejken
         float anim_progress;
     };
 
-    enum class RightHandItem : uint8_t
+    enum class WeaponType : uint8_t
     {
         None,
         Axe,
@@ -31,7 +31,7 @@ namespace kvejken
         Crossbow,
     };
 
-    enum class LeftHandItem : uint8_t
+    enum class ItemType : uint8_t
     {
         None,
         Key,
@@ -58,9 +58,9 @@ namespace kvejken
         glm::vec3 model_offset;
     };
 
-    void init_items();
-    const WeaponInfo& get_weapon_info(RightHandItem item);
-    const ItemInfo& get_item_info(LeftHandItem item);
+    void init_weapon_item_infos();
+    const WeaponInfo& get_weapon_info(WeaponType type);
+    const ItemInfo& get_item_info(ItemType type);
 
     void spawn_interactables();
     void update_interactables(float delta_time, float game_time);

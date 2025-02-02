@@ -36,11 +36,11 @@ namespace kvejken
         Player player = {};
         player.health = 100;
         player.local = true;
-        player.points = 800; // TODO: nazaj na 0
+        player.points = 1000; // TODO: nazaj na 0
 
-        player.right_hand_item = RightHandItem::Axe;
+        player.right_hand_item = WeaponType::Axe;
         player.time_since_attack = 99.0f;
-        player.left_hand_item = LeftHandItem::Torch;
+        player.left_hand_item = ItemType::Torch;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
@@ -205,15 +205,10 @@ namespace kvejken
                 player.move_velocity *= SLIDE_BOOST;
             }
 
-            // TODO: remove to je samo za debug
-            if (input::key_pressed(GLFW_KEY_1)) player.right_hand_item = RightHandItem::Axe;
-            if (input::key_pressed(GLFW_KEY_2)) player.right_hand_item = RightHandItem::Hammer;
-            if (input::key_pressed(GLFW_KEY_3)) player.right_hand_item = RightHandItem::SpikedClub;
-
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
             player.left_hand_rotation = glm::slerp(player.left_hand_rotation, transform.rotation, 40.0f * delta_time);
 
-            if (player.right_hand_item != RightHandItem::None)
+            if (player.right_hand_item != WeaponType::None)
             {
                 const WeaponInfo& weapon = get_weapon_info(player.right_hand_item);
 
@@ -264,12 +259,9 @@ namespace kvejken
                 renderer::draw_model(weapon.model, t, Layer_FirstPerson);
             }
 
-            if (player.left_hand_item != LeftHandItem::None)
+            if (player.left_hand_item != ItemType::None)
             {
                 const ItemInfo& item = get_item_info(player.left_hand_item);
-
-                // TODO: torch point light
-                // TODO: item pickup drop sistem
 
                 glm::mat4 t = glm::translate(glm::mat4(1.0f), transform.position + camera.position)
                     * glm::toMat4(player.left_hand_rotation)
@@ -302,14 +294,15 @@ namespace kvejken
                         closest_interactable->player_interacted = true;
                         player.points -= closest_interactable->cost;
                     }
-                    else if (player.left_hand_item != LeftHandItem::None && get_item_info(player.left_hand_item).cost == closest_interactable->cost)
+                    else if (player.left_hand_item != ItemType::None && get_item_info(player.left_hand_item).cost == closest_interactable->cost)
                     {
                         closest_interactable->player_interacted = true;
-                        player.left_hand_item = LeftHandItem::None;
+                        player.left_hand_item = ItemType::None;
                     }
                 }
             }
 
+            // TODO: tema samo v kleti in luc prizgi ko v temi
             renderer::set_sun_light(glm::smoothstep(1.5f, 2.7f, transform.position.y));
         }
     }

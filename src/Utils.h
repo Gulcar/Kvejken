@@ -78,6 +78,7 @@ namespace kvejken::utils
         return glm::u16vec2((uint16_t)ux, (uint16_t)uy);
     }
 
+    // for pack_texture_coords
     inline void wrap_texture_coords(glm::vec2* a, glm::vec2* b, glm::vec2* c)
     {
         if (a->x >= 2.0f || b->x >= 2.0f || c->x >= 2.0f)
