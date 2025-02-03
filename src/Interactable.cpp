@@ -178,6 +178,7 @@ namespace kvejken
             {
                 gate.opened = true;
                 remove_interactable.push_back(id);
+                ecs::get_components<Player>().begin()->progress += 1;
             }
             else if (interactable.player_close)
             {

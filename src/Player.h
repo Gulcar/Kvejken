@@ -26,6 +26,7 @@ namespace kvejken
         float time_since_attack;
 
         int points;
+        int progress; // za hitrost enemy spawnov
     };
 
     void spawn_local_player(glm::vec3 position);

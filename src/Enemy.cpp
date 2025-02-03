@@ -13,7 +13,7 @@ namespace kvejken
 {
     namespace
     {
-        float m_time_to_spawn = time_btw_spawns(0.0f);
+        float m_time_to_spawn = time_btw_spawns(0.0f, 0);
 
         constexpr float ENEMY_ANIM_TIME = 0.5f;
 
@@ -47,8 +47,9 @@ namespace kvejken
 
     // TODO: lahko bi namesto (ali pa ce bi oboje gledal) casa gledal
     // koliko sob je ze odprl oz. kako dalec je v igri
-    float time_btw_spawns(float game_time)
+    float time_btw_spawns(float game_time, int player_progress)
     {
+        game_time += player_progress * 124.0f;
         // cas pada zaradi e na -x in valovi zaradi sinusa
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
     }
@@ -137,7 +138,8 @@ namespace kvejken
         m_time_to_spawn -= delta_time;
         if (m_time_to_spawn <= 0.0f)
         {
-            m_time_to_spawn = time_btw_spawns(game_time);
+            int player_progress = ecs::get_components<Player>().begin()->progress;
+            m_time_to_spawn = time_btw_spawns(game_time, player_progress);
 
             glm::vec3 spawn_point = get_spawn_point(player_transform.position, player_transform.rotation * glm::vec3(0, 0, -1));
             glm::vec3 direction = player_transform.position - spawn_point;

@@ -40,6 +40,7 @@ namespace kvejken
         player.right_hand_item = WeaponType::None;
         player.left_hand_item = ItemType::None;
         player.time_since_attack = 99.0f;
+        player.progress = 0;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
