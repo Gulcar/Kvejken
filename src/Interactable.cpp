@@ -151,9 +151,12 @@ namespace kvejken
         spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 700);
         spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), COST_KEY);
 
-        spawn_item(ItemType::Key, glm::vec3(8.91f, 3.5f, 30.76f), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
 
-        spawn_weapon(WeaponType::SpikedClub, glm::vec3(7.91f, 3.5f, 30.76f), glm::vec3(0, 0, 0), 100);
+        spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 100);
+        spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 100);
+        spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
     }
 
     static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)

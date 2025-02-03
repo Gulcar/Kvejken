@@ -36,11 +36,10 @@ namespace kvejken
         Player player = {};
         player.health = 100;
         player.local = true;
-        player.points = 1000; // TODO: nazaj na 0
-
-        player.right_hand_item = WeaponType::Axe;
+        player.points = 2000; // TODO: nazaj na 0
+        player.right_hand_item = WeaponType::None;
+        player.left_hand_item = ItemType::None;
         player.time_since_attack = 99.0f;
-        player.left_hand_item = ItemType::Torch;
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
