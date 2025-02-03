@@ -56,19 +56,19 @@ namespace kvejken
     // TODO: dodaj vec
     // TODO: mislim da nekatere spawna v tla
     constexpr glm::vec3 SPAWN_POINTS[] = {
-        glm::vec3(-34.6f, 2.5f, -1.3f),
-        glm::vec3(-32.6f, 3.2f, 9.0f),
-        glm::vec3(-24.3f, 3.4f, 16.9f),
-        glm::vec3(-8.7f, 1.7f, 27.3f),
-        glm::vec3(8.5f, 2.3f, 22.3f),
-        glm::vec3(17.0f, 2.1f, 19.5f),
-        glm::vec3(26.9f, 1.6f, 10.8f),
-        glm::vec3(29.7f, 1.9f, 1.6f),
-        glm::vec3(24.7f, 3.14f, -12.9f),
-        glm::vec3(15.6f, 3.98f, -24.5f),
-        glm::vec3(5.1f, 4.1f, -30.3f),
-        glm::vec3(-12.5f, 3.68f, -25.7f),
-        glm::vec3(-29.1f, 2.68f, -21.0f),
+        glm::vec3(-34.6f, 2.5f, 1.3f),
+        glm::vec3(-32.6f, 3.2f, -9.0f),
+        glm::vec3(-24.3f, 3.4f, -16.9f),
+        glm::vec3(-8.7f, 1.7f, -27.3f),
+        glm::vec3(8.5f, 2.3f, -22.3f),
+        glm::vec3(17.0f, 2.1f, -19.5f),
+        glm::vec3(26.9f, 1.6f, -10.8f),
+        glm::vec3(29.7f, 1.9f, -1.6f),
+        glm::vec3(24.7f, 3.14f, 12.9f),
+        glm::vec3(15.6f, 3.98f, 24.5f),
+        glm::vec3(5.1f, 4.1f, 30.3f),
+        glm::vec3(-12.5f, 3.68f, 25.7f),
+        glm::vec3(-29.1f, 2.68f, 21.0f),
     };
     static glm::vec3 get_spawn_point(glm::vec3 player_position, glm::vec3 player_direction)
     {
@@ -132,6 +132,9 @@ namespace kvejken
             glm::vec3 direction = player_transform.position - spawn_point;
             spawn_enemy(spawn_point, direction);
         }
+
+        for (auto spawn : SPAWN_POINTS)
+            renderer::draw_model(assets::spawn.get(), spawn, glm::angleAxis(game_time, glm::vec3(0, 1, 0)), glm::vec3(0.8f));
 
         for (auto& [enemy, model, transform] : ecs::get_components<Enemy, Model*, Transform>())
         {

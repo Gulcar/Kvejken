@@ -7,6 +7,7 @@ namespace kvejken::assets
 {
     inline std::unique_ptr<Model> terrain;
     inline std::unique_ptr<Model> gate;
+    inline std::unique_ptr<Model> spawn;
 
     inline std::vector<Model> eel_anim;
 
@@ -25,6 +26,7 @@ namespace kvejken::assets
     {
         terrain = std::make_unique<Model>("assets/environment/terrain.obj", false);
         gate = std::make_unique<Model>("assets/environment/gate.obj");
+        spawn = std::make_unique<Model>("assets/environment/spawn.obj");
         
         for (int i = 1; i <= 12; i++)
             eel_anim.emplace_back("assets/enemies/eel" + std::to_string(i) + ".obj");
@@ -45,6 +47,7 @@ namespace kvejken::assets
     {
         terrain.reset();
         gate.reset();
+        spawn.reset();
 
         eel_anim.clear();
         

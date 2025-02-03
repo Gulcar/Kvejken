@@ -261,7 +261,10 @@ namespace kvejken
             {
                 const ItemInfo& item = get_item_info(player.left_hand_item);
 
-                glm::mat4 t = glm::translate(glm::mat4(1.0f), transform.position + camera.position)
+                glm::vec3 hand_position = transform.position + camera.position;
+                hand_position.y -= glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 600.0f;
+
+                glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
                     * glm::toMat4(player.left_hand_rotation)
                     * glm::translate(glm::mat4(1.0f), item.model_offset)
                     * glm::scale(glm::mat4(1.0f), glm::vec3(item.model_scale));
