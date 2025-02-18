@@ -4,8 +4,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
-#include <stb_truetype.h>
 #include <stb_rect_pack.h>
+#include <stb_truetype.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/euler_angles.hpp>
@@ -70,6 +70,7 @@ namespace kvejken::renderer
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
 
+        Texture m_font_atlas = {};
         std::unique_ptr<Model> m_skybox = nullptr;
     }
 
@@ -395,19 +396,34 @@ namespace kvejken::renderer
         if (it != m_textures.end())
             return it->second;
 
-        Texture tex = {};
+        int width, height;
         int num_components;
-        uint8_t* data = stbi_load(file_path, &tex.width, &tex.height, &num_components, 0);
+        uint8_t* data = stbi_load(file_path, &width, &height, &num_components, 0);
         if (data == nullptr)
         {
             std::string new_path = "../../" + std::string(file_path);
-            data = stbi_load(new_path.c_str(), &tex.width, &tex.height, &num_components, 0);
+            data = stbi_load(new_path.c_str(), &width, &height, &num_components, 0);
         }
 
         if (data == nullptr)
             ERROR_EXIT("Failed to load texture '%s' (%s)", file_path, stbi_failure_reason());
-        if (tex.width % 4 != 0 || tex.height % 4 != 0)
-            ERROR_EXIT("Texture size is not a multiple of 4 (w=%d, h=%d)", tex.width, tex.height);
+
+        Texture tex = load_texture(data, width, height, num_components, srgb);
+
+        stbi_image_free(data);
+
+        m_textures[file_path] = tex;
+        return tex;
+    }
+
+    Texture load_texture(const uint8_t* data, int width, int height, int num_components, bool srgb)
+    {
+        if (width % 4 != 0 || height % 4 != 0)
+            ERROR_EXIT("Texture size is not a multiple of 4 (w=%d, h=%d)", width, height);
+
+        Texture tex = {};
+        tex.width = width;
+        tex.height = height;
 
         glGenTextures(1, &tex.id);
         glBindTexture(GL_TEXTURE_2D, tex.id);
@@ -440,9 +456,7 @@ namespace kvejken::renderer
             ERROR_EXIT("Invalid number of channels on image (%d)", num_components);
 
         glTexImage2D(GL_TEXTURE_2D, 0, internal_format, tex.width, tex.height, 0, format, GL_UNSIGNED_BYTE, data);
-        stbi_image_free(data);
 
-        m_textures[file_path] = tex;
         return tex;
     }
 
@@ -506,10 +520,30 @@ namespace kvejken::renderer
 
         stbtt_PackSetOversampling(&stbtt_ctx, 2, 2);
 
-        //stbtt_PackFontRanges(&stbtt_ctx, )
-            //           stbtt_PackFontRanges()               -- pack and renders
-            //           stbtt_PackEnd()
-            //           stbtt_GetPackedQuad()
+        uint8_t* ttf_data = utils::read_file_bytes(font_file);
+
+        std::vector<int> codepoints;
+        for (int i = 32; i <= 126; i++) codepoints.push_back(i);
+
+        std::vector<stbtt_packedchar> packed_chars(codepoints.size());
+
+        stbtt_pack_range range = {};
+        range.font_size = 32;
+        range.array_of_unicode_codepoints = codepoints.data();
+        range.num_chars = codepoints.size();
+        range.chardata_for_range = packed_chars.data();
+
+        if (stbtt_PackFontRanges(&stbtt_ctx, ttf_data, 0, &range, 1) == 0)
+            ERROR_EXIT("failed to pack font ranges");
+
+        stbtt_PackEnd(&stbtt_ctx);
+
+        //stbtt_GetPackedQuad(range.chardata_for_range, 0, )
+
+        m_font_atlas = load_texture(pixels, 512, 512, 1);
+
+        delete[] ttf_data;
+        delete[] pixels;
     }
 
     void draw_text(const char* text)

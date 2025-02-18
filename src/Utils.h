@@ -57,6 +57,23 @@ namespace kvejken::utils
         return str;
     }
 
+    inline uint8_t* read_file_bytes(const char* file_path)
+    {
+        std::ifstream file(file_path, std::ios::binary);
+        if (!file.is_open() || !file.good())
+            file = std::ifstream("../../" + std::string(file_path), std::ios::binary);
+        ASSERT(file.is_open() && file.good());
+
+        file.seekg(0, std::ios::end);
+        size_t size = file.tellg();
+        uint8_t* data = new uint8_t[size];
+
+        file.seekg(0);
+        file.read((char*)data, size);
+        file.close();
+        return data;
+    }
+
     // GL_INT_2_10_10_10_REV
     inline uint32_t pack_vec3_to_32b(glm::vec3 v)
     {
