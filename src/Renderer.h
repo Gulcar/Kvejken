@@ -27,11 +27,18 @@ namespace kvejken
         int height;
     };
 
-    enum Layer
+    enum class Layer
     {
-        Layer_World = 3,
-        Layer_FirstPerson = 2,
-        Layer_UserInterface = 0,
+        World = 3,
+        FirstPerson = 2,
+        UserInterface = 0,
+    };
+
+    enum class Align
+    {
+        Left,
+        Center,
+        Right,
     };
 
     struct PointLight
@@ -60,12 +67,14 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path, bool srgb = true);
 
-    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer_World);
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer_World);
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World);
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World);
 
-    void draw_model(const Model* model, const glm::mat4& transform, Layer layer = Layer_World);
-    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer_World);
+    void draw_model(const Model* model, const glm::mat4& transform, Layer layer = Layer::World);
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer::World);
 
+    void load_font(const char* font_file);
+    void draw_text(const char* text);
     //void draw_sprite();
 
     void set_skybox(const std::string& skybox_obj_path);

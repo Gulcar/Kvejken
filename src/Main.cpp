@@ -21,6 +21,7 @@ int main()
     atexit(renderer::terminate);
 
     renderer::create_window("Kvejken", 1280, 720);
+    renderer::load_font("C:\\Windows\\Fonts\\Arial.ttf");
     
     input::init(renderer::window_ptr());
 

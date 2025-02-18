@@ -14,7 +14,7 @@ add_executable(${PROJECT_NAME}
     src/Interactable.cpp
     src/Shader.cpp
     libs/glad/src/glad.c
-    libs/stb/stb_image.cpp
+    libs/stb/compile_stb.cpp
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17)

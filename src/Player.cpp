@@ -254,7 +254,7 @@ namespace kvejken
                     * glm::translate(glm::mat4(1.0f), -weapon_pivot)
                     * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale));
 
-                renderer::draw_model(weapon.model, t, Layer_FirstPerson);
+                renderer::draw_model(weapon.model, t, Layer::FirstPerson);
             }
 
             if (player.left_hand_item != ItemType::None)
@@ -269,7 +269,7 @@ namespace kvejken
                     * glm::translate(glm::mat4(1.0f), item.model_offset)
                     * glm::scale(glm::mat4(1.0f), glm::vec3(item.model_scale));
 
-                renderer::draw_model(item.model, t, Layer_FirstPerson);
+                renderer::draw_model(item.model, t, Layer::FirstPerson);
             }
 
             Interactable* closest_interactable = nullptr;

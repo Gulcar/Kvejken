@@ -4,6 +4,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <stb_image.h>
+#include <stb_truetype.h>
+#include <stb_rect_pack.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/euler_angles.hpp>
@@ -318,14 +320,14 @@ namespace kvejken::renderer
 
                 switch (m_draw_queue[i].order.layer)
                 {
-                case Layer_World:
+                case (uint32_t)Layer::World:
                     break;
 
-                case Layer_FirstPerson:
+                case (uint32_t)Layer::FirstPerson:
                     glClear(GL_DEPTH_BUFFER_BIT);
                     break;
 
-                case Layer_UserInterface:
+                case (uint32_t)Layer::UserInterface:
                     break;
                 }
             }
@@ -494,7 +496,26 @@ namespace kvejken::renderer
         m_draw_queue.push_back({ order, mesh, transform });
     }
 
-    //void draw_sprite();
+    void load_font(const char* font_file)
+    {
+        stbtt_pack_context stbtt_ctx;
+        uint8_t* pixels = new uint8_t[512 * 512];
+
+        if (stbtt_PackBegin(&stbtt_ctx, pixels, 512, 512, 0, 1, nullptr) == 0)
+            ERROR_EXIT("failed to begin stbtt pack context");
+
+        stbtt_PackSetOversampling(&stbtt_ctx, 2, 2);
+
+        //stbtt_PackFontRanges(&stbtt_ctx, )
+            //           stbtt_PackFontRanges()               -- pack and renders
+            //           stbtt_PackEnd()
+            //           stbtt_GetPackedQuad()
+    }
+
+    void draw_text(const char* text)
+    {
+
+    }
 
     void set_skybox(const std::string& skybox_obj_path)
     {
