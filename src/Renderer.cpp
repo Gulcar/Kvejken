@@ -70,7 +70,33 @@ namespace kvejken::renderer
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
 
+        constexpr float UI_WIDTH = 1920;
+        constexpr float UI_HEIGHT = 1080;
+        glm::mat4 m_ui_view_proj = {};
+
+        struct UIVertex
+        {
+            glm::vec2 position;
+            glm::vec2 texture_coords;
+            uint8_t texture_index;
+        };
+        std::vector<UIVertex> m_ui_batched_vertices;
+
+        struct UITextureChange
+        {
+            size_t vertex_index;
+            uint32_t texture_id;
+        };
+        std::vector<UITextureChange> m_ui_texture_changes;
+
+        constexpr size_t UI_VERTICES_PER_BATCH = 2048;
+        constexpr size_t UI_VERTEX_BUFFER_SIZE = UI_VERTICES_PER_BATCH * sizeof(UIVertex);
+        uint32_t m_ui_batch_vao, m_ui_batch_vbo;
+        Shader m_ui_shader;
+
         Texture m_font_atlas = {};
+        std::vector<stbtt_packedchar> m_font_atlas_coords;
+
         std::unique_ptr<Model> m_skybox = nullptr;
     }
 
@@ -114,7 +140,7 @@ namespace kvejken::renderer
         m_camera.z_near = 0.01f;
         m_camera.z_far = 100.0f;
 
-        // opengl buffers
+        // opengl buffers for 3d vertices
         glGenVertexArrays(1, &m_batch_vao);
         glBindVertexArray(m_batch_vao);
 
@@ -143,6 +169,31 @@ namespace kvejken::renderer
 
         m_shader.set_uniform("u_shading", 1.0f);
         m_shader.set_uniform("u_sun_light", 1.0f);
+
+
+        // opengl buffers for 2d vertices
+        glGenVertexArrays(1, &m_ui_batch_vao);
+        glBindVertexArray(m_ui_batch_vao);
+
+        glGenBuffers(1, &m_ui_batch_vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, m_ui_batch_vbo);
+        glBufferData(GL_ARRAY_BUFFER, UI_VERTEX_BUFFER_SIZE, nullptr, GL_DYNAMIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (void*)offsetof(UIVertex, position));
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (void*)offsetof(UIVertex, texture_coords));
+        glEnableVertexAttribArray(2);
+        glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(UIVertex), (void*)offsetof(UIVertex, texture_index));
+
+        m_ui_batched_vertices.reserve(UI_VERTICES_PER_BATCH);
+
+        m_ui_shader = Shader("assets/shaders/ui_vert.glsl", "assets/shaders/ui_frag.glsl");
+        glUseProgram(m_ui_shader.id());
+        m_shader.set_uniform("u_textures", texture_indices, TEXTURES_PER_BATCH);
+
+        glUseProgram(m_shader.id());
+        
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
@@ -252,6 +303,16 @@ namespace kvejken::renderer
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.position + m_camera.direction, m_camera.up);
         m_view_proj = proj * view;
 
+        // TODO: fix
+        /*
+        if (aspect_ratio() > UI_WIDTH / UI_HEIGHT)
+            m_ui_view_proj = glm::ortho(0.0f, UI_HEIGHT * aspect_ratio(), UI_HEIGHT, 0.0f);
+        else
+            m_ui_view_proj = glm::ortho(0.0f, UI_WIDTH, UI_WIDTH / aspect_ratio(), 0.0f);
+        */
+
+        m_ui_view_proj = glm::ortho(0.0f, UI_WIDTH, UI_HEIGHT, 0.0f);
+
         update_point_lights();
 
         if (m_skybox)
@@ -301,11 +362,27 @@ namespace kvejken::renderer
         glDrawArrays(GL_TRIANGLES, 0, mesh->vertex_count());
     }
 
-    void draw_queue()
+    static void draw_ui_batch(int start_vertex, int count)
     {
-        if (m_draw_queue.size() == 0)
+        if (count == 0)
             return;
 
+        for (int i = 0; i < m_batched_textures.size(); i++)
+        {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_2D, m_batched_textures[i]);
+        }
+
+        glBindVertexArray(m_ui_batch_vao);
+        glBindBuffer(GL_ARRAY_BUFFER, m_ui_batch_vbo);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, count * sizeof(UIVertex), m_ui_batched_vertices.data() + start_vertex);
+        glDrawArrays(GL_TRIANGLES, 0, count);
+
+        m_batched_textures.clear();
+    }
+
+    void draw_queue()
+    {
         // sortiraj tako da bodo DrawOrderKey po vrednosti padajoci
         std::sort(m_draw_queue.begin(), m_draw_queue.end(), draw_sort_predicate);
 
@@ -383,6 +460,58 @@ namespace kvejken::renderer
 
         m_draw_queue.clear();
         m_batched_vertices.clear();
+
+        // konec risanja 3d zdaj samo se UI
+        glUseProgram(m_ui_shader.id());
+        m_ui_shader.set_uniform("u_view_proj", m_ui_view_proj);
+
+        int tex_change_i = -1;
+        uint8_t texture_index = 0;
+        int start_vertex = 0;
+        for (int i = 0; i < m_ui_batched_vertices.size(); i++)
+        {
+            if (tex_change_i + 1 < m_ui_texture_changes.size() && m_ui_texture_changes[tex_change_i + 1].vertex_index == i)
+            {
+                texture_index = 255;
+
+                for (int i = 0; i < m_batched_textures.size(); i++)
+                {
+                    if (m_batched_textures[i] == m_ui_texture_changes[tex_change_i + 1].texture_id)
+                    {
+                        texture_index = i;
+                        break;
+                    }
+                }
+
+                if (texture_index == 255)
+                {
+                    if (m_batched_textures.size() >= TEXTURES_PER_BATCH)
+                    {
+                        draw_ui_batch(start_vertex, i - start_vertex);
+                        start_vertex = i + 1;
+                    }
+                    texture_index = 0;
+                    m_batched_textures.push_back(m_ui_texture_changes[tex_change_i + 1].texture_id);
+                }
+                
+                tex_change_i++;
+            }
+
+            if (i - start_vertex >= UI_VERTICES_PER_BATCH)
+            {
+                draw_ui_batch(start_vertex, i - start_vertex);
+                start_vertex = i + 1;
+                texture_index = 0;
+                m_batched_textures.push_back(m_ui_texture_changes[tex_change_i].texture_id);
+            }
+
+            m_ui_batched_vertices[i].texture_index = texture_index;
+        }
+        
+        draw_ui_batch(start_vertex, m_ui_batched_vertices.size() - start_vertex);
+        m_ui_batched_vertices.clear();
+
+        glUseProgram(m_shader.id());
     }
 
     void swap_buffers()
@@ -538,17 +667,48 @@ namespace kvejken::renderer
 
         stbtt_PackEnd(&stbtt_ctx);
 
-        //stbtt_GetPackedQuad(range.chardata_for_range, 0, )
-
         m_font_atlas = load_texture(pixels, 512, 512, 1);
+        m_font_atlas_coords = std::move(packed_chars);
 
         delete[] ttf_data;
         delete[] pixels;
     }
 
-    void draw_text(const char* text)
+    void draw_text(const char* text, glm::vec2 position, int size)
     {
+        if (m_ui_texture_changes.size() == 0 || m_ui_texture_changes.back().texture_id != m_font_atlas.id)
+            m_ui_texture_changes.push_back({ m_ui_batched_vertices.size(), m_font_atlas.id });
 
+        float x = position.x;
+        float y = position.y;
+        float scale = size / 32.0f;
+
+        for (int i = 0; text[i] != '\0'; i++)
+        {
+			// TODO: skip ce je ' '
+			
+            const stbtt_packedchar& pc = m_font_atlas_coords[text[i] - 32];
+
+            float x0 = x + pc.xoff * scale;
+            float y0 = y + pc.yoff * scale;
+            float x1 = x + pc.xoff2 * scale;
+            float y1 = y + pc.yoff2 * scale;
+
+            float s0 = pc.x0 / 512.0f;
+            float t0 = pc.y0 / 512.0f;
+            float s1 = pc.x1 / 512.0f;
+            float t1 = pc.y1 / 512.0f;
+
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t0), 0 });
+
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), 0 });
+
+            x += pc.xadvance * scale;
+        }
     }
 
     void set_skybox(const std::string& skybox_obj_path)

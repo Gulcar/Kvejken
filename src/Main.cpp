@@ -83,6 +83,8 @@ int main()
 
         renderer::clear_screen();
 
+        renderer::draw_text("pozdravljen svet", glm::vec2(100, 100), 64);
+
         /*
         renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
         renderer::draw_model(assets::test_cube.get(), glm::vec3(3, 5.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
