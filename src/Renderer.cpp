@@ -1,4 +1,4 @@
-#include "Renderer.h"
+﻿#include "Renderer.h"
 #include "Model.h"
 #include "Utils.h"
 #include <glad/glad.h>
@@ -648,6 +648,27 @@ namespace kvejken::renderer
 
         m_draw_queue.push_back({ order, mesh, transform });
     }
+    
+    constexpr uint32_t decode_2_byte_utf8(char byte1, char byte2)
+    {
+        uint32_t a = (uint32_t)byte1;
+        uint32_t b = (uint32_t)byte2;
+
+        if (a < 0b1100'0000 || b < 0b1000'0000)
+            return 0;
+
+        uint32_t z = b & 0b0000'1111;
+        uint32_t y = ((a & 0b0000'0011) << 2) | ((b & 0b0011'0000) >> 4);
+        uint32_t x = (a & 0b0001'1100) >> 2;
+
+        return x * 256 + y * 16 + z;
+    }
+
+    uint32_t decode_2_byte_utf8(const char* c)
+    {
+        ASSERT(strlen(c) == 2);
+        return decode_2_byte_utf8(c[0], c[1]);
+    }
 
     void load_font(const char* font_file)
     {
@@ -663,6 +684,12 @@ namespace kvejken::renderer
 
         std::vector<int> codepoints;
         for (int i = 32; i <= 126; i++) codepoints.push_back(i);
+        codepoints.push_back(decode_2_byte_utf8(u8"Č"));
+        codepoints.push_back(decode_2_byte_utf8(u8"č"));
+        codepoints.push_back(decode_2_byte_utf8(u8"Š"));
+        codepoints.push_back(decode_2_byte_utf8(u8"š"));
+        codepoints.push_back(decode_2_byte_utf8(u8"Ž"));
+        codepoints.push_back(decode_2_byte_utf8(u8"ž"));
 
         std::vector<stbtt_packedchar> packed_chars(codepoints.size());
 
@@ -697,20 +724,53 @@ namespace kvejken::renderer
         uint32_t rgba8 = *reinterpret_cast<uint32_t*>(&u8color);
 
         for (int i = 0; text[i] != '\0'; i++)
-        {
-			// TODO: skip ce je ' '
-			
-            const stbtt_packedchar& pc = m_font_atlas_coords[text[i] - 32];
+        {			
+            const stbtt_packedchar* pc = nullptr;
+            int char_bytes = 1;
 
-            float x0 = x + pc.xoff * scale;
-            float y0 = y + pc.yoff * scale;
-            float x1 = x + pc.xoff2 * scale;
-            float y1 = y + pc.yoff2 * scale;
+            // ce je ascii vrednost
+            if (text[i] >= 32 && text[i] <= 126)
+            {
+                pc = &m_font_atlas_coords[text[i] - 32];
+            }
+            else // ce ne preveri samo slovenske crke iz utf8
+            {
+                //uint32_t c = decode_2_byte_utf8(text[i], text[i + 1]);
 
-            float s0 = pc.x0 / (float)FONT_ATLAS_WIDTH;
-            float t0 = pc.y0 / (float)FONT_ATLAS_WIDTH;
-            float s1 = pc.x1 / (float)FONT_ATLAS_WIDTH;
-            float t1 = pc.y1 / (float)FONT_ATLAS_WIDTH;
+                if (strncmp(text + i, u8"Č", 2) == 0)
+                    pc = &m_font_atlas_coords[95];
+                else if (strncmp(text + i, u8"č", 2) == 0)
+                    pc = &m_font_atlas_coords[96];
+                else if (strncmp(text + i, u8"Š", 2) == 0)
+                    pc = &m_font_atlas_coords[97];
+                else if (strncmp(text + i, u8"š", 2) == 0)
+                    pc = &m_font_atlas_coords[98];
+                else if (strncmp(text + i, u8"Ž", 2) == 0)
+                    pc = &m_font_atlas_coords[99];
+                else if (strncmp(text + i, u8"ž", 2) == 0)
+                    pc = &m_font_atlas_coords[100];
+                else
+                    ERROR_EXIT("invalid character in draw_text");
+
+                char_bytes = 2;
+            }
+
+            
+            if (text[i] == ' ')
+            {
+                x += pc->xadvance * scale;
+                continue;
+            }
+
+            float x0 = x + pc->xoff * scale;
+            float y0 = y + pc->yoff * scale;
+            float x1 = x + pc->xoff2 * scale;
+            float y1 = y + pc->yoff2 * scale;
+
+            float s0 = pc->x0 / (float)FONT_ATLAS_WIDTH;
+            float t0 = pc->y0 / (float)FONT_ATLAS_WIDTH;
+            float s1 = pc->x1 / (float)FONT_ATLAS_WIDTH;
+            float t1 = pc->y1 / (float)FONT_ATLAS_WIDTH;
 
             m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, true, 0 });
             m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, true, 0 });
@@ -720,7 +780,9 @@ namespace kvejken::renderer
             m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), rgba8, true, 0 });
             m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, true, 0 });
 
-            x += pc.xadvance * scale;
+            x += pc->xadvance * scale;
+
+            i += char_bytes - 1;
         }
     }
 
