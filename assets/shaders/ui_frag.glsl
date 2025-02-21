@@ -3,6 +3,8 @@
 out vec4 v_frag_color;
 
 in vec2 v_uv;
+in vec4 v_color;
+flat in int v_is_text;
 flat in int v_texture_index;
 
 uniform sampler2D u_textures[16];
@@ -30,8 +32,15 @@ void main()
     case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
 
-    v_frag_color = tex_color;
+    if (v_is_text != 0)
+    {
+        v_frag_color = vec4(tex_color.r);
+    }
+    else
+    {
+        v_frag_color = tex_color;
+    }
 
-    if (v_frag_color.a < 0.1)
-        discard;
+    v_frag_color *= v_color;
+
 }

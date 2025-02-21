@@ -75,7 +75,7 @@ namespace kvejken::renderer
     void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer::World);
 
     void load_font(const char* font_file);
-    void draw_text(const char* text, glm::vec2 position, int size);
+    void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color = glm::vec4(1.0f));
     //void draw_sprite();
 
     void set_skybox(const std::string& skybox_obj_path);

@@ -78,6 +78,8 @@ namespace kvejken::renderer
         {
             glm::vec2 position;
             glm::vec2 texture_coords;
+            uint32_t color;
+            bool is_text;
             uint8_t texture_index;
         };
         std::vector<UIVertex> m_ui_batched_vertices;
@@ -94,6 +96,8 @@ namespace kvejken::renderer
         uint32_t m_ui_batch_vao, m_ui_batch_vbo;
         Shader m_ui_shader;
 
+        constexpr int FONT_ATLAS_WIDTH = 1024;
+        constexpr int FONT_ATLAS_FONT_SIZE = 64;
         Texture m_font_atlas = {};
         std::vector<stbtt_packedchar> m_font_atlas_coords;
 
@@ -184,7 +188,11 @@ namespace kvejken::renderer
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(UIVertex), (void*)offsetof(UIVertex, texture_coords));
         glEnableVertexAttribArray(2);
-        glVertexAttribIPointer(2, 1, GL_UNSIGNED_BYTE, sizeof(UIVertex), (void*)offsetof(UIVertex, texture_index));
+        glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(UIVertex), (void*)offsetof(UIVertex, color));
+        glEnableVertexAttribArray(3);
+        glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(UIVertex), (void*)offsetof(UIVertex, is_text));
+        glEnableVertexAttribArray(4);
+        glVertexAttribIPointer(4, 1, GL_UNSIGNED_BYTE, sizeof(UIVertex), (void*)offsetof(UIVertex, texture_index));
 
         m_ui_batched_vertices.reserve(UI_VERTICES_PER_BATCH);
 
@@ -193,12 +201,12 @@ namespace kvejken::renderer
         m_shader.set_uniform("u_textures", texture_indices, TEXTURES_PER_BATCH);
 
         glUseProgram(m_shader.id());
-        
 
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_CULL_FACE);
-        // glEnable(GL_BLEND);
         glEnable(GL_FRAMEBUFFER_SRGB);
+
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
         /*
         * renderer todo:
@@ -463,6 +471,7 @@ namespace kvejken::renderer
 
         // konec risanja 3d zdaj samo se UI
         glUseProgram(m_ui_shader.id());
+        glEnable(GL_BLEND);
         m_ui_shader.set_uniform("u_view_proj", m_ui_view_proj);
 
         int tex_change_i = -1;
@@ -512,6 +521,7 @@ namespace kvejken::renderer
         m_ui_batched_vertices.clear();
 
         glUseProgram(m_shader.id());
+        glDisable(GL_BLEND);
     }
 
     void swap_buffers()
@@ -642,9 +652,9 @@ namespace kvejken::renderer
     void load_font(const char* font_file)
     {
         stbtt_pack_context stbtt_ctx;
-        uint8_t* pixels = new uint8_t[512 * 512];
+        uint8_t* pixels = new uint8_t[FONT_ATLAS_WIDTH * FONT_ATLAS_WIDTH];
 
-        if (stbtt_PackBegin(&stbtt_ctx, pixels, 512, 512, 0, 1, nullptr) == 0)
+        if (stbtt_PackBegin(&stbtt_ctx, pixels, FONT_ATLAS_WIDTH, FONT_ATLAS_WIDTH, 0, 1, nullptr) == 0)
             ERROR_EXIT("failed to begin stbtt pack context");
 
         stbtt_PackSetOversampling(&stbtt_ctx, 2, 2);
@@ -657,7 +667,7 @@ namespace kvejken::renderer
         std::vector<stbtt_packedchar> packed_chars(codepoints.size());
 
         stbtt_pack_range range = {};
-        range.font_size = 32;
+        range.font_size = FONT_ATLAS_FONT_SIZE;
         range.array_of_unicode_codepoints = codepoints.data();
         range.num_chars = codepoints.size();
         range.chardata_for_range = packed_chars.data();
@@ -667,21 +677,24 @@ namespace kvejken::renderer
 
         stbtt_PackEnd(&stbtt_ctx);
 
-        m_font_atlas = load_texture(pixels, 512, 512, 1);
+        m_font_atlas = load_texture(pixels, FONT_ATLAS_WIDTH, FONT_ATLAS_WIDTH, 1);
         m_font_atlas_coords = std::move(packed_chars);
 
         delete[] ttf_data;
         delete[] pixels;
     }
 
-    void draw_text(const char* text, glm::vec2 position, int size)
+    void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color)
     {
         if (m_ui_texture_changes.size() == 0 || m_ui_texture_changes.back().texture_id != m_font_atlas.id)
             m_ui_texture_changes.push_back({ m_ui_batched_vertices.size(), m_font_atlas.id });
 
         float x = position.x;
         float y = position.y;
-        float scale = size / 32.0f;
+        float scale = size / FONT_ATLAS_FONT_SIZE;
+
+        glm::u8vec4 u8color = 255.0f * color;
+        uint32_t rgba8 = *reinterpret_cast<uint32_t*>(&u8color);
 
         for (int i = 0; text[i] != '\0'; i++)
         {
@@ -694,18 +707,18 @@ namespace kvejken::renderer
             float x1 = x + pc.xoff2 * scale;
             float y1 = y + pc.yoff2 * scale;
 
-            float s0 = pc.x0 / 512.0f;
-            float t0 = pc.y0 / 512.0f;
-            float s1 = pc.x1 / 512.0f;
-            float t1 = pc.y1 / 512.0f;
+            float s0 = pc.x0 / (float)FONT_ATLAS_WIDTH;
+            float t0 = pc.y0 / (float)FONT_ATLAS_WIDTH;
+            float s1 = pc.x1 / (float)FONT_ATLAS_WIDTH;
+            float t1 = pc.y1 / (float)FONT_ATLAS_WIDTH;
 
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), 0 });
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), 0 });
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t0), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, true, 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, true, 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t0), rgba8, true, 0 });
 
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), 0 });
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), 0 });
-            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, true, 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), rgba8, true, 0 });
+            m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, true, 0 });
 
             x += pc.xadvance * scale;
         }
