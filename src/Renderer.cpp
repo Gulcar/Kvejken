@@ -711,7 +711,7 @@ namespace kvejken::renderer
         delete[] pixels;
     }
 
-    void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color)
+    void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color, Align horizontal_align)
     {
         if (m_ui_texture_changes.size() == 0 || m_ui_texture_changes.back().texture_id != m_font_atlas.id)
             m_ui_texture_changes.push_back({ m_ui_batched_vertices.size(), m_font_atlas.id });
@@ -722,6 +722,9 @@ namespace kvejken::renderer
 
         glm::u8vec4 u8color = 255.0f * color;
         uint32_t rgba8 = *reinterpret_cast<uint32_t*>(&u8color);
+
+        float measured_width = 0.0f;
+        int start_vertex = m_ui_batched_vertices.size();
 
         for (int i = 0; text[i] != '\0'; i++)
         {			
@@ -755,6 +758,10 @@ namespace kvejken::renderer
                 char_bytes = 2;
             }
 
+            if (text[i + char_bytes - 1] == '\0')
+                measured_width += pc->xoff2 * scale;
+            else
+                measured_width += pc->xadvance * scale;
             
             if (text[i] == ' ')
             {
@@ -783,6 +790,18 @@ namespace kvejken::renderer
             x += pc->xadvance * scale;
 
             i += char_bytes - 1;
+        }
+
+        if (horizontal_align != Align::Left)
+        {
+            float align_offset = 0.0f;
+            if (horizontal_align == Align::Center) align_offset = measured_width / 2.0f;
+            else if (horizontal_align == Align::Right) align_offset = measured_width;
+
+            for (int i = start_vertex; i < m_ui_batched_vertices.size(); i++)
+            {
+                m_ui_batched_vertices[i].position.x -= align_offset;
+            }
         }
     }
 
