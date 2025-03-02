@@ -131,6 +131,14 @@ namespace kvejken::utils
         return *reinterpret_cast<uint32_t*>(&u8color);
     }
 
+    inline bool point_in_rect(glm::vec2 point, glm::vec2 rect_pos, glm::vec2 rect_size)
+    {
+        return point.x >= rect_pos.x - rect_size.x / 2.0f &&
+            point.x <= rect_pos.x + rect_size.x / 2.0f &&
+            point.y >= rect_pos.y - rect_size.y / 2.0f &&
+            point.y <= rect_pos.y + rect_size.y / 2.0f;
+    }
+
     inline int rand(int min, int max)
     {
         static std::mt19937 generator;

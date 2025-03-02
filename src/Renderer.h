@@ -59,6 +59,7 @@ namespace kvejken::renderer
     int window_width();
     int window_height();
     float aspect_ratio();
+    glm::vec2 mouse_ui_position();
 
     void poll_events();
     void clear_screen();
@@ -76,7 +77,7 @@ namespace kvejken::renderer
 
     void load_font(const char* font_file);
     void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
-    void draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
+    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
 
     void draw_rect(glm::vec2 position, glm::vec2 size, glm::vec4 color);
     void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec4 color = glm::vec4(1.0f));

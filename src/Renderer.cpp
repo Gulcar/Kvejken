@@ -20,6 +20,7 @@
 #include "ECS.h"
 #include "Components.h"
 #include "Shader.h"
+#include "Input.h"
 
 namespace kvejken::renderer
 {
@@ -73,6 +74,7 @@ namespace kvejken::renderer
         constexpr float UI_WIDTH = 1920;
         constexpr float UI_HEIGHT = 1080;
         glm::mat4 m_ui_view_proj = {};
+        glm::mat4 m_ui_view_proj_inv = {};
 
         struct UIVertex
         {
@@ -262,6 +264,15 @@ namespace kvejken::renderer
         return 1;
     }
 
+    glm::vec2 mouse_ui_position()
+    {
+        glm::vec2 sp = input::mouse_screen_position();
+        sp.x = (sp.x / window_width()) * 2.0f - 1.0f;
+        sp.y = -((sp.y / window_height()) * 2.0f - 1.0f);
+        glm::vec4 up = m_ui_view_proj_inv * glm::vec4(sp, 0.0f, 1.0f);
+        return glm::vec2(up.x, up.y);
+    }
+
     void poll_events()
     {
         glfwPollEvents();
@@ -316,15 +327,20 @@ namespace kvejken::renderer
         glm::mat4 view = glm::lookAt(m_camera.position, m_camera.position + m_camera.direction, m_camera.up);
         m_view_proj = proj * view;
 
-        // TODO: fix
-        /*
         if (aspect_ratio() > UI_WIDTH / UI_HEIGHT)
-            m_ui_view_proj = glm::ortho(0.0f, UI_HEIGHT * aspect_ratio(), UI_HEIGHT, 0.0f);
+        {
+            // extra width
+            float b = (window_width() * UI_HEIGHT / window_height()) - UI_WIDTH;
+            m_ui_view_proj = glm::ortho(-b / 2, UI_WIDTH + b / 2, UI_HEIGHT, 0.0f);
+        }
         else
-            m_ui_view_proj = glm::ortho(0.0f, UI_WIDTH, UI_WIDTH / aspect_ratio(), 0.0f);
-        */
+        {
+            // extra height
+            float b = (window_height() * UI_WIDTH / window_width()) - UI_HEIGHT;
+            m_ui_view_proj = glm::ortho(0.0f, UI_WIDTH, UI_HEIGHT + b / 2, -b / 2);
+        }
 
-        m_ui_view_proj = glm::ortho(0.0f, UI_WIDTH, UI_HEIGHT, 0.0f);
+        m_ui_view_proj_inv = glm::inverse(m_ui_view_proj);
 
         update_point_lights();
 
@@ -525,6 +541,7 @@ namespace kvejken::renderer
         
         draw_ui_batch(start_vertex, m_ui_batched_vertices.size() - start_vertex);
         m_ui_batched_vertices.clear();
+        m_ui_texture_changes.clear();
 
         glUseProgram(m_shader.id());
         glDisable(GL_BLEND);
@@ -811,7 +828,7 @@ namespace kvejken::renderer
         }
     }
 
-    void draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align)
+    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align)
     {
         glm::vec2 rect_pos = position;
         if (horizontal_align == Align::Left) rect_pos.x += rect_size.x / 2.0f - size / 8.0f;
@@ -819,9 +836,15 @@ namespace kvejken::renderer
 
         rect_pos.y -= size / 2.8f;
 
-        draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.1f));
+        bool hover = utils::point_in_rect(mouse_ui_position(), rect_pos, rect_size);
+        if (hover)
+            draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.1f));
+        else
+            draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.05f));
 
         draw_text(text, position, size, color, horizontal_align);
+
+        return hover && input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
     }
 
     void draw_rect(glm::vec2 position, glm::vec2 size, glm::vec4 color)

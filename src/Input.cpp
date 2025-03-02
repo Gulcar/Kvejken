@@ -106,7 +106,7 @@ namespace kvejken::input
 
     glm::vec3 mouse_world_position()
     {
-        // TODO
+        assert(false && "mouse_world_position ni narejeno verjetno ne bom rabil");
         return glm::vec3(0, 0, 0);
     }
 
