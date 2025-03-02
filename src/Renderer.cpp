@@ -694,7 +694,7 @@ namespace kvejken::renderer
         std::vector<stbtt_packedchar> packed_chars(codepoints.size());
 
         stbtt_pack_range range = {};
-        range.font_size = FONT_ATLAS_FONT_SIZE;
+        range.font_size = STBTT_POINT_SIZE(FONT_ATLAS_FONT_SIZE);
         range.array_of_unicode_codepoints = codepoints.data();
         range.num_chars = codepoints.size();
         range.chardata_for_range = packed_chars.data();
@@ -718,7 +718,7 @@ namespace kvejken::renderer
 
         float x = position.x;
         float y = position.y;
-        float scale = size / FONT_ATLAS_FONT_SIZE;
+        float scale = size / (float)FONT_ATLAS_FONT_SIZE;
 
         glm::u8vec4 u8color = 255.0f * color;
         uint32_t rgba8 = *reinterpret_cast<uint32_t*>(&u8color);

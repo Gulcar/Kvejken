@@ -21,7 +21,7 @@ int main()
     atexit(renderer::terminate);
 
     renderer::create_window("Kvejken", 1280, 720);
-    renderer::load_font("C:\\Windows\\Fonts\\Arial.ttf");
+    renderer::load_font("assets/Shafarik-Regular.ttf");
     
     input::init(renderer::window_ptr());
 
@@ -83,9 +83,13 @@ int main()
 
         renderer::clear_screen();
 
-        renderer::draw_text(u8"poŠdraŽljen Čvet če že šumniki delajo", glm::vec2(1920/2, 100), 64, glm::vec4(0.9f, 0.1f, 0.1f, 1.0f));
-        renderer::draw_text(u8"poŠdraŽljen Čvet če že šumniki delajo", glm::vec2(1920/2, 170), 64, glm::vec4(0.9f, 0.1f, 0.1f, 1.0f), Align::Center);
-        renderer::draw_text(u8"poŠdraŽljen Čvet če že šumniki delajo", glm::vec2(1920/2, 240), 64, glm::vec4(0.9f, 0.1f, 0.1f, 1.0f), Align::Right);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 100), 11, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 116), 12, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 133), 16, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 154), 24, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 183), 32, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 220), 64, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 289), 128, glm::vec4(1.0f), Align::Center);
 
         /*
         renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
