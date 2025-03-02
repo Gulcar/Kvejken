@@ -101,6 +101,8 @@ namespace kvejken::renderer
         Texture m_font_atlas = {};
         std::vector<stbtt_packedchar> m_font_atlas_coords;
 
+        Texture m_white_texture = {};
+
         std::unique_ptr<Model> m_skybox = nullptr;
     }
 
@@ -198,7 +200,7 @@ namespace kvejken::renderer
 
         m_ui_shader = Shader("assets/shaders/ui_vert.glsl", "assets/shaders/ui_frag.glsl");
         glUseProgram(m_ui_shader.id());
-        m_shader.set_uniform("u_textures", texture_indices, TEXTURES_PER_BATCH);
+        m_ui_shader.set_uniform("u_textures", texture_indices, TEXTURES_PER_BATCH);
 
         glUseProgram(m_shader.id());
 
@@ -220,6 +222,9 @@ namespace kvejken::renderer
         glfwSwapInterval(0);
 
         stbi_set_flip_vertically_on_load(true);
+
+        uint8_t white_pixel[] = { 0xff, 0xff, 0xff, 0xff };
+        m_white_texture = load_texture(white_pixel, 1, 1, 4);
     }
 
     void terminate()
@@ -472,6 +477,7 @@ namespace kvejken::renderer
         // konec risanja 3d zdaj samo se UI
         glUseProgram(m_ui_shader.id());
         glEnable(GL_BLEND);
+        glDisable(GL_DEPTH_TEST);
         m_ui_shader.set_uniform("u_view_proj", m_ui_view_proj);
 
         int tex_change_i = -1;
@@ -483,11 +489,11 @@ namespace kvejken::renderer
             {
                 texture_index = 255;
 
-                for (int i = 0; i < m_batched_textures.size(); i++)
+                for (int j = 0; j < m_batched_textures.size(); j++)
                 {
-                    if (m_batched_textures[i] == m_ui_texture_changes[tex_change_i + 1].texture_id)
+                    if (m_batched_textures[j] == m_ui_texture_changes[tex_change_i + 1].texture_id)
                     {
-                        texture_index = i;
+                        texture_index = j;
                         break;
                     }
                 }
@@ -499,7 +505,7 @@ namespace kvejken::renderer
                         draw_ui_batch(start_vertex, i - start_vertex);
                         start_vertex = i + 1;
                     }
-                    texture_index = 0;
+                    texture_index = m_batched_textures.size();
                     m_batched_textures.push_back(m_ui_texture_changes[tex_change_i + 1].texture_id);
                 }
                 
@@ -522,6 +528,7 @@ namespace kvejken::renderer
 
         glUseProgram(m_shader.id());
         glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
     }
 
     void swap_buffers()
@@ -557,7 +564,7 @@ namespace kvejken::renderer
 
     Texture load_texture(const uint8_t* data, int width, int height, int num_components, bool srgb)
     {
-        if (width % 4 != 0 || height % 4 != 0)
+        if ((width % 4 != 0 || height % 4 != 0) && (width != 1 || height != 1))
             ERROR_EXIT("Texture size is not a multiple of 4 (w=%d, h=%d)", width, height);
 
         Texture tex = {};
@@ -720,8 +727,7 @@ namespace kvejken::renderer
         float y = position.y;
         float scale = size / (float)FONT_ATLAS_FONT_SIZE;
 
-        glm::u8vec4 u8color = 255.0f * color;
-        uint32_t rgba8 = *reinterpret_cast<uint32_t*>(&u8color);
+        uint32_t rgba8 = utils::vec_to_rgba8(color);
 
         float measured_width = 0.0f;
         int start_vertex = m_ui_batched_vertices.size();
@@ -803,6 +809,55 @@ namespace kvejken::renderer
                 m_ui_batched_vertices[i].position.x -= align_offset;
             }
         }
+    }
+
+    void draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align)
+    {
+        glm::vec2 rect_pos = position;
+        if (horizontal_align == Align::Left) rect_pos.x += rect_size.x / 2.0f - size / 8.0f;
+        else if (horizontal_align == Align::Right) rect_pos.x -= rect_size.x / 2.0f - size / 8.0f;
+
+        rect_pos.y -= size / 2.8f;
+
+        draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.1f));
+
+        draw_text(text, position, size, color, horizontal_align);
+    }
+
+    void draw_rect(glm::vec2 position, glm::vec2 size, glm::vec4 color)
+    {
+        draw_rect(m_white_texture, position, size, glm::vec2(0, 0), glm::vec2(1, 1), color);
+    }
+
+    void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec4 color)
+    {
+        draw_rect(texture, position, size, glm::vec2(0, 0), glm::vec2(texture.width, texture.height), color);
+    }
+
+    void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec2 tex_min_coord, glm::vec2 tex_max_coord, glm::vec4 color)
+    {
+        if (m_ui_texture_changes.size() == 0 || m_ui_texture_changes.back().texture_id != texture.id)
+            m_ui_texture_changes.push_back({ m_ui_batched_vertices.size(), texture.id });
+
+        uint32_t rgba8 = utils::vec_to_rgba8(color);
+
+        float x0 = position.x - size.x / 2.0f;
+        float x1 = position.x + size.x / 2.0f;
+        float y0 = position.y - size.y / 2.0f;
+        float y1 = position.y + size.y / 2.0f;
+
+        float s0 = tex_min_coord.s / texture.width;
+        float s1 = tex_max_coord.s / texture.width;
+        float t0 = tex_min_coord.t / texture.height;
+        float t1 = tex_max_coord.t / texture.height;
+
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t0), rgba8, false, 0 });
+
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, false, 0 });
     }
 
     void set_skybox(const std::string& skybox_obj_path)

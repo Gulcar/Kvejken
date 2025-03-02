@@ -8,6 +8,7 @@
 #include <random>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
 #include <glm/common.hpp>
 
 #ifdef WIN32
@@ -122,6 +123,12 @@ namespace kvejken::utils
             b->y += 1.0f;
             c->y += 1.0f;
         }
+    }
+
+    inline uint32_t vec_to_rgba8(glm::vec4 color)
+    {
+        glm::u8vec4 u8color = 255.0f * color;
+        return *reinterpret_cast<uint32_t*>(&u8color);
     }
 
     inline int rand(int min, int max)

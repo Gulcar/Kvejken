@@ -76,7 +76,11 @@ namespace kvejken::renderer
 
     void load_font(const char* font_file);
     void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
-    //void draw_sprite();
+    void draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
+
+    void draw_rect(glm::vec2 position, glm::vec2 size, glm::vec4 color);
+    void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec4 color = glm::vec4(1.0f));
+    void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec2 tex_min_coord, glm::vec2 tex_max_coord, glm::vec4 color = glm::vec4(1.0f));
 
     void set_skybox(const std::string& skybox_obj_path);
     void set_sun_light(float strength);

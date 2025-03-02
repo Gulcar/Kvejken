@@ -15,6 +15,23 @@
 
 using namespace kvejken;
 
+enum class Menu
+{
+    Main,
+    Play,
+    Settings,
+};
+
+void draw_main_menu()
+{
+    int y = 300;
+
+    renderer::draw_text("Kvejken", glm::vec2(1920 / 2, y), 169, glm::vec4(1.0f), Align::Center); y += 169;
+    renderer::draw_button("Igraj", glm::vec2(1920 / 2, y), 64, glm::vec2(300, 64), glm::vec4(1.0f), Align::Center); y += 80;
+    renderer::draw_button("Nastavitve", glm::vec2(1920 / 2, y), 64, glm::vec2(300, 64), glm::vec4(1.0f), Align::Center); y += 80;
+    renderer::draw_button("Izhod", glm::vec2(1920 / 2, y), 64, glm::vec2(300, 64), glm::vec4(1.0f), Align::Center); y += 80;
+}
+
 int main()
 {
     printf("pozdravljen svet\n");
@@ -83,13 +100,7 @@ int main()
 
         renderer::clear_screen();
 
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 100), 11, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 116), 12, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 133), 16, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 154), 24, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 183), 32, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 220), 64, glm::vec4(1.0f), Align::Center);
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, 289), 128, glm::vec4(1.0f), Align::Center);
+        draw_main_menu();
 
         /*
         renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
