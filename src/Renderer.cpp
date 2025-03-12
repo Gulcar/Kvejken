@@ -838,8 +838,6 @@ namespace kvejken::renderer
 
         bool hover = utils::point_in_rect(mouse_ui_position(), rect_pos, rect_size);
         if (hover)
-            draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.1f));
-        else
             draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.05f));
 
         draw_text(text, position, size, color, horizontal_align);

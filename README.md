@@ -1,10 +1,19 @@
 # Kvejken
-### TODO
-- [x] basic renderer
-- [x] ECS
-- [x] collision detection
-- [ ] world
-- [x] player movement
-- [ ] weapons
-- [ ] enemies
-- [ ] ...
+
+### TODO:
+- [ ] player damage and death
+- [ ] improve fighting (particles, attack animations)
+- [ ] menu UI
+- [ ] HUD
+- [ ] end
+
+### mogoce:
+- [ ] save, load game
+- [ ] custom keybinds
+- [ ] graphics settings
+- [ ] vec posasti
+- [ ] story
+
+### vec casa:
+- [ ] multiplayer
+- [ ] boljse grafike (sence, SSAO)
