@@ -47,27 +47,37 @@ int main()
 
     int frame_count = 0;
     float prev_time = glfwGetTime();
+    float delta_time = 0.0f;
+    float game_time = 0.0f;
 
     while (renderer::is_window_open())
     {
         input::clear();
         renderer::poll_events();
 
-        float game_time = glfwGetTime();
-        float delta_time = game_time - prev_time;
+        bool paused = ui::current_menu() != ui::Menu::None;
+
+        if (!paused)
+            game_time += delta_time;
+
+        float real_time = glfwGetTime();
+        float delta_time = real_time - prev_time;
         if (delta_time > 1.0f / 15.0f)
         {
             printf("WARNING: high delta_time (%.2f ms)\n", delta_time * 1000.0f);
             delta_time = 1.0f / 15.0f;
         }
-        prev_time += delta_time;
+        prev_time = real_time;
 
 
-        update_players(delta_time, game_time);
+        if (!paused)
+        {
+            update_players(delta_time, game_time);
 
-        update_enemies(delta_time, game_time);
+            update_enemies(delta_time, game_time);
 
-        update_interactables(delta_time, game_time);
+            update_interactables(delta_time, game_time);
+        }
 
 
         ecs::destroy_queued_entities();

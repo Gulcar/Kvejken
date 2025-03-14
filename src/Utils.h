@@ -139,6 +139,7 @@ namespace kvejken::utils
             point.y <= rect_pos.y + rect_size.y / 2.0f;
     }
 
+    // both min and max inclusive
     inline int rand(int min, int max)
     {
         static std::mt19937 generator;

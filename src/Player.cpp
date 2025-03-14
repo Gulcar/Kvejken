@@ -1,4 +1,4 @@
-#include "Player.h"
+﻿#include "Player.h"
 #include "ECS.h"
 #include "Components.h"
 #include "Input.h"
@@ -31,6 +31,19 @@ namespace kvejken
     constexpr float JUMP_STRENGTH = 9.0f;
     constexpr float COYOTE_TIME = 0.12f;
 
+    const char* death_texts[] = {
+        u8"Urml si!",
+        u8"Neeeeeee!",
+        u8"Izgubil si!",
+        u8"Avč! To pa boli!",
+        u8"AAAAAAhhhhhh!",
+        u8"Zakaj sem moral umreti?",
+        u8"Pa tako dobro je šlo!",
+        u8"Kje se je vse zalomilo?",
+        u8"Nič več življenja",
+        u8"Slab si!",
+    };
+
     void spawn_local_player(glm::vec3 position)
     {
         Player player = {};
@@ -40,6 +53,7 @@ namespace kvejken
         player.right_hand_item = WeaponType::None;
         player.left_hand_item = ItemType::None;
         player.time_since_attack = 99.0f;
+        player.time_since_recv_damage = 99.0f;
         player.progress = 0;
 
         Camera camera = {};
@@ -69,7 +83,7 @@ namespace kvejken
     {
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
         {
-            if (!player.local)
+            if (!player.local || player.health <= 0)
                 continue;
 
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
@@ -168,9 +182,24 @@ namespace kvejken
         for (int i = 0; i < substeps; i++)
             update_players_movement(sub_delta, game_time);
 
+        for (auto [player, player_transform] : ecs::get_components<Player, Transform>())
+        {
+            if (!player.local || player.health <= 0)
+                continue;
+
+            for (auto [enemy_id, enemy, enemy_transform] : ecs::get_components_ids<Enemy, Transform>())
+            {
+                if (glm::distance2(player_transform.position, enemy_transform.position) < 2.0f)
+                {
+                    damage_player(player, utils::rand(15, 30));
+                    ecs::queue_destroy_entity(enemy_id);
+                }
+            }
+        }
+
         for (auto [player, camera, transform] : ecs::get_components<Player, Camera, Transform>())
         {
-            if (!player.local)
+            if (!player.local || player.health <= 0)
                 continue;
 
             if (input::is_mouse_locked())
@@ -302,11 +331,23 @@ namespace kvejken
                     }
                 }
             }
+
+            std::string points = u8"točke: " + std::to_string(player.points);
+            std::string health = "zdravje: " + std::to_string(player.health);
+            renderer::draw_text(points.c_str(), glm::vec2(16, 48), 48);
+            renderer::draw_text(health.c_str(), glm::vec2(16, 96), 48);
+
+            if (player.time_since_recv_damage < 1.0f)
+            {
+                float opacity = 0.4f * (1.0f - player.time_since_recv_damage) * (1.0f - player.time_since_recv_damage);
+                renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, opacity));
+                player.time_since_recv_damage += delta_time;
+            }
         }
 
         for (auto [player, light, transform] : ecs::get_components<Player, PointLight, Transform>())
         {
-            if (!player.local)
+            if (!player.local || player.health <= 0)
                 continue;
 
             float sun = glm::smoothstep(1.5f, 2.7f, transform.position.y);
@@ -325,5 +366,30 @@ namespace kvejken
                 light.strength = (1.0f - sun) * 2.2f;
             }
         }
+
+        for (auto& player : ecs::get_components<Player>())
+        {
+            if (player.local && player.health <= 0)
+            {
+                renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.3f));
+
+                renderer::draw_text(death_texts[player.death_message], glm::vec2(1920 / 2, 1080 / 2), 128, glm::vec4(1.0f), Align::Center);
+            }
+        }
+    }
+
+    void damage_player(Player& player, int damage)
+    {
+        player.health -= damage;
+
+        if (player.health <= 0)
+        {
+            player.health = 0;
+
+            player.death_message = utils::rand(0, std::size(death_texts) - 1);
+        }
+
+        player.time_since_recv_damage = 0.0f;
+        // TODO: particles
     }
 }

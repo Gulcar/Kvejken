@@ -24,6 +24,8 @@ namespace kvejken
         glm::quat left_hand_rotation, right_hand_rotation;
 
         float time_since_attack;
+        float time_since_recv_damage;
+        int death_message;
 
         int points;
         int progress; // za hitrost enemy spawnov
@@ -32,4 +34,6 @@ namespace kvejken
     void spawn_local_player(glm::vec3 position);
 
     void update_players(float delta_time, float game_time);
+
+    void damage_player(Player& player, int damage);
 }
