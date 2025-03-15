@@ -16,4 +16,6 @@ namespace kvejken
     void spawn_enemy(glm::vec3 position, glm::vec3 rot_dir);
 
     void update_enemies(float delta_time, float game_time);
+
+    void draw_enemy_spawns(float game_time);
 }

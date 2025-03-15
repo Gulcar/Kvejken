@@ -13,6 +13,7 @@
 #include "Assets.h"
 #include "Interactable.h"
 #include "UI.h"
+#include "Particles.h"
 
 using namespace kvejken;
 
@@ -77,6 +78,8 @@ int main()
             update_enemies(delta_time, game_time);
 
             update_interactables(delta_time, game_time);
+
+            update_particles(delta_time, game_time);
         }
 
 
@@ -126,6 +129,9 @@ int main()
         {
             renderer::draw_model(model, transform.position, transform.rotation, glm::vec3(transform.scale));
         }
+
+        draw_enemy_spawns(game_time);
+        draw_particles();
 
         ui::draw_and_update_ui();
 

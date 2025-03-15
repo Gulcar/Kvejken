@@ -82,6 +82,8 @@ namespace kvejken
         glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, texture_coords));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 
         // free memory
         m_vertices = std::vector<Vertex>();
@@ -197,16 +199,19 @@ namespace kvejken
                     positions[av - 1],
                     normals[avn - 1],
                     utils::pack_texture_coords(tex_coords_a),
+                    0xffffffff,
                 });
                 vertices.push_back(Vertex{
                     positions[bv - 1],
                     normals[bvn - 1],
                     utils::pack_texture_coords(tex_coords_b),
+                    0xffffffff,
                 });
                 vertices.push_back(Vertex{
                     positions[cv - 1],
                     normals[cvn - 1],
                     utils::pack_texture_coords(tex_coords_c),
+                    0xffffffff,
                 });
             }
         }

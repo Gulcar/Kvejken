@@ -12,6 +12,7 @@ namespace kvejken
         glm::vec3 position;
         glm::vec3 normal;
         glm::u16vec2 texture_coords;
+        uint32_t color;
     };
 
     class Mesh

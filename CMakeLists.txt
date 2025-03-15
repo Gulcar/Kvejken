@@ -14,6 +14,7 @@ add_executable(${PROJECT_NAME}
     src/Interactable.cpp
     src/Shader.cpp
     src/UI.cpp
+    src/Particles.cpp
     libs/glad/src/glad.c
     libs/stb/compile_stb.cpp
 )

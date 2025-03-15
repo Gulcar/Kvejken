@@ -146,9 +146,6 @@ namespace kvejken
             spawn_enemy(spawn_point, direction);
         }
 
-        for (auto spawn : SPAWN_POINTS)
-            renderer::draw_model(assets::spawn.get(), spawn, glm::angleAxis(game_time, glm::vec3(0, 1, 0)), glm::vec3(0.8f));
-
         for (auto& [enemy, model, transform] : ecs::get_components<Enemy, Model*, Transform>())
         {
             enemy.animation_time += delta_time * utils::randf(0.9f, 1.1f);
@@ -230,5 +227,11 @@ namespace kvejken
             }
             */
         }
+    }
+
+    void draw_enemy_spawns(float game_time)
+    {
+        for (auto spawn : SPAWN_POINTS)
+            renderer::draw_model(assets::spawn.get(), spawn, glm::angleAxis(game_time, glm::vec3(0, 1, 0)), glm::vec3(0.8f));
     }
 }

@@ -66,7 +66,7 @@ namespace kvejken
             m_index_to_entity[index] = last;
             m_entity_to_index.erase(entity);
 
-            m_components[index] = m_components.back();
+            m_components[index] = std::move(m_components.back());
             m_components.pop_back();
             m_index_to_entity.pop_back();
         }
@@ -624,7 +624,7 @@ namespace kvejken
         }
 
         template<typename T>
-        inline ComponentPoolCollectionIds1<T>& get_components_ids()
+        inline ComponentPoolCollectionIds1<T> get_components_ids()
         {
             uint32_t comp_id = component_id<T>();
 
@@ -635,7 +635,7 @@ namespace kvejken
                 component_pools().push_back((IComponentPool*)pool);
             }
 
-            auto p1 = *(ComponentPool<T>*)(component_pools()[comp_id]);
+            auto p1 = (ComponentPool<T>*)(component_pools()[comp_id]);
             return ComponentPoolCollectionIds1(p1);
         }
 

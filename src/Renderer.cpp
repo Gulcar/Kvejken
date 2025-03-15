@@ -46,6 +46,7 @@ namespace kvejken::renderer
             DrawOrderKey order;
             const Mesh* mesh;
             glm::mat4 transform;
+            uint32_t color;
         };
         std::vector<DrawCommand> m_draw_queue;
 
@@ -54,6 +55,7 @@ namespace kvejken::renderer
             glm::vec3 position;
             glm::vec3 normal;
             glm::u16vec2 texture_coords;
+            uint32_t color;
             uint8_t texture_index;
         };
         constexpr size_t VERTICES_PER_BATCH = 4128;
@@ -163,7 +165,9 @@ namespace kvejken::renderer
         glEnableVertexAttribArray(2);
         glVertexAttribPointer(2, 2, GL_UNSIGNED_SHORT, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_coords));
         glEnableVertexAttribArray(3);
-        glVertexAttribIPointer(3, 1, GL_UNSIGNED_BYTE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_index));
+        glVertexAttribPointer(3, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, color));
+        glEnableVertexAttribArray(4);
+        glVertexAttribIPointer(4, 1, GL_UNSIGNED_BYTE, sizeof(BatchVertex), (void*)offsetof(BatchVertex, texture_index));
 
         m_batched_vertices.reserve(VERTICES_PER_BATCH);
 
@@ -480,6 +484,7 @@ namespace kvejken::renderer
                 bv.position = m_draw_queue[i].transform * glm::vec4(vertex.position, 1.0f);
                 bv.normal = normal_matrix * glm::vec4(vertex.normal, 1.0f);
                 bv.texture_coords = vertex.texture_coords;
+                bv.color = glm::packUnorm4x8(glm::unpackUnorm4x8(vertex.color) * glm::unpackUnorm4x8(m_draw_queue[i].color));
                 bv.texture_index = texture_index;
                 m_batched_vertices.push_back(bv);
             }
@@ -623,7 +628,7 @@ namespace kvejken::renderer
         return tex;
     }
 
-    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer)
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer, glm::vec4 color)
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
@@ -631,28 +636,28 @@ namespace kvejken::renderer
 
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), transform, layer);
+            draw_mesh(&(model->meshes()[i]), transform, layer, color);
         }
     }
 
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer)
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer, glm::vec4 color)
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
 
-        draw_mesh(mesh, transform, layer);
+        draw_mesh(mesh, transform, layer, color);
     }
 
-    void draw_model(const Model* model, const glm::mat4& transform, Layer layer)
+    void draw_model(const Model* model, const glm::mat4& transform, Layer layer, glm::vec4 color)
     {
         for (int i = 0; i < model->meshes().size(); i++)
         {
-            draw_mesh(&(model->meshes()[i]), transform, layer);
+            draw_mesh(&(model->meshes()[i]), transform, layer, color);
         }
     }
 
-    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer)
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer, glm::vec4 color)
     {
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
@@ -670,7 +675,7 @@ namespace kvejken::renderer
         constexpr int max_depth = (1 << 21) - 1; // for 21 bits
         order.depth = (int)(distance01 * max_depth);
 
-        m_draw_queue.push_back({ order, mesh, transform });
+        m_draw_queue.push_back({ order, mesh, transform, utils::vec_to_rgba8(color) });
     }
     
     constexpr uint32_t decode_2_byte_utf8(char byte1, char byte2)

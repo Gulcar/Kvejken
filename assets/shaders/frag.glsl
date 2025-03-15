@@ -4,6 +4,7 @@ out vec4 v_frag_color;
 
 in vec3 v_normal;
 in vec2 v_uv;
+in vec4 v_color;
 flat in int v_texture_index;
 in vec3 v_world_pos;
 
@@ -44,6 +45,8 @@ void main()
     case 14: tex_color = texture(u_textures[14], v_uv); break;
     case 15: tex_color = texture(u_textures[15], v_uv); break;
     }
+
+    tex_color *= v_color;
 
     vec3 light = vec3(0);
 

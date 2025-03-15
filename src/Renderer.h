@@ -69,11 +69,11 @@ namespace kvejken::renderer
     Texture load_texture(const char* file_path, bool srgb = true);
     Texture load_texture(const uint8_t* data, int width, int height, int num_components, bool srgb = true);
 
-    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World);
-    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World);
+    void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));
+    void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));
 
-    void draw_model(const Model* model, const glm::mat4& transform, Layer layer = Layer::World);
-    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer::World);
+    void draw_model(const Model* model, const glm::mat4& transform, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));
+    void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));
 
     void load_font(const char* font_file);
     void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
