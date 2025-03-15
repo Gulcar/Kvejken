@@ -2,12 +2,13 @@
 #include "ECS.h"
 #include "Renderer.h"
 #include "Model.h"
+#include "Assets.h"
 #include <glm/gtc/random.hpp>
 #include <memory>
 
 namespace kvejken
 {
-    void create_particle_explosion(const ParticleExplosionParameters& params)
+    void spawn_particle_explosion(const ParticleExplosionParameters& params)
     {
         Entity e = ecs::create_entity();
         ecs::add_component(ParticleExplosion{}, e);
@@ -54,7 +55,15 @@ namespace kvejken
         {
             for (auto& particle : particle_explosion.particles)
             {
-                //renderer::draw_mesh()
+                float t = particle_explosion.time / particle.time_alive;
+                if (t > 1.0f)
+                    continue;
+                t = t * t;
+
+                glm::mat4 transform(1.0f);
+                transform = glm::translate(transform, particle.position);
+                transform = glm::scale(transform, glm::vec3(particle.size * (1.0f - t)));
+                renderer::draw_model(assets::particle.get(), transform, Layer::World, glm::vec4(particle.color, 1.0f));
             }
         }
     }

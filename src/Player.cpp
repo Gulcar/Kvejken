@@ -6,6 +6,7 @@
 #include "Assets.h"
 #include "Enemy.h"
 #include "Interactable.h"
+#include "Particles.h"
 #include <glm/mat4x4.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -230,6 +231,24 @@ namespace kvejken
             if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
             {
                 player.move_velocity *= SLIDE_BOOST;
+            }
+
+            if (input::key_pressed(GLFW_KEY_T))
+            {
+                ParticleExplosionParameters particle_params;
+                particle_params.min_count = 10;
+                particle_params.max_count = 20;
+                particle_params.min_size = 0.1f;
+                particle_params.max_size = 0.2f;
+                particle_params.min_time_alive = 0.2f;
+                particle_params.max_time_alive = 0.4f;
+                particle_params.origin = glm::vec3(0, 8, 0);
+                particle_params.min_velocity = 15.0f;
+                particle_params.max_velocity = 20.2f;
+                particle_params.velocity_offset = glm::vec3(0.0f);
+                particle_params.color_a = glm::vec3(1.0f, 0.0f, 0.0f);
+                particle_params.color_b = glm::vec3(1.0f, 1.0f, 0.0f);
+                spawn_particle_explosion(particle_params);
             }
 
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);

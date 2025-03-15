@@ -33,7 +33,7 @@ namespace kvejken
         glm::vec3 color_a, color_b;
     };
 
-    void create_particle_explosion(const ParticleExplosionParameters& params);
+    void spawn_particle_explosion(const ParticleExplosionParameters& params);
 
     void update_particles(float delta_time, float game_time);
 
