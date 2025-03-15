@@ -44,6 +44,12 @@ namespace kvejken::input
         glfwSetKeyCallback(m_window, key_callback);
         glfwSetMouseButtonCallback(m_window, mouse_button_callback);
         clear();
+
+        // raw mouse motion bo vklopljen le ko bo GLFW_CURSOR_DISABLED
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+        else
+            printf("raw mouse motion not supported\n");
     }
 
     void clear()

@@ -25,7 +25,7 @@ namespace kvejken
     constexpr float DECELERATION_SLIDE = DECELERATION * 0.1f;
     constexpr float SLIDE_BOOST = 1.2f;
 
-    constexpr float MOUSE_SENS = 1.0f / 1000.0f;
+    constexpr float MOUSE_SENS = 4.0f / 10000.0f;
 
     constexpr float PLAYER_GRAVITY = -25.0f;
     constexpr float MAX_Y_VELOCITY = -PLAYER_GRAVITY * 5.0f;
