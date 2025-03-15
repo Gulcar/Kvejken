@@ -153,7 +153,7 @@ namespace kvejken
         }
     }
 
-    static void attack(glm::vec3 attack_pos, float attack_radius, int* out_points)
+    static void attack(Player& player, glm::vec3 blade_pos, float attack_radius, glm::vec3 camera_pos)
     {
         Entity closest = -1;
         float closest_dist = attack_radius * attack_radius;
@@ -161,7 +161,7 @@ namespace kvejken
 
         for (auto [id, enemy, transform] : ecs::get_components_ids<Enemy, Transform>())
         {
-            float dist2 = glm::distance2(attack_pos, transform.position);
+            float dist2 = glm::distance2(blade_pos, transform.position);
             if (dist2 < closest_dist)
             {
                 closest_dist = dist2;
@@ -170,6 +170,7 @@ namespace kvejken
             }
         }
 
+        // hit
         if (closest != (Entity)-1)
         {
             ParticleExplosionParameters particle_params;
@@ -188,7 +189,30 @@ namespace kvejken
             spawn_particle_explosion(particle_params);
 
             ecs::queue_destroy_entity(closest);
-            *out_points += 10;
+            player.points += 10;
+
+            player.attack_hit = true;
+        }
+        // miss
+        else if (auto environment_hit = collision::raycast(camera_pos, glm::normalize(blade_pos - camera_pos),
+            glm::length(blade_pos - camera_pos) + attack_radius / 2.0f))
+        {
+            ParticleExplosionParameters particle_params;
+            particle_params.min_count = 5;
+            particle_params.max_count = 10;
+            particle_params.min_size = 0.025f;
+            particle_params.max_size = 0.050f;
+            particle_params.min_time_alive = 0.2f;
+            particle_params.max_time_alive = 0.4f;
+            particle_params.origin = environment_hit->position;
+            particle_params.min_velocity = 5.0f;
+            particle_params.max_velocity = 10.0f;
+            particle_params.velocity_offset = glm::vec3(0.0f);
+            particle_params.color_a = glm::vec3(0.2f, 0.2f, 0.2f);
+            particle_params.color_b = glm::vec3(0.0f, 0.0f, 0.0f);
+            spawn_particle_explosion(particle_params);
+
+            player.attack_miss = true;
         }
     }
 
@@ -257,11 +281,21 @@ namespace kvejken
                 const WeaponInfo& weapon = get_weapon_info(player.right_hand_item);
 
                 player.time_since_attack += delta_time;
-                if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && player.time_since_attack > weapon.attack_time)
+
+                float attack_timeout = weapon.attack_time * 2.0f;
+                if (player.attack_hit) attack_timeout = weapon.attack_time;
+                if (player.attack_miss) attack_timeout = weapon.attack_time * 3.0f;
+
+                // TODO:
+                // - boljse animacije in napad iz leve
+                // - enemy health
+                // - popravi velikosti in offsete weapon modelov
+
+                if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && player.time_since_attack > attack_timeout)
                 {
                     player.time_since_attack = 0.0f;
-                    glm::vec3 attack_center = transform.position + camera.position + transform.rotation * glm::vec3(0, 0, -1);
-                    attack(attack_center, weapon.range, &player.points);
+                    player.attack_hit = false;
+                    player.attack_miss = false;
                 }
 
                 glm::vec3 hand_position = transform.position + camera.position;
@@ -281,9 +315,9 @@ namespace kvejken
                         * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
                     weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
                 }
-                else if (player.time_since_attack < weapon.attack_time + 0.2f)
+                else if (player.time_since_attack < weapon.attack_time + 0.8f)
                 {
-                    float t = (player.time_since_attack - weapon.attack_time) / 0.2f;
+                    float t = (player.time_since_attack - weapon.attack_time) / 0.8f;
                     t = 1 - std::pow(1 - t, 3.0f);
                     weapon_offset += glm::mix(glm::vec3(0, 0.4f, 0.7f), glm::vec3(0, 0, 0), t);
 
@@ -301,6 +335,13 @@ namespace kvejken
                     * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale));
 
                 renderer::draw_model(weapon.model, t, Layer::FirstPerson);
+
+                if (player.time_since_attack > weapon.attack_time * 0.25f && player.time_since_attack < weapon.attack_time * 0.75f
+                    && !player.attack_hit && !player.attack_miss)
+                {
+                    glm::vec3 blade_pos = glm::vec3(t * glm::vec4(0, 1.6f, 0, 1));
+                    attack(player, blade_pos, weapon.range, transform.position + camera.position);
+                }
             }
 
             if (player.left_hand_item != ItemType::None)

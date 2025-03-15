@@ -24,6 +24,9 @@ namespace kvejken
         glm::quat left_hand_rotation, right_hand_rotation;
 
         float time_since_attack;
+        bool attack_hit;
+        bool attack_miss;
+
         float time_since_recv_damage;
         int death_message;
 
