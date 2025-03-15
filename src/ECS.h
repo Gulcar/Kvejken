@@ -3,6 +3,7 @@
 #include <vector>
 #include <bitset>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace kvejken
 {
@@ -449,7 +450,7 @@ namespace kvejken
     {
         std::vector<IComponentPool*>& component_pools();
         std::unordered_map<Entity, std::bitset<32>>& signatures();
-        std::vector<Entity>& to_destroy();
+        std::unordered_set<Entity>& to_destroy();
 
         inline uint32_t new_component_id()
         {
@@ -492,7 +493,7 @@ namespace kvejken
 
         inline void queue_destroy_entity(Entity entity)
         {
-            to_destroy().push_back(entity);
+            to_destroy().insert(entity);
         }
 
         inline void destroy_queued_entities()

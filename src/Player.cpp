@@ -153,24 +153,40 @@ namespace kvejken
         }
     }
 
-    static void attack(glm::vec3 attack_position, float attack_radius, int* out_points)
+    static void attack(glm::vec3 attack_pos, float attack_radius, int* out_points)
     {
         Entity closest = -1;
         float closest_dist = attack_radius * attack_radius;
+        glm::vec3 enemy_pos;
 
         for (auto [id, enemy, transform] : ecs::get_components_ids<Enemy, Transform>())
         {
-            float dist2 = glm::distance2(attack_position, transform.position);
+            float dist2 = glm::distance2(attack_pos, transform.position);
             if (dist2 < closest_dist)
             {
                 closest_dist = dist2;
                 closest = id;
+                enemy_pos = transform.position;
             }
         }
-        // TODO: particles
 
         if (closest != (Entity)-1)
         {
+            ParticleExplosionParameters particle_params;
+            particle_params.min_count = 10;
+            particle_params.max_count = 20;
+            particle_params.min_size = 0.1f;
+            particle_params.max_size = 0.2f;
+            particle_params.min_time_alive = 0.2f;
+            particle_params.max_time_alive = 0.4f;
+            particle_params.origin = enemy_pos;
+            particle_params.min_velocity = 15.0f;
+            particle_params.max_velocity = 20.2f;
+            particle_params.velocity_offset = glm::vec3(0.0f);
+            particle_params.color_a = glm::vec3(0.6f, 0.0f, 0.0f);
+            particle_params.color_b = glm::vec3(0.0f, 0.0f, 0.0f);
+            spawn_particle_explosion(particle_params);
+
             ecs::queue_destroy_entity(closest);
             *out_points += 10;
         }
@@ -192,7 +208,7 @@ namespace kvejken
             {
                 if (glm::distance2(player_transform.position, enemy_transform.position) < 2.0f)
                 {
-                    damage_player(player, utils::rand(15, 30));
+                    damage_player(player, utils::rand(15, 30), enemy_transform.position);
                     ecs::queue_destroy_entity(enemy_id);
                 }
             }
@@ -231,24 +247,6 @@ namespace kvejken
             if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
             {
                 player.move_velocity *= SLIDE_BOOST;
-            }
-
-            if (input::key_pressed(GLFW_KEY_T))
-            {
-                ParticleExplosionParameters particle_params;
-                particle_params.min_count = 10;
-                particle_params.max_count = 20;
-                particle_params.min_size = 0.1f;
-                particle_params.max_size = 0.2f;
-                particle_params.min_time_alive = 0.2f;
-                particle_params.max_time_alive = 0.4f;
-                particle_params.origin = glm::vec3(0, 8, 0);
-                particle_params.min_velocity = 15.0f;
-                particle_params.max_velocity = 20.2f;
-                particle_params.velocity_offset = glm::vec3(0.0f);
-                particle_params.color_a = glm::vec3(1.0f, 0.0f, 0.0f);
-                particle_params.color_b = glm::vec3(1.0f, 1.0f, 0.0f);
-                spawn_particle_explosion(particle_params);
             }
 
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
@@ -397,7 +395,7 @@ namespace kvejken
         }
     }
 
-    void damage_player(Player& player, int damage)
+    void damage_player(Player& player, int damage, glm::vec3 attack_pos)
     {
         player.health -= damage;
 
@@ -409,6 +407,20 @@ namespace kvejken
         }
 
         player.time_since_recv_damage = 0.0f;
-        // TODO: particles
+        
+        ParticleExplosionParameters particle_params;
+        particle_params.min_count = 10;
+        particle_params.max_count = 20;
+        particle_params.min_size = 0.1f;
+        particle_params.max_size = 0.2f;
+        particle_params.min_time_alive = 0.2f;
+        particle_params.max_time_alive = 0.4f;
+        particle_params.origin = attack_pos;
+        particle_params.min_velocity = 15.0f;
+        particle_params.max_velocity = 20.2f;
+        particle_params.velocity_offset = glm::vec3(0.0f);
+        particle_params.color_a = glm::vec3(1.0f, 0.0f, 0.0f);
+        particle_params.color_b = glm::vec3(1.0f, 1.0f, 0.0f);
+        spawn_particle_explosion(particle_params);
     }
 }

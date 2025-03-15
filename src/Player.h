@@ -35,5 +35,5 @@ namespace kvejken
 
     void update_players(float delta_time, float game_time);
 
-    void damage_player(Player& player, int damage);
+    void damage_player(Player& player, int damage, glm::vec3 attack_pos);
 }

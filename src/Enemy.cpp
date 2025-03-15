@@ -45,8 +45,6 @@ namespace kvejken
         }
     }
 
-    // TODO: lahko bi namesto (ali pa ce bi oboje gledal) casa gledal
-    // koliko sob je ze odprl oz. kako dalec je v igri
     float time_btw_spawns(float game_time, int player_progress)
     {
         game_time += player_progress * 124.0f;
