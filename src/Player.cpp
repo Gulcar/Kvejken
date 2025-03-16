@@ -8,6 +8,7 @@
 #include "Interactable.h"
 #include "Particles.h"
 #include <glm/mat4x4.hpp>
+#include <glm/gtc/noise.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
 
@@ -192,6 +193,7 @@ namespace kvejken
             player.points += 10;
 
             player.attack_hit = true;
+            player.screen_shake += 0.3f;
         }
         // miss
         else if (auto environment_hit = collision::raycast(camera_pos, glm::normalize(blade_pos - camera_pos),
@@ -213,6 +215,7 @@ namespace kvejken
             spawn_particle_explosion(particle_params);
 
             player.attack_miss = true;
+            player.screen_shake += 0.2f;
         }
     }
 
@@ -323,7 +326,8 @@ namespace kvejken
                 if (glm::distance2(player_transform.position, enemy_transform.position) < 2.0f)
                 {
                     damage_player(player, utils::rand(15, 30), enemy_transform.position);
-                    ecs::queue_destroy_entity(enemy_id);
+                    if (player.health > 0)
+                        ecs::queue_destroy_entity(enemy_id);
                 }
             }
         }
@@ -351,11 +355,21 @@ namespace kvejken
 
             if (input::key_held(GLFW_KEY_LEFT_SHIFT))
             {
-                camera.position.y = 0.29f;
+                camera.position = glm::vec3(0, 0.29f, 0);
             }
             else
             {
-                camera.position.y = 0.44f;
+                camera.position = glm::vec3(0, 0.44f, 0);
+            }
+
+            if (player.screen_shake > 0.0f)
+            {
+                float magnitude = player.screen_shake / 20.0f * (1.0f + glm::length(glm::vec3(player.move_velocity, player.velocity_y)) / 3.0f);
+                camera.position.x += glm::simplex(glm::vec2(10.0f, game_time * 20.0f)) * magnitude;
+                camera.position.y += glm::simplex(glm::vec2(20.0f, game_time * 20.0f)) * magnitude;
+                camera.position.z += glm::simplex(glm::vec2(30.0f, game_time * 20.0f)) * magnitude;
+
+                player.screen_shake = std::max(player.screen_shake - delta_time, 0.0f);
             }
 
             if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
@@ -422,9 +436,9 @@ namespace kvejken
             renderer::draw_text(points.c_str(), glm::vec2(16, 48), 48);
             renderer::draw_text(health.c_str(), glm::vec2(16, 96), 48);
 
-            if (player.time_since_recv_damage < 1.0f)
+            if (player.time_since_recv_damage < 1.5f)
             {
-                float opacity = 0.4f * (1.0f - player.time_since_recv_damage) * (1.0f - player.time_since_recv_damage);
+                float opacity = 0.4f * (1.5f - player.time_since_recv_damage) * (1.5f - player.time_since_recv_damage) / (1.5f * 1.5f);
                 renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, opacity));
                 player.time_since_recv_damage += delta_time;
             }
@@ -475,6 +489,7 @@ namespace kvejken
         }
 
         player.time_since_recv_damage = 0.0f;
+        player.screen_shake += 0.65f;
         
         ParticleExplosionParameters particle_params;
         particle_params.min_count = 10;
@@ -490,5 +505,10 @@ namespace kvejken
         particle_params.color_a = glm::vec3(1.0f, 0.0f, 0.0f);
         particle_params.color_b = glm::vec3(1.0f, 1.0f, 0.0f);
         spawn_particle_explosion(particle_params);
+    }
+
+    void add_screen_shake(float amount)
+    {
+        ecs::get_components<Player>().begin()->screen_shake += amount;
     }
 }

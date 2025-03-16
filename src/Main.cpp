@@ -62,7 +62,7 @@ int main()
             game_time += delta_time;
 
         float real_time = glfwGetTime();
-        float delta_time = real_time - prev_time;
+        delta_time = real_time - prev_time;
         if (delta_time > 1.0f / 15.0f)
         {
             printf("WARNING: high delta_time (%.2f ms)\n", delta_time * 1000.0f);

@@ -47,7 +47,7 @@ namespace kvejken
 
     float time_btw_spawns(float game_time, int player_progress)
     {
-        //return 1.5f;
+        return 1.5f;
         game_time += player_progress * 124.0f;
         // cas pada zaradi e na -x in valovi zaradi sinusa
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
@@ -83,21 +83,24 @@ namespace kvejken
     };
     static glm::vec3 get_spawn_point(glm::vec3 player_position)
     {
-        int nearest = 0;
-        float dist = 1e30f;
+        static std::vector<int> ok_spawns;
+        ok_spawns.clear();
 
         for (int i = 0; i < std::size(SPAWN_POINTS); i++)
         {
             float dist2 = glm::distance2(SPAWN_POINTS[i], player_position);
 
-            if (dist2 < dist && dist2 > 5.0f * 5.0f)
+            if (dist2 > 6.0f * 6.0f && dist2 < 25.0f * 25.0f)
             {
-                dist = dist2;
-                nearest = i;
+                ok_spawns.push_back(i);
             }
         }
 
-        return SPAWN_POINTS[nearest];
+        if (ok_spawns.size() == 0)
+            return SPAWN_POINTS[0];
+
+        int random = utils::rand(0, ok_spawns.size() - 1);
+        return SPAWN_POINTS[ok_spawns[random]];
     }
 
     void spawn_enemy(glm::vec3 position, glm::vec3 rot_dir)

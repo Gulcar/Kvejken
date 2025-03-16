@@ -19,6 +19,8 @@ namespace kvejken
         float look_yaw;
         float look_pitch;
 
+        float screen_shake;
+
         ItemType left_hand_item;
         WeaponType right_hand_item;
         glm::quat left_hand_rotation, right_hand_rotation;
@@ -41,4 +43,6 @@ namespace kvejken
     void update_players(float delta_time, float game_time);
 
     void damage_player(Player& player, int damage, glm::vec3 attack_pos);
+
+    void add_screen_shake(float amount);
 }
