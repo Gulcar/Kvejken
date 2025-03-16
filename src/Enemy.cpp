@@ -47,7 +47,7 @@ namespace kvejken
 
     float time_btw_spawns(float game_time, int player_progress)
     {
-        return 1.5f;
+        //return 1.5f;
         game_time += player_progress * 124.0f;
         // cas pada zaradi e na -x in valovi zaradi sinusa
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
@@ -81,7 +81,7 @@ namespace kvejken
         glm::vec3(20.96f, -0.3f, 110.0f),
         glm::vec3(10.32f, -0.3f, 96.16f),
     };
-    static glm::vec3 get_spawn_point(glm::vec3 player_position, glm::vec3 player_direction)
+    static glm::vec3 get_spawn_point(glm::vec3 player_position)
     {
         int nearest = 0;
         float dist = 1e30f;
@@ -90,8 +90,7 @@ namespace kvejken
         {
             float dist2 = glm::distance2(SPAWN_POINTS[i], player_position);
 
-            if (dist2 < dist && dist2 > 5.0f * 5.0f &&
-                glm::dot(glm::normalize(SPAWN_POINTS[i] - player_position), player_direction) < 0.1f)
+            if (dist2 < dist && dist2 > 5.0f * 5.0f)
             {
                 dist = dist2;
                 nearest = i;
@@ -132,17 +131,29 @@ namespace kvejken
 
     void update_enemies(float delta_time, float game_time)
     {
-        const Transform& player_transform = (*ecs::get_components<Player, Transform>().begin()).second;
+        const auto pl = (*ecs::get_components<Player, Transform>().begin());
+        const Player& player = pl.first;
+        const Transform& player_transform = pl.second;
 
-        m_time_to_spawn -= delta_time;
-        if (m_time_to_spawn <= 0.0f)
+        static float spawner_active_time = 0.0f;
+        // zacni s spawnanjem ko player pobere prvo orozje
+        if (spawner_active_time == 0.0f && player.right_hand_item != WeaponType::None)
         {
-            int player_progress = ecs::get_components<Player>().begin()->progress;
-            m_time_to_spawn = time_btw_spawns(game_time, player_progress);
+            spawner_active_time += delta_time;
+        }
+        else if (spawner_active_time > 0.0f)
+        {
+            spawner_active_time += delta_time;
+            m_time_to_spawn -= delta_time;
 
-            glm::vec3 spawn_point = get_spawn_point(player_transform.position, player_transform.rotation * glm::vec3(0, 0, -1));
-            glm::vec3 direction = player_transform.position - spawn_point;
-            spawn_enemy(spawn_point, direction);
+            if (m_time_to_spawn <= 0.0f)
+            {
+                m_time_to_spawn = time_btw_spawns(spawner_active_time, player.progress);
+
+                glm::vec3 spawn_point = get_spawn_point(player_transform.position);
+                glm::vec3 direction = player_transform.position - spawn_point;
+                spawn_enemy(spawn_point, direction);
+            }
         }
 
         for (auto& [enemy, model, transform] : ecs::get_components<Enemy, Model*, Transform>())
