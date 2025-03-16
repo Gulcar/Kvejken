@@ -17,21 +17,21 @@ namespace kvejken
     void init_weapon_item_infos()
     {
         WeaponInfo& axe = m_weapon_infos[WeaponType::Axe];
-        axe.range = 2.0f;
+        axe.range = 0.31f;
         axe.attack_time = 0.5f;
         axe.model = assets::axe.get();
         axe.model_scale = 0.5f;
         axe.model_offset = glm::vec3(0.0f, 0.0f, 0.0f);
 
         WeaponInfo& hammer = m_weapon_infos[WeaponType::Hammer];
-        hammer.range = 2.4f;
+        hammer.range = 0.37f;
         hammer.attack_time = 0.6f;
         hammer.model = assets::hammer.get();
         hammer.model_scale = 0.3f;
         hammer.model_offset = glm::vec3(0.0f, 0.3f, 0.0f);
 
         WeaponInfo& spiked_club = m_weapon_infos[WeaponType::SpikedClub];
-        spiked_club.range = 1.66f;
+        spiked_club.range = 0.26f;
         spiked_club.attack_time = 0.4f;
         spiked_club.model = assets::spiked_club.get();
         spiked_club.model_scale = 0.25f;

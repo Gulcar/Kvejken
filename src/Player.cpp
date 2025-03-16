@@ -195,7 +195,7 @@ namespace kvejken
         }
         // miss
         else if (auto environment_hit = collision::raycast(camera_pos, glm::normalize(blade_pos - camera_pos),
-            glm::length(blade_pos - camera_pos) + attack_radius / 2.0f))
+            glm::length(blade_pos - camera_pos) + attack_radius * 0.7f))
         {
             ParticleExplosionParameters particle_params;
             particle_params.min_count = 5;
@@ -276,11 +276,13 @@ namespace kvejken
 
         renderer::draw_model(weapon.model, t, Layer::FirstPerson);
 
-        if (player.time_since_attack > weapon.attack_time * 0.25f && player.time_since_attack < weapon.attack_time * 0.75f
+        if (player.time_since_attack > weapon.attack_time * 0.21f && player.time_since_attack < weapon.attack_time * 0.5f
             && !player.attack_hit && !player.attack_miss)
         {
             glm::vec3 blade_pos = glm::vec3(t * glm::vec4(0, 1.6f, 0, 1));
             attack(player, blade_pos, weapon.range, transform.position + camera.position);
+
+            //renderer::draw_model(assets::test_cube.get(), blade_pos, glm::vec3(0), glm::vec3(weapon.range * 2.0f));
         }
     }
 
