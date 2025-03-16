@@ -20,22 +20,22 @@ namespace kvejken
         axe.range = 2.0f;
         axe.attack_time = 0.5f;
         axe.model = assets::axe.get();
-        axe.model_scale = 0.3f;
-        axe.model_offset = glm::vec3(0.3f, -0.5f, -0.5f);
+        axe.model_scale = 0.5f;
+        axe.model_offset = glm::vec3(0.0f, 0.0f, 0.0f);
 
         WeaponInfo& hammer = m_weapon_infos[WeaponType::Hammer];
         hammer.range = 2.4f;
         hammer.attack_time = 0.6f;
         hammer.model = assets::hammer.get();
-        hammer.model_scale = 0.2f;
-        hammer.model_offset = glm::vec3(0.35f, -0.4f, -0.5f);
+        hammer.model_scale = 0.3f;
+        hammer.model_offset = glm::vec3(0.0f, 0.3f, 0.0f);
 
         WeaponInfo& spiked_club = m_weapon_infos[WeaponType::SpikedClub];
         spiked_club.range = 1.66f;
         spiked_club.attack_time = 0.4f;
         spiked_club.model = assets::spiked_club.get();
-        spiked_club.model_scale = 0.15f;
-        spiked_club.model_offset = glm::vec3(0.3f, -0.35f, -0.5f);
+        spiked_club.model_scale = 0.25f;
+        spiked_club.model_offset = glm::vec3(0.0f, 0.2f, 0.0f);
 
 
         ItemInfo& key = m_item_infos[ItemType::Key];
@@ -104,7 +104,7 @@ namespace kvejken
         inter.cost = cost;
 
         Transform transform;
-        transform.position = position;
+        transform.position = position + weapon.model_offset;
         transform.rotation = rotation;
         transform.scale = weapon.model_scale;
 
@@ -157,6 +157,10 @@ namespace kvejken
         spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 100);
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
+
+        spawn_weapon(WeaponType::Axe, glm::vec3(0, 3, 0), glm::vec3(0, PI / 2.0f, 0), 100);
+        spawn_weapon(WeaponType::SpikedClub, glm::vec3(1, 3, 0), glm::vec3(0, 0, 0), 100);
+        spawn_weapon(WeaponType::Hammer, glm::vec3(2, 3, 0), glm::vec3(0, 0, 0), 100);
     }
 
     static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)
@@ -192,7 +196,7 @@ namespace kvejken
 
     static void update_weapons()
     {
-        std::vector<std::tuple<WeaponType, glm::vec3>> new_spawn;
+        static std::vector<std::tuple<WeaponType, glm::vec3>> new_spawn;
         new_spawn.clear();
 
         for (const auto [id, weapon, interactable] : ecs::get_components_ids<WeaponType, Interactable>())
@@ -218,12 +222,12 @@ namespace kvejken
         }
 
         for (auto& [type, position] : new_spawn)
-            spawn_weapon(type, position, glm::vec3(0, 0, PI / 2.0f), 0);
+            spawn_weapon(type, position - get_weapon_info(type).model_offset, glm::vec3(0, 0, PI / 2.0f), 0);
     }
 
     static void update_items()
     {
-        std::vector<std::tuple<ItemType, glm::vec3>> new_spawn;
+        static std::vector<std::tuple<ItemType, glm::vec3>> new_spawn;
         new_spawn.clear();
 
         for (const auto [id, item, interactable] : ecs::get_components_ids<ItemType, Interactable>())
