@@ -26,6 +26,8 @@ namespace kvejken
         float time_since_attack;
         bool attack_hit;
         bool attack_miss;
+        bool attack_from_left;
+        int attack_combo;
 
         float time_since_recv_damage;
         int death_message;

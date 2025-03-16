@@ -156,7 +156,7 @@ namespace kvejken
     static void attack(Player& player, glm::vec3 blade_pos, float attack_radius, glm::vec3 camera_pos)
     {
         Entity closest = -1;
-        float closest_dist = attack_radius * attack_radius;
+        float closest_dist = (attack_radius + 1.25f) * (attack_radius + 1.25f);
         glm::vec3 enemy_pos;
 
         for (auto [id, enemy, transform] : ecs::get_components_ids<Enemy, Transform>())
@@ -222,26 +222,44 @@ namespace kvejken
 
         player.time_since_attack += delta_time;
 
-        float attack_timeout = weapon.attack_time * 2.0f;
-        if (player.attack_hit) attack_timeout = weapon.attack_time;
-        if (player.attack_miss) attack_timeout = weapon.attack_time * 3.0f;
+        float weapon_return_time = (player.attack_hit || player.attack_miss) ? 0.7f : 2.0f;
+        float attack_timeout = weapon.attack_time + weapon_return_time * 0.6f;
 
         // TODO:
         // - boljse animacije in napad iz leve
         // - enemy health
-        // - popravi velikosti in offsete weapon modelov
 
-        if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && player.time_since_attack > attack_timeout)
+        bool can_combo = player.attack_hit && player.time_since_attack > weapon.attack_time
+            && player.time_since_attack < weapon.attack_time + 0.2f && player.attack_combo < 3;
+        bool can_combo_left = !player.attack_from_left && can_combo;
+        bool can_combo_right = player.attack_from_left && can_combo;
+
+        if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && (player.time_since_attack > attack_timeout || can_combo_right))
         {
             player.time_since_attack = 0.0f;
             player.attack_hit = false;
             player.attack_miss = false;
+
+            player.attack_from_left = false;
+            if (can_combo_right) player.attack_combo += 1;
+            else player.attack_combo = 1;
         }
+        else if (input::mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) && can_combo_left)
+        {
+            player.time_since_attack = 0.0f;
+            player.attack_hit = false;
+            player.attack_miss = false;
+
+            player.attack_from_left = true;
+            player.attack_combo += 1;
+        }
+
+        float left_mult = (player.attack_from_left && player.time_since_attack < weapon.attack_time + weapon_return_time) ? -1.0f : 1.0f;
 
         glm::vec3 hand_position = transform.position + camera.position;
         hand_position.y += glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 300.0f;
 
-        glm::vec3 weapon_offset = glm::vec3(0.3f, -0.5f, -0.5f);
+        glm::vec3 weapon_offset = glm::vec3(0.3f * left_mult, -0.5f, -0.5f);
         glm::mat4 weapon_rotation(1.0f);
         glm::vec3 weapon_pivot = glm::vec3(0, -1.375f, 0);
         if (player.time_since_attack < weapon.attack_time)
@@ -250,20 +268,22 @@ namespace kvejken
             t = 1 - std::pow(1 - t, 3.0f);
             weapon_offset += glm::mix(glm::vec3(0, 0.8f, 0.3f), glm::vec3(0, 0.4f, 0.7f), t);
 
-            glm::quat rot1 = glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
-            glm::quat rot2 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
-                * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
+            glm::quat rot1 = glm::angleAxis(glm::radians(-50.0f * left_mult), glm::vec3(0, 0, 1));
+            glm::quat rot2 = glm::angleAxis(glm::radians(150.0f * left_mult), glm::vec3(0, 1, 0))
+                * glm::angleAxis(glm::radians(-50.0f * left_mult), glm::vec3(0, 0, 1));
             weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
         }
-        else if (player.time_since_attack < weapon.attack_time + 0.8f)
+        else if (player.time_since_attack < weapon.attack_time + weapon_return_time)
         {
-            float t = (player.time_since_attack - weapon.attack_time) / 0.8f;
+            float t = (player.time_since_attack - weapon.attack_time) / weapon_return_time;
             t = 1 - std::pow(1 - t, 3.0f);
-            weapon_offset += glm::mix(glm::vec3(0, 0.4f, 0.7f), glm::vec3(0, 0, 0), t);
 
-            glm::quat rot1 = glm::angleAxis(glm::radians(140.0f), glm::vec3(0, 1, 0))
-                * glm::angleAxis(glm::radians(-50.0f), glm::vec3(0, 0, 1));
-            glm::quat rot2 = glm::quat(1, 0, 0, 0);
+            glm::vec3 return_offset = player.attack_from_left ? glm::vec3(0.6f, 0, 0) : glm::vec3(0, 0, 0);
+            weapon_offset += glm::mix(glm::vec3(0, 0.4f, 0.7f), return_offset, t);
+
+            glm::quat rot1 = glm::angleAxis(glm::radians(150.0f * left_mult), glm::vec3(0, 1, 0))
+                * glm::angleAxis(glm::radians(-50.0f * left_mult), glm::vec3(0, 0, 1));
+            glm::quat rot2 = player.attack_from_left ? glm::quat(0, 0, 1, 0) : glm::quat(1, 0, 0, 0);
             weapon_rotation = glm::toMat4(glm::slerp(rot1, rot2, t));
         }
 
@@ -276,7 +296,7 @@ namespace kvejken
 
         renderer::draw_model(weapon.model, t, Layer::FirstPerson);
 
-        if (player.time_since_attack > weapon.attack_time * 0.21f && player.time_since_attack < weapon.attack_time * 0.5f
+        if (player.time_since_attack > weapon.attack_time * 0.21f && player.time_since_attack < weapon.attack_time * 0.45f
             && !player.attack_hit && !player.attack_miss)
         {
             glm::vec3 blade_pos = glm::vec3(t * glm::vec4(0, 1.6f, 0, 1));
