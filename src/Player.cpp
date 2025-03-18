@@ -86,8 +86,8 @@ namespace kvejken
         particles.min_velocity = 0.5f;
         particles.max_velocity = 0.75f;
         particles.velocity_offset = glm::vec3(0, 1, 0);
-        particles.color_a = glm::vec3(1, 0, 0);
-        particles.color_b = glm::vec3(1, 0.3f, 0);
+        particles.color_a = glm::vec3(1, 0.01f, 0);
+        particles.color_b = glm::vec3(1, 0.03f, 0);
         particles.draw_layer = Layer::FirstPerson;
 
         Entity entity = ecs::create_entity();
@@ -342,7 +342,7 @@ namespace kvejken
 
             for (auto [enemy_id, enemy, enemy_transform] : ecs::get_components_ids<Enemy, Transform>())
             {
-                if (glm::distance2(player_transform.position, enemy_transform.position) < 2.0f)
+                if (glm::distance2(player_transform.position, enemy_transform.position) < 1.5f)
                 {
                     damage_player(player, utils::rand(15, 30), enemy_transform.position);
                     if (player.health > 0)
@@ -503,13 +503,15 @@ namespace kvejken
             }
         }
 
-        for (auto& player : ecs::get_components<Player>())
+        for (auto& [player, particle_spawner] : ecs::get_components<Player, ParticleSpawner>())
         {
             if (player.local && player.health <= 0)
             {
                 renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.3f));
 
                 renderer::draw_text(death_texts[player.death_message], glm::vec2(1920 / 2, 1080 / 2), 128, glm::vec4(1.0f), Align::Center);
+
+                particle_spawner.active = false;
             }
         }
     }
