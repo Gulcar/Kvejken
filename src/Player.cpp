@@ -74,11 +74,28 @@ namespace kvejken
         PointLight light = {}; // ostale lastnosti so posodobljene vsak frame
         light.offset = camera.position;
 
+        ParticleSpawner particles = {};
+        particles.active = true;
+        particles.spawn_rate = 100.0f;
+        particles.min_size = 0.02f;
+        particles.max_size = 0.03f;
+        particles.min_time_alive = 0.3f;
+        particles.max_time_alive = 0.45f;
+        particles.origin = glm::vec3(0, 6, 0);
+        particles.origin_radius = 0.1f;
+        particles.min_velocity = 0.5f;
+        particles.max_velocity = 0.75f;
+        particles.velocity_offset = glm::vec3(0, 1, 0);
+        particles.color_a = glm::vec3(1, 0, 0);
+        particles.color_b = glm::vec3(1, 0.3f, 0);
+        particles.draw_layer = Layer::FirstPerson;
+
         Entity entity = ecs::create_entity();
         ecs::add_component(player, entity);
         ecs::add_component(camera, entity);
         ecs::add_component(transform, entity);
         ecs::add_component(light, entity);
+        ecs::add_component(particles, entity);
     }
 
     void update_players_movement(float delta_time, float game_time)
@@ -187,6 +204,7 @@ namespace kvejken
             particle_params.velocity_offset = glm::vec3(0.0f);
             particle_params.color_a = glm::vec3(0.6f, 0.0f, 0.0f);
             particle_params.color_b = glm::vec3(0.0f, 0.0f, 0.0f);
+            particle_params.draw_layer = Layer::World;
             spawn_particle_explosion(particle_params);
 
             ecs::queue_destroy_entity(closest);
@@ -212,6 +230,7 @@ namespace kvejken
             particle_params.velocity_offset = glm::vec3(0.0f);
             particle_params.color_a = glm::vec3(0.2f, 0.2f, 0.2f);
             particle_params.color_b = glm::vec3(0.0f, 0.0f, 0.0f);
+            particle_params.draw_layer = Layer::World;
             spawn_particle_explosion(particle_params);
 
             player.attack_miss = true;
@@ -332,7 +351,7 @@ namespace kvejken
             }
         }
 
-        for (auto [player, camera, transform] : ecs::get_components<Player, Camera, Transform>())
+        for (auto [id, player, camera, transform] : ecs::get_components_ids<Player, Camera, Transform>())
         {
             if (!player.local || player.health <= 0)
                 continue;
@@ -398,6 +417,23 @@ namespace kvejken
                     * glm::scale(glm::mat4(1.0f), glm::vec3(item.model_scale));
 
                 renderer::draw_model(item.model, t, Layer::FirstPerson);
+
+                ParticleSpawner& particle_spawner = ecs::get_component<ParticleSpawner>(id);
+                PointLight& point_light = ecs::get_component<PointLight>(id);
+                if (player.left_hand_item == ItemType::Torch)
+                {
+                    glm::vec3 torch_fire_pos = glm::vec3(t * glm::vec4(0.0f, 1.4f, 0.0f, 1.0f));
+                    particle_spawner.active = true;
+                    particle_spawner.origin = torch_fire_pos - transform.position;
+
+                    glm::vec3 ray_origin = transform.position + camera.position;
+                    glm::vec3 ray_dir = glm::normalize(torch_fire_pos - ray_origin);
+                    point_light.offset = ray_dir * 0.4f + ray_origin - transform.position;
+                }
+                else
+                {
+                    particle_spawner.active = false;
+                }
             }
 
             Interactable* closest_interactable = nullptr;
@@ -456,13 +492,14 @@ namespace kvejken
 
             if (player.left_hand_item == ItemType::Torch)
             {
-                light.color = glm::vec3(1.0f, 0.7f, 0.7f);
+                light.color = glm::vec3(1.0f, 0.6f, 0.4f);
                 light.strength = 12.0f;
             }
             else
             {
                 light.color = glm::vec3(1, 1, 1);
-                light.strength = (1.0f - sun) * 2.2f;
+                light.strength = (1.0f - sun) * 1.4f;
+                light.offset = glm::vec3(0, 0, 0);
             }
         }
 
@@ -504,6 +541,7 @@ namespace kvejken
         particle_params.velocity_offset = glm::vec3(0.0f);
         particle_params.color_a = glm::vec3(1.0f, 0.0f, 0.0f);
         particle_params.color_b = glm::vec3(1.0f, 1.0f, 0.0f);
+        particle_params.draw_layer = Layer::World;
         spawn_particle_explosion(particle_params);
     }
 

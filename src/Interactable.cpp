@@ -137,7 +137,7 @@ namespace kvejken
         if (item_tag == ItemType::Torch)
         {
             PointLight light;
-            light.offset = glm::vec3(0, 0.8f, 0);
+            light.offset = rotation * glm::vec3(0, 0.8f, 0);
             light.color = glm::vec3(1.0f, 0.5f, 0.5f);
             light.strength = 10.0f;
             ecs::add_component(light, e);
@@ -161,6 +161,7 @@ namespace kvejken
         spawn_weapon(WeaponType::Axe, glm::vec3(0, 3, 0), glm::vec3(0, PI / 2.0f, 0), 100);
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(1, 3, 0), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(2, 3, 0), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Torch, glm::vec3(3, 3, 0), glm::vec3(0, 0, 0), 100);
     }
 
     static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)

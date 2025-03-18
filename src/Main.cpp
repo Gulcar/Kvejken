@@ -131,7 +131,7 @@ int main()
         }
 
         draw_enemy_spawns(game_time);
-        draw_particles();
+        draw_particles(game_time);
 
         ui::draw_and_update_ui();
 

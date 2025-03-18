@@ -296,7 +296,7 @@ namespace kvejken::renderer
 
         for (const auto [light, transform] : ecs::get_components<PointLight, Transform>())
         {
-            point_lights_pos.push_back(transform.position + transform.rotation * light.offset);
+            point_lights_pos.push_back(transform.position + light.offset);
             point_lights_color.push_back(light.color);
             point_lights_strength.push_back(light.strength);
         }

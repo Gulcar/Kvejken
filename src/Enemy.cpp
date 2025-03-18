@@ -47,7 +47,7 @@ namespace kvejken
 
     float time_btw_spawns(float game_time, int player_progress)
     {
-        return 1.5f;
+        //return 1.5f;
         game_time += player_progress * 124.0f;
         // cas pada zaradi e na -x in valovi zaradi sinusa
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
