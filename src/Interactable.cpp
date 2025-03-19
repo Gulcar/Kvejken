@@ -1,4 +1,4 @@
-#include "Interactable.h"
+﻿#include "Interactable.h"
 #include "ECS.h"
 #include "Components.h"
 #include "Model.h"
@@ -13,6 +13,8 @@ namespace kvejken
         std::unordered_map<WeaponType, WeaponInfo> m_weapon_infos;
         std::unordered_map<ItemType, ItemInfo> m_item_infos;
     }
+
+    constexpr glm::vec4 INTERACT_TEXT_COLOR = glm::vec4(0.9f, 0.9f, 0.9f, 1.0f);
 
     void init_weapon_item_infos()
     {
@@ -190,7 +192,16 @@ namespace kvejken
             }
             else if (interactable.player_close)
             {
-                // TODO: napisi na zaslon: odpri prehod za x tock [E]
+                if (interactable.cost == COST_KEY)
+                {
+                    renderer::draw_text(u8"[E] odpri prehod s ključem", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
+                else
+                {
+                    char text[64];
+                    sprintf(text, u8"[E] odpri prehod za %d točk", interactable.cost);
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
             }
 
             interactable.player_close = false;
@@ -218,7 +229,16 @@ namespace kvejken
             }
             else if (interactable.player_close)
             {
-                // TODO: napisi na zaslon: kupi predmet za x tock [E] razen ce zastonj ker sem ga ze kupil in dropal
+                if (interactable.cost == 0)
+                {
+                    renderer::draw_text(u8"[E] poberi orožje", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
+                else
+                {
+                    char text[64];
+                    sprintf(text, u8"[E] kupi orožje za %d točk", interactable.cost);
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
             }
 
             interactable.player_close = false;
@@ -249,7 +269,24 @@ namespace kvejken
             }
             else if (interactable.player_close)
             {
-                // TODO: napisi na zaslon: kupi predmet za x tock [E] razen ce zastonj ker sem ga ze kupil in dropal
+                const char* item_name;
+                if (item == ItemType::Key) item_name = u8"ključ";
+                else if (item == ItemType::Torch) item_name = u8"baklo";
+                else if (item == ItemType::Skull) item_name = u8"lobanjo";
+                else ERROR_EXIT("no item_name found");
+
+                if (interactable.cost == 0)
+                {
+                    char text[64];
+                    sprintf(text, u8"[E] vzemi %s", item_name);
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
+                else
+                {
+                    char text[64];
+                    sprintf(text, u8"[E] kupi %s za %d točk", item_name, interactable.cost);
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                }
             }
 
             interactable.player_close = false;

@@ -404,6 +404,9 @@ namespace kvejken
                 update_player_weapon(player, transform, camera, delta_time, game_time);
             }
 
+            ParticleSpawner& particle_spawner = ecs::get_component<ParticleSpawner>(id);
+            particle_spawner.active = player.left_hand_item == ItemType::Torch;
+
             if (player.left_hand_item != ItemType::None)
             {
                 const ItemInfo& item = get_item_info(player.left_hand_item);
@@ -418,7 +421,6 @@ namespace kvejken
 
                 renderer::draw_model(item.model, t, Layer::FirstPerson);
 
-                ParticleSpawner& particle_spawner = ecs::get_component<ParticleSpawner>(id);
                 PointLight& point_light = ecs::get_component<PointLight>(id);
                 if (player.left_hand_item == ItemType::Torch)
                 {
@@ -430,19 +432,16 @@ namespace kvejken
                     glm::vec3 ray_dir = glm::normalize(torch_fire_pos - ray_origin);
                     point_light.offset = ray_dir * 0.4f + ray_origin - transform.position;
                 }
-                else
-                {
-                    particle_spawner.active = false;
-                }
             }
 
             Interactable* closest_interactable = nullptr;
             float closest_dist = 1e30f;
             for (auto [interactable, interactable_transform] : ecs::get_components<Interactable, Transform>())
             {
-                float dist = glm::distance2(interactable_transform.position, transform.position);
+                glm::vec3 dir = interactable_transform.position - transform.position;
+                float dist = glm::length2(dir);
                 float max_dist = interactable.max_player_dist * interactable.max_player_dist;
-                if (dist < closest_dist && dist < max_dist)
+                if (dist < closest_dist && dist < max_dist && glm::dot(dir / dist, transform.rotation * glm::vec3(0, 0, -1)) > -0.2f)
                 {
                     closest_interactable = &interactable;
                     closest_dist = dist;

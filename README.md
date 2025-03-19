@@ -1,8 +1,8 @@
 # Kvejken
 
 ### TODO:
-- [ ] player damage and death
-- [ ] improve fighting (particles, attack animations)
+- [x] player damage and death
+- [x] improve fighting (particles, attack animations)
 - [ ] menu UI
 - [ ] HUD
 - [ ] end
@@ -12,7 +12,9 @@
 - [ ] custom keybinds
 - [ ] graphics settings
 - [ ] vec posasti
+- [ ] vec orozji
 - [ ] story
+- [ ] zvok
 
 ### vec casa:
 - [ ] multiplayer
