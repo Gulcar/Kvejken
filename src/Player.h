@@ -24,6 +24,8 @@ namespace kvejken
         ItemType left_hand_item;
         WeaponType right_hand_item;
         glm::quat left_hand_rotation, right_hand_rotation;
+        float left_hand_time_since_pickup;
+        float right_hand_time_since_pickup;
 
         float time_since_attack;
         bool attack_hit;

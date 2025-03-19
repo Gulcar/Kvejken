@@ -7,13 +7,18 @@ namespace kvejken
     struct Interactable
     {
         float max_player_dist;
-        int cost;
+        int cost; // tocke ali SpecialCost
 
         bool player_close;
         bool player_interacted;
     };
 
-    constexpr int COST_KEY = -99;
+    enum class SpecialCost
+    {
+        Key = -999,
+        Torch,
+        Skull,
+    };
 
     struct Gate
     {
@@ -36,6 +41,7 @@ namespace kvejken
         None,
         Key,
         Torch,
+        LitTorch,
         Skull,
     };
 
@@ -51,12 +57,14 @@ namespace kvejken
 
     struct ItemInfo
     {
-        int cost; // ce se lahko uporabi za odpiranje vrat npr
+        int cost; // ce se lahko uporabi za odpiranje vrat npr je SpecialCost
 
         Model* model;
         float model_scale;
         glm::vec3 model_offset;
     };
+
+    struct Fireplace {};
 
     void init_weapon_item_infos();
     const WeaponInfo& get_weapon_info(WeaponType type);

@@ -281,6 +281,8 @@ namespace kvejken
         glm::vec3 hand_position = transform.position + camera.position;
         hand_position.y += glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 300.0f;
 
+        glm::vec3 pickup_offset = glm::vec3(0, glm::smoothstep(0.0f, 0.2f, player.right_hand_time_since_pickup) - 1.0f, 0);
+
         glm::vec3 weapon_offset = glm::vec3(0.3f * left_mult, -0.5f, -0.5f);
         glm::mat4 weapon_rotation(1.0f);
         glm::vec3 weapon_pivot = glm::vec3(0, -1.375f, 0);
@@ -311,7 +313,7 @@ namespace kvejken
 
         glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
             * glm::toMat4(player.right_hand_rotation)
-            * glm::translate(glm::mat4(1.0f), weapon_offset + weapon_pivot)
+            * glm::translate(glm::mat4(1.0f), weapon_offset + weapon_pivot + pickup_offset)
             * weapon_rotation
             * glm::translate(glm::mat4(1.0f), weapon.model_offset - weapon_pivot)
             * glm::scale(glm::mat4(1.0f), glm::vec3(weapon.model_scale / 0.5f * 0.3f));
@@ -398,6 +400,8 @@ namespace kvejken
 
             player.right_hand_rotation = glm::slerp(player.right_hand_rotation, transform.rotation, 30.0f * delta_time);
             player.left_hand_rotation = glm::slerp(player.left_hand_rotation, transform.rotation, 40.0f * delta_time);
+            player.left_hand_time_since_pickup += delta_time;
+            player.right_hand_time_since_pickup += delta_time;
 
             if (player.right_hand_item != WeaponType::None)
             {
@@ -405,7 +409,7 @@ namespace kvejken
             }
 
             ParticleSpawner& particle_spawner = ecs::get_component<ParticleSpawner>(id);
-            particle_spawner.active = player.left_hand_item == ItemType::Torch;
+            particle_spawner.active = player.left_hand_item == ItemType::LitTorch;
 
             if (player.left_hand_item != ItemType::None)
             {
@@ -414,15 +418,17 @@ namespace kvejken
                 glm::vec3 hand_position = transform.position + camera.position;
                 hand_position.y -= glm::length(player.move_velocity) * std::sin(game_time * 7.0f) / 600.0f;
 
+                glm::vec3 pickup_offset = glm::vec3(0, glm::smoothstep(0.0f, 0.2f, player.left_hand_time_since_pickup) - 1.0f, 0);
+
                 glm::mat4 t = glm::translate(glm::mat4(1.0f), hand_position)
                     * glm::toMat4(player.left_hand_rotation)
-                    * glm::translate(glm::mat4(1.0f), item.model_offset)
+                    * glm::translate(glm::mat4(1.0f), item.model_offset + pickup_offset)
                     * glm::scale(glm::mat4(1.0f), glm::vec3(item.model_scale));
 
                 renderer::draw_model(item.model, t, Layer::FirstPerson);
 
                 PointLight& point_light = ecs::get_component<PointLight>(id);
-                if (player.left_hand_item == ItemType::Torch)
+                if (player.left_hand_item == ItemType::LitTorch)
                 {
                     glm::vec3 torch_fire_pos = glm::vec3(t * glm::vec4(0.0f, 1.4f, 0.0f, 1.0f));
                     particle_spawner.active = true;
@@ -489,7 +495,7 @@ namespace kvejken
                 sun = 1.0f;
             renderer::set_sun_light(sun);
 
-            if (player.left_hand_item == ItemType::Torch)
+            if (player.left_hand_item == ItemType::LitTorch)
             {
                 light.color = glm::vec3(1.0f, 0.6f, 0.4f);
                 light.strength = 12.0f;

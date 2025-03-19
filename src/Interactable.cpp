@@ -5,6 +5,7 @@
 #include "Assets.h"
 #include "Player.h"
 #include "Collision.h"
+#include "Particles.h"
 
 namespace kvejken
 {
@@ -41,16 +42,20 @@ namespace kvejken
 
 
         ItemInfo& key = m_item_infos[ItemType::Key];
-        key.cost = COST_KEY;
+        key.cost = (int)SpecialCost::Key;
         key.model = assets::key.get();
         key.model_scale = 0.3f;
         key.model_offset = glm::vec3(-0.4f, -0.4f, -1.1f);
 
         ItemInfo& torch = m_item_infos[ItemType::Torch];
-        torch.cost = 0;
+        torch.cost = (int)SpecialCost::Torch;
         torch.model = assets::torch.get();
         torch.model_scale = 0.55f;
         torch.model_offset = glm::vec3(-0.55f, -0.8f, -1.1f);
+
+        ItemInfo& lit_torch = m_item_infos[ItemType::LitTorch];
+        lit_torch = torch;
+        lit_torch.cost = 0;
     }
 
     const WeaponInfo& get_weapon_info(WeaponType type)
@@ -135,15 +140,40 @@ namespace kvejken
         ecs::add_component(item.model, e);
         ecs::add_component(transform, e);
         ecs::add_component(item_tag, e);
+    }
 
-        if (item_tag == ItemType::Torch)
-        {
-            PointLight light;
-            light.offset = rotation * glm::vec3(0, 0.8f, 0);
-            light.color = glm::vec3(1.0f, 0.5f, 0.5f);
-            light.strength = 10.0f;
-            ecs::add_component(light, e);
-        }
+    static void spawn_fireplace(glm::vec3 position)
+    {
+        Transform transform;
+        transform.position = position;
+        transform.rotation = glm::quat(1, 0, 0, 0);
+        transform.scale = 1.0f;
+
+        ParticleSpawner particles = {};
+        particles.active = true;
+        particles.spawn_rate = 120.0f;
+        particles.min_size = 0.04f;
+        particles.max_size = 0.08f;
+        particles.min_time_alive = 0.5f;
+        particles.max_time_alive = 0.8f;
+        particles.origin = glm::vec3(0, 0, 0);
+        particles.origin_radius = 0.2f;
+        particles.min_velocity = 0.5f;
+        particles.max_velocity = 0.75f;
+        particles.velocity_offset = glm::vec3(0, 1, 0);
+        particles.color_a = glm::vec3(1, 0.01f, 0);
+        particles.color_b = glm::vec3(1, 0.03f, 0);
+        particles.draw_layer = Layer::World;
+
+        Interactable inter = {};
+        inter.max_player_dist = 2.0f;
+        inter.cost = (int)SpecialCost::Torch;
+
+        Entity entity = ecs::create_entity();
+        ecs::add_component(transform, entity);
+        ecs::add_component(particles, entity);
+        ecs::add_component(inter, entity);
+        ecs::add_component(Fireplace{}, entity);
     }
 
     void spawn_interactables()
@@ -151,7 +181,7 @@ namespace kvejken
         spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), 100);
         spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), 500);
         spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 700);
-        spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), COST_KEY);
+        spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), (int)SpecialCost::Key);
 
         spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
@@ -160,13 +190,16 @@ namespace kvejken
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
 
+        spawn_fireplace(glm::vec3(-26.67f, 1.508f, 12.14f));
+
+        // samo testno:
         spawn_weapon(WeaponType::Axe, glm::vec3(0, 3, 0), glm::vec3(0, PI / 2.0f, 0), 100);
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(1, 3, 0), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(2, 3, 0), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(3, 3, 0), glm::vec3(0, 0, 0), 100);
     }
 
-    static void update_gates(std::vector<Entity>& remove_interactable, float delta_time)
+    static void update_gates(Player& player, std::vector<Entity>& remove_interactable, float delta_time)
     {
         for (auto [gate, transform] : ecs::get_components<Gate, Transform>())
         {
@@ -186,13 +219,12 @@ namespace kvejken
                 gate.opened = true;
                 remove_interactable.push_back(id);
 
-                auto& player = *ecs::get_components<Player>().begin();
                 player.progress += 1;
                 player.screen_shake += 1.0f;
             }
             else if (interactable.player_close)
             {
-                if (interactable.cost == COST_KEY)
+                if (interactable.cost == (int)SpecialCost::Key)
                 {
                     renderer::draw_text(u8"[E] odpri prehod s ključem", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
@@ -209,7 +241,7 @@ namespace kvejken
         }
     }
 
-    static void update_weapons()
+    static void update_weapons(Player& player, Transform& player_transform)
     {
         static std::vector<std::tuple<WeaponType, glm::vec3>> new_spawn;
         new_spawn.clear();
@@ -218,13 +250,13 @@ namespace kvejken
         {
             if (interactable.player_interacted)
             {
-                auto [player, player_transform] = *ecs::get_components<Player, Transform>().begin();
                 if (player.right_hand_item != WeaponType::None)
                 {
                     new_spawn.push_back({ player.right_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
 
                 player.right_hand_item = weapon;
+                player.right_hand_time_since_pickup = 0.0f;
                 ecs::queue_destroy_entity(id);
             }
             else if (interactable.player_close)
@@ -249,7 +281,7 @@ namespace kvejken
             spawn_weapon(type, position - get_weapon_info(type).model_offset, glm::vec3(0, 0, PI / 2.0f), 0);
     }
 
-    static void update_items()
+    static void update_items(Player& player, Transform& player_transform)
     {
         static std::vector<std::tuple<ItemType, glm::vec3>> new_spawn;
         new_spawn.clear();
@@ -258,20 +290,23 @@ namespace kvejken
         {
             if (interactable.player_interacted)
             {
-                auto [player, player_transform] = *ecs::get_components<Player, Transform>().begin();
                 if (player.left_hand_item != ItemType::None)
                 {
+                    if (player.left_hand_item == ItemType::LitTorch)
+                        player.left_hand_item = ItemType::Torch;
+
                     new_spawn.push_back({ player.left_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
 
                 player.left_hand_item = item;
+                player.left_hand_time_since_pickup = 0.0f;
                 ecs::queue_destroy_entity(id);
             }
             else if (interactable.player_close)
             {
                 const char* item_name;
                 if (item == ItemType::Key) item_name = u8"ključ";
-                else if (item == ItemType::Torch) item_name = u8"baklo";
+                else if (item == ItemType::Torch || item == ItemType::LitTorch) item_name = u8"baklo";
                 else if (item == ItemType::Skull) item_name = u8"lobanjo";
                 else ERROR_EXIT("no item_name found");
 
@@ -297,14 +332,36 @@ namespace kvejken
             spawn_item(type, position, glm::vec3(0, 0, PI / 2.0f), 0);
     }
 
+    static void update_fireplace(Player& player)
+    {
+        for (auto [fireplace, interactable] : ecs::get_components<Fireplace, Interactable>())
+        {
+            if (interactable.player_interacted)
+            {
+                player.left_hand_item = ItemType::LitTorch;
+                player.left_hand_time_since_pickup = 0.0f;
+            }
+            else if (interactable.player_close && player.left_hand_item == ItemType::Torch)
+            {
+                renderer::draw_text(u8"[E] prižgi baklo", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+            }
+
+            interactable.player_close = false;
+            interactable.player_interacted = false;
+        }
+    }
+
     void update_interactables(float delta_time, float game_time)
     {
         static std::vector<Entity> remove_interactable;
         remove_interactable.clear();
 
-        update_gates(remove_interactable, delta_time);
-        update_weapons();
-        update_items();
+        auto [player, player_transform] = *ecs::get_components<Player, Transform>().begin();
+
+        update_gates(player, remove_interactable, delta_time);
+        update_weapons(player, player_transform);
+        update_items(player, player_transform);
+        update_fireplace(player);
 
         for (const auto& entity : remove_interactable)
         {
