@@ -33,3 +33,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     libs/glad/include/
     libs/stb/
 )
+
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+    KVEJKEN_TEST
+)

@@ -92,6 +92,9 @@ int main()
 
         renderer::clear_screen();
 
+        renderer::draw_model(assets::terrain.get(), glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
+
+
         /*
         renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
         renderer::draw_model(assets::test_cube.get(), glm::vec3(3, 5.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
@@ -104,8 +107,6 @@ int main()
         renderer::draw_model(assets::test_rock.get(), glm::vec3(4, 5, 0), glm::vec3(0, -glfwGetTime(), 0), glm::vec3(1.0f));
         renderer::draw_model(assets::test_multiple.get(), glm::vec3(-2, 5, -2), glm::vec3(0, -PI / 2.0f, 0), glm::vec3(0.5f));
         */
-
-        renderer::draw_model(assets::terrain.get(), glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
 
         /*
         for (auto [player, transform] : ecs::get_components<Player, Transform>())

@@ -51,12 +51,16 @@ namespace kvejken
         Player player = {};
         player.health = 100;
         player.local = true;
-        player.points = 2000; // TODO: nazaj na 0
+        player.points = 0;
         player.right_hand_item = WeaponType::None;
         player.left_hand_item = ItemType::None;
         player.time_since_attack = 99.0f;
         player.time_since_recv_damage = 99.0f;
         player.progress = 0;
+
+#ifdef KVEJKEN_TEST
+        player.points = 2069;
+#endif
 
         Camera camera = {};
         camera.position = glm::vec3(0, 0.44f, 0);
