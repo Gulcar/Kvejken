@@ -9,6 +9,9 @@ namespace kvejken::assets
     inline std::unique_ptr<Model> gate;
     inline std::unique_ptr<Model> spawn;
 
+    inline std::vector<Model> lever_anim;
+    inline std::vector<Model> lever_hand_anim;
+
     inline std::unique_ptr<Model> particle;
 
     inline std::vector<Model> eel_anim;
@@ -29,6 +32,11 @@ namespace kvejken::assets
         terrain = std::make_unique<Model>("assets/environment/terrain.obj", false);
         gate = std::make_unique<Model>("assets/environment/gate.obj");
         spawn = std::make_unique<Model>("assets/environment/spawn.obj");
+
+        for (int i = 1; i <= 20; i++)
+            lever_anim.emplace_back("assets/environment/lever/lever_anim" + std::to_string(i) + ".obj");
+        for (int i = 1; i <= 20; i++)
+            lever_hand_anim.emplace_back("assets/environment/lever/hand_anim" + std::to_string(i) + ".obj");
 
         particle = std::make_unique<Model>("assets/particle.obj");
         
@@ -52,6 +60,9 @@ namespace kvejken::assets
         terrain.reset();
         gate.reset();
         spawn.reset();
+
+        lever_anim.clear();
+        lever_hand_anim.clear();
 
         particle.reset();
 

@@ -94,7 +94,15 @@ int main()
 
         renderer::draw_model(assets::terrain.get(), glm::vec3(0), glm::vec3(0), glm::vec3(1.0f));
 
-
+#ifdef KVEJKEN_TEST
+        renderer::draw_model(&assets::lever_anim[0], glm::vec3(5, 3.2f, 5), glm::vec3(0), glm::vec3(0.2f));
+        static float lever_anim_time = 0.0f;
+        lever_anim_time += delta_time;
+        if (lever_anim_time > 1.0f) lever_anim_time = 0.0f;
+        int lever_anim_i = std::min((int)(lever_anim_time * 1000.0f) / 25, 19);
+        renderer::draw_model(&assets::lever_anim[lever_anim_i], glm::vec3(6, 3.2f, 5), glm::vec3(0), glm::vec3(0.2f));
+        renderer::draw_model(&assets::lever_hand_anim[lever_anim_i], glm::vec3(6, 3.2f, 5), glm::vec3(0), glm::vec3(0.2f));
+#endif
         /*
         renderer::draw_model(assets::test_cube.get(), glm::vec3(std::sin(glfwGetTime()), 5, 0), glm::vec3(0, glfwGetTime(), 0), glm::vec3(1.0f));
         renderer::draw_model(assets::test_cube.get(), glm::vec3(3, 5.4f, -5), glm::vec3(0, 0, 0), glm::vec3(0.5f));
