@@ -24,6 +24,8 @@ namespace kvejken
     {
         bool opened;
         float anim_progress;
+        glm::vec3 lever_pos;
+        glm::quat lever_rot;
     };
 
     enum class WeaponType : uint8_t
@@ -72,4 +74,6 @@ namespace kvejken
 
     void spawn_interactables();
     void update_interactables(float delta_time, float game_time);
+
+    void draw_levers();
 }

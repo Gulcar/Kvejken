@@ -141,6 +141,7 @@ int main()
 
         draw_enemy_spawns(game_time);
         draw_particles(game_time);
+        draw_levers();
 
         ui::draw_and_update_ui();
 

@@ -172,6 +172,16 @@ namespace kvejken
 
             if (transform.position.y < -150.0f)
                 transform.position.y = 150.0f;
+
+
+            if (player.forced_movement_time > 0.0f)
+            {
+                player.forced_movement_time -= delta_time;
+                transform.position = player.forced_pos;
+
+                player.left_hand_time_since_pickup = 0.0f;
+                player.right_hand_time_since_pickup = 0.0f;
+            }
         }
     }
 
@@ -260,7 +270,9 @@ namespace kvejken
         bool can_combo_left = !player.attack_from_left && can_combo;
         bool can_combo_right = player.attack_from_left && can_combo;
 
-        if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && (player.time_since_attack > attack_timeout || can_combo_right))
+        bool attack_disabled = player.forced_movement_time > 0.0f || player.right_hand_time_since_pickup < 0.2f;
+
+        if (input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT) && (player.time_since_attack > attack_timeout || can_combo_right) && !attack_disabled)
         {
             player.time_since_attack = 0.0f;
             player.attack_hit = false;
@@ -270,7 +282,7 @@ namespace kvejken
             if (can_combo_right) player.attack_combo += 1;
             else player.attack_combo = 1;
         }
-        else if (input::mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) && can_combo_left)
+        else if (input::mouse_pressed(GLFW_MOUSE_BUTTON_RIGHT) && can_combo_left && !attack_disabled)
         {
             player.time_since_attack = 0.0f;
             player.attack_hit = false;
@@ -362,12 +374,20 @@ namespace kvejken
             if (!player.local || player.health <= 0)
                 continue;
 
-            if (input::is_mouse_locked())
+            if (input::is_mouse_locked() && player.forced_movement_time <= 0.0f)
             {
                 glm::vec2 mouse_delta = input::mouse_delta();
                 player.look_yaw -= mouse_delta.x * MOUSE_SENS;
                 player.look_pitch -= mouse_delta.y * MOUSE_SENS;
                 player.look_pitch = glm::clamp(player.look_pitch, -PI / 2.0f + 0.01f, PI / 2.0f - 0.01f);
+                transform.rotation = glm::quat(glm::vec3(player.look_pitch, player.look_yaw, 0.0f));
+            }
+            else if (player.forced_movement_time > 0.0f)
+            {
+                glm::vec3 rot_forward = glm::normalize(player.forced_look_at - (transform.position + camera.position));
+                //glm::quat quat = glm::quatLookAt(rot_forward, glm::vec3(0, 1, 0));
+                player.look_yaw = std::atan2(-rot_forward.z, rot_forward.x) - PI / 2.0f;
+                player.look_pitch = std::asin(rot_forward.y);
                 transform.rotation = glm::quat(glm::vec3(player.look_pitch, player.look_yaw, 0.0f));
             }
 

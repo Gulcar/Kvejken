@@ -72,11 +72,13 @@ namespace kvejken
         return it->second;
     }
 
-    static void spawn_gate(glm::vec3 position, glm::quat rotation, int cost)
+    static void spawn_gate(glm::vec3 position, glm::quat rotation, glm::vec3 lever_pos, glm::quat lever_rot, int cost)
     {
         Gate gate;
         gate.anim_progress = 0.0f;
         gate.opened = false;
+        gate.lever_pos = lever_pos;
+        gate.lever_rot = lever_rot;
 
         Interactable inter = {};
         inter.max_player_dist = 2.5f;
@@ -178,10 +180,10 @@ namespace kvejken
 
     void spawn_interactables()
     {
-        spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), 100);
-        spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), 500);
-        spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(110.0f), 0), 700);
-        spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), (int)SpecialCost::Key);
+        spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(15.03f, 4.2f, 32.38f), glm::vec3(0), 100);
+        spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), glm::vec3(32.46f, 4.2f, 61.53f), glm::vec3(0), 500);
+        spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(290.0f), 0), glm::vec3(12.85f, 4.2f, 67.94f), glm::vec3(0), 700);
+        spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(6.4f, 0, 91.69f), glm::vec3(0, PI/2.0f, 0), (int)SpecialCost::Key);
 
         spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
@@ -204,11 +206,18 @@ namespace kvejken
     {
         for (auto [gate, transform] : ecs::get_components<Gate, Transform>())
         {
-            constexpr float GATE_OPEN_SPEED = 1.0f;
-            constexpr float GATE_OPEN_TIME = 4.5f;
-            if (gate.opened && gate.anim_progress < GATE_OPEN_TIME)
+            if (gate.anim_progress < 0.5f && gate.anim_progress + delta_time >= 0.5f)
+                player.screen_shake += 1.0f;
+
+            if (gate.opened)
             {
                 gate.anim_progress += delta_time;
+            }
+
+            constexpr float GATE_OPEN_SPEED = 1.0f;
+            constexpr float GATE_OPEN_TIME = 5.0f;
+            if (gate.anim_progress > 0.5f && gate.anim_progress < GATE_OPEN_TIME)
+            {
                 transform.position.y += GATE_OPEN_SPEED * delta_time;
             }
         }
@@ -221,7 +230,11 @@ namespace kvejken
                 remove_interactable.push_back(id);
 
                 player.progress += 1;
-                player.screen_shake += 1.0f;
+
+                glm::quat rot = ecs::get_component<Transform>(id).rotation;
+                player.forced_movement_time = 0.5f;
+                player.forced_pos = gate.lever_pos + gate.lever_rot * rot * glm::vec3(0, 0, -1);
+                player.forced_look_at = gate.lever_pos;
             }
             else if (interactable.player_close)
             {
@@ -367,6 +380,34 @@ namespace kvejken
         for (const auto& entity : remove_interactable)
         {
             ecs::remove_component<Interactable>(entity);
+        }
+    }
+
+    void draw_levers()
+    {
+        auto& player = *ecs::get_components<Player>().begin();
+
+        for (auto [id, gate, transform] : ecs::get_components_ids<Gate, Transform>())
+        {
+            if (!gate.opened)
+            {
+                auto& interactable = ecs::get_component<Interactable>(id);
+                if (interactable.cost >= 0 && player.points < interactable.cost)
+                    continue;
+                if (interactable.cost < 0 && (player.left_hand_item == ItemType::None || get_item_info(player.left_hand_item).cost != interactable.cost))
+                    continue;
+            }
+
+            int frame = (int)(gate.anim_progress / 0.025f);
+            if (frame >= assets::lever_anim.size())
+                frame = assets::lever_anim.size() - 1;
+
+            glm::quat rot = gate.lever_rot * glm::angleAxis(PI / 2.0f, glm::vec3(0, 1, 0)) * transform.rotation;
+
+            renderer::draw_model(&assets::lever_anim[frame], gate.lever_pos, rot, glm::vec3(0.35f));
+
+            if (gate.opened && gate.anim_progress <= 0.5f)
+                renderer::draw_model(&assets::lever_hand_anim[frame], gate.lever_pos, rot, glm::vec3(0.35f));
         }
     }
 }

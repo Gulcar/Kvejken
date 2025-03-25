@@ -19,6 +19,10 @@ namespace kvejken
         float look_yaw;
         float look_pitch;
 
+        float forced_movement_time;
+        glm::vec3 forced_pos;
+        glm::vec3 forced_look_at;
+
         float screen_shake;
 
         ItemType left_hand_item;
