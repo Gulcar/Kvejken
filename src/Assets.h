@@ -22,6 +22,7 @@ namespace kvejken::assets
 
     inline std::unique_ptr<Model> key;
     inline std::unique_ptr<Model> torch;
+    inline std::unique_ptr<Model> skull;
 
     inline std::unique_ptr<Model> test_cube;
     inline std::unique_ptr<Model> test_rock;
@@ -49,6 +50,7 @@ namespace kvejken::assets
 
         key = std::make_unique<Model>("assets/items/key.obj");
         torch = std::make_unique<Model>("assets/items/torch.obj");
+        skull = std::make_unique<Model>("assets/items/skull.obj");
 
         test_cube = std::make_unique<Model>("assets/test/test_cube.obj");
         test_rock = std::make_unique<Model>("assets/test/test_rock.obj");
@@ -74,6 +76,7 @@ namespace kvejken::assets
 
         key.reset();
         torch.reset();
+        skull.reset();
 
         test_cube.reset();
         test_rock.reset();
