@@ -25,7 +25,13 @@ namespace kvejken
         uint32_t id;
         int width;
         int height;
+
+        bool operator==(const Texture& o) const
+        {
+            return this->id == o.id && this->height == o.height && this->width == o.width;
+        }
     };
+    constexpr Texture TEXTURE_COLLISION_ONLY = Texture{ 0 };
 
     enum class Layer
     {

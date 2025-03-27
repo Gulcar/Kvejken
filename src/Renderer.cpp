@@ -659,6 +659,9 @@ namespace kvejken::renderer
 
     void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer, glm::vec4 color)
     {
+        if (mesh->diffuse_texture() == TEXTURE_COLLISION_ONLY)
+            return; // ne risi collision_only objektov
+
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
         order.layer = (int)layer;

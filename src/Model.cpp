@@ -106,6 +106,9 @@ namespace kvejken
             if (utils::starts_with(line, "newmtl "))
             {
                 current_material = line.substr(7, -1);
+
+                if (current_material == "collision_only")
+                    materials[current_material] = TEXTURE_COLLISION_ONLY;
             }
             else if (utils::starts_with(line, "map_Kd "))
             {
