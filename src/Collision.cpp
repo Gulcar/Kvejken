@@ -444,28 +444,9 @@ namespace kvejken::collision
         static std::vector<BVHNode*> stack;
         stack.clear();
 
-        auto handle_triangle = [&](const Triangle& tri) {
-            auto intersection = sphere_triangle_intersection(center, radius, tri.v1, tri.v2, tri.v3);
-            if (intersection)
-            {
-                any = true;
+        static std::vector<std::pair<const Triangle*, float>> close_triangles;
+        close_triangles.clear();
 
-                if (only_y_movement)
-                {
-                    center.y += (intersection->normal * intersection->depth).y;
-                }
-                else
-                {
-                    center += intersection->normal * intersection->depth;
-                }
-
-                if (intersection->normal.y > ground_normal_y)
-                    ground_collison = true;
-
-                float vel_on_normal = glm::dot(velocity, -intersection->normal);
-                velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
-            }
-        };
 
         while (node != nullptr)
         {
@@ -473,7 +454,11 @@ namespace kvejken::collision
             {
                 for (int i = node->left_child; i <= node->right_child; i++)
                 {
-                    handle_triangle(m_triangles[i]);
+                    const auto& tri = m_triangles[i];
+                    if (auto collision = sphere_triangle_intersection(center, radius * 1.6f, tri.v1, tri.v2, tri.v3))
+                    {
+                        close_triangles.push_back({ &tri, collision->depth });
+                    }
                 }
 
                 if (stack.size() > 0)
@@ -491,8 +476,8 @@ namespace kvejken::collision
                 BVHNode* left = &m_bvh_nodes[node->left_child];
                 BVHNode* right = &m_bvh_nodes[node->right_child];
 
-                bool left_inside = sphere_aabb_intersection(left->bounds, center, radius * 1.25f); // malo vecji radij ker se center premika
-                bool right_inside = sphere_aabb_intersection(right->bounds, center, radius * 1.25f);
+                bool left_inside = sphere_aabb_intersection(left->bounds, center, radius * 1.6f); // malo vecji radij ker se center premika
+                bool right_inside = sphere_aabb_intersection(right->bounds, center, radius * 1.6f);
 
                 if (left_inside && right_inside)
                 {
@@ -519,11 +504,51 @@ namespace kvejken::collision
             }
         }
 
+        static std::vector<Triangle> temp_triangles;
+        temp_triangles.clear();
+
         for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
         {
             auto [t1, t2] = rect_to_tris(rect, transform);
-            handle_triangle(t1);
-            handle_triangle(t2);
+            if (auto collision = sphere_triangle_intersection(center, radius * 1.25f, t1.v1, t1.v2, t1.v3))
+            {
+                temp_triangles.push_back(t1);
+                close_triangles.push_back({ &temp_triangles.back(), collision->depth});
+            }
+            if (auto collision = sphere_triangle_intersection(center, radius * 1.25f, t2.v1, t2.v2, t2.v3))
+            {
+                temp_triangles.push_back(t2);
+                close_triangles.push_back({ &temp_triangles.back(), collision->depth });
+            }
+        }
+
+        // sortiraj blizje trikotnike tako da najprej pregledam tiste z manj penetracije
+        std::sort(close_triangles.begin(), close_triangles.end(), [](const auto& a, const auto& b) {
+            return a.second < b.second;
+        });
+
+        for (const auto& [tri, depth] : close_triangles)
+        {
+            auto intersection = sphere_triangle_intersection(center, radius, tri->v1, tri->v2, tri->v3);
+            if (intersection)
+            {
+                any = true;
+
+                if (only_y_movement)
+                {
+                    center.y += (intersection->normal * intersection->depth).y;
+                }
+                else
+                {
+                    center += intersection->normal * intersection->depth;
+                }
+
+                if (intersection->normal.y > ground_normal_y)
+                    ground_collison = true;
+
+                float vel_on_normal = glm::dot(velocity, -intersection->normal);
+                velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
+            }
         }
 
         if (any)

@@ -152,7 +152,7 @@ namespace kvejken
             transform.position.y += player.velocity_y * delta_time;
 
             glm::vec3 velocity = glm::vec3(player.move_velocity.x, player.velocity_y, player.move_velocity.y);
-            auto res = collision::sphere_collision(transform.position, 0.5f, velocity, 35.0f, 0.01f);
+            auto res = collision::sphere_collision(transform.position, 0.5f, velocity, 35.0f, 0.0001f);
             if (res)
             {
                 transform.position = res->new_center;
@@ -164,7 +164,7 @@ namespace kvejken
                 if (res->ground_collision)
                 {
                     if (player.velocity_y < 0.0f)
-                        player.velocity_y = 0.0f;
+                        player.velocity_y = -0.001f;
 
                     player.jump_allowed_time = game_time + COYOTE_TIME;
                 }
@@ -348,7 +348,7 @@ namespace kvejken
 
     void update_players(float delta_time, float game_time)
     {
-        int substeps = (int)(delta_time / 0.010f) + 1;
+        int substeps = (int)(delta_time / 0.007) + 1;
         float sub_delta = delta_time / substeps;
         for (int i = 0; i < substeps; i++)
             update_players_movement(sub_delta, game_time);
