@@ -7,6 +7,19 @@
 
 namespace kvejken
 {
+    enum Objective
+    {
+        None,
+        PickUpWeapon,
+        EnterCastle,
+        EnterBasement,
+        FindTorch,
+        LightTorch,
+        FindSkull,
+        SkullOnThrone,
+        Done,
+    };
+
     struct Player
     {
         int health;
@@ -42,6 +55,7 @@ namespace kvejken
 
         int points;
         int progress; // za hitrost enemy spawnov
+        Objective curr_objective;
     };
 
     void spawn_local_player(glm::vec3 position);
@@ -51,4 +65,5 @@ namespace kvejken
     void damage_player(Player& player, int damage, glm::vec3 attack_pos);
 
     void add_screen_shake(float amount);
+    void objective_complete(Objective completed_objective);
 }

@@ -46,6 +46,22 @@ namespace kvejken
         u8"Slab si!",
     };
 
+    const char* objective_message(Objective objective)
+    {
+        switch (objective)
+        {
+        case Objective::PickUpWeapon: return u8"za začetek poberi orožje";
+        case Objective::EnterCastle: return u8"vstopi v grad";
+        case Objective::EnterBasement: return u8"pridobi dostop do kleti";
+        case Objective::FindTorch: return u8"najdi si vir svetlobe";
+        case Objective::LightTorch: return u8"prižgi si baklo";
+        case Objective::FindSkull: return u8"v kleti poišči lobanjo";
+        case Objective::SkullOnThrone: return u8"posadi lobanjo na prestol";
+        case Objective::Done: return u8"ritual uspešen. preživi.";
+        }
+        return nullptr;
+    }
+
     void spawn_local_player(glm::vec3 position)
     {
         Player player = {};
@@ -57,6 +73,7 @@ namespace kvejken
         player.time_since_attack = 99.0f;
         player.time_since_recv_damage = 99.0f;
         player.progress = 0;
+        player.curr_objective = Objective::PickUpWeapon;
 
 #ifdef KVEJKEN_TEST
         player.points = 2069;
@@ -501,6 +518,13 @@ namespace kvejken
             renderer::draw_text(points.c_str(), glm::vec2(16, 48), 48);
             renderer::draw_text(health.c_str(), glm::vec2(16, 96), 48);
 
+            std::string time_elapsed = std::to_string((int)game_time);
+            //std::string time_elapsed = std::to_string((int)game_time) + "," + std::to_string((int)(game_time * 10) % 10);
+            renderer::draw_text(time_elapsed.c_str(), glm::vec2(1904, 48), 48, glm::vec4(1.0f), Align::Right);
+
+            if (player.curr_objective != Objective::None)
+                renderer::draw_text(objective_message(player.curr_objective), glm::vec2(1904, 96), 48, glm::vec4(1.0f), Align::Right);
+
             if (player.time_since_recv_damage < 1.5f)
             {
                 float opacity = 0.4f * (1.5f - player.time_since_recv_damage) * (1.5f - player.time_since_recv_damage) / (1.5f * 1.5f);
@@ -579,5 +603,13 @@ namespace kvejken
     void add_screen_shake(float amount)
     {
         ecs::get_components<Player>().begin()->screen_shake += amount;
+    }
+
+    void objective_complete(Objective completed_objective)
+    {
+        auto& player = *ecs::get_components<Player>().begin();
+
+        if (player.curr_objective <= completed_objective)
+            player.curr_objective = (Objective)((int)completed_objective + 1);
     }
 }

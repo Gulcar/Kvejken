@@ -195,7 +195,7 @@ namespace kvejken
         transform.scale = get_item_info(ItemType::Skull).model_scale;
 
         Interactable inter = {};
-        inter.max_player_dist = 2.2f;
+        inter.max_player_dist = 2.4f;
         inter.cost = (int)SpecialCost::Skull;
 
         Entity entity = ecs::create_entity();
@@ -259,6 +259,9 @@ namespace kvejken
                 remove_interactable.push_back(id);
 
                 player.progress += 1;
+                objective_complete(Objective::EnterCastle);
+                if (interactable.cost == (int)SpecialCost::Key)
+                    objective_complete(Objective::EnterBasement);
 
                 glm::quat rot = ecs::get_component<Transform>(id).rotation;
                 player.forced_movement_time = 0.5f;
@@ -297,6 +300,8 @@ namespace kvejken
                 {
                     new_spawn.push_back({ player.right_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
+
+                objective_complete(Objective::PickUpWeapon);
 
                 player.right_hand_item = weapon;
                 player.right_hand_time_since_pickup = 0.0f;
@@ -341,6 +346,11 @@ namespace kvejken
                     new_spawn.push_back({ player.left_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
 
+                if (item == ItemType::Torch)
+                    objective_complete(Objective::FindTorch);
+                if (item == ItemType::Skull)
+                    objective_complete(Objective::FindSkull);
+
                 player.left_hand_item = item;
                 player.left_hand_time_since_pickup = 0.0f;
                 ecs::queue_destroy_entity(id);
@@ -383,6 +393,7 @@ namespace kvejken
             {
                 player.left_hand_item = ItemType::LitTorch;
                 player.left_hand_time_since_pickup = 0.0f;
+                objective_complete(Objective::LightTorch);
             }
             else if (interactable.player_close && player.left_hand_item == ItemType::Torch)
             {
@@ -405,8 +416,11 @@ namespace kvejken
             {
                 player.left_hand_item = ItemType::None;
                 throne.has_skull = true;
+
                 remove_interactable.push_back(id);
                 to_add_skull.push_back(id);
+
+                objective_complete(Objective::SkullOnThrone);
             }
             else if (interactable.player_close && player.left_hand_item == ItemType::Skull)
             {
