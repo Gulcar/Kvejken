@@ -56,6 +56,12 @@ namespace kvejken
         ItemInfo& lit_torch = m_item_infos[ItemType::LitTorch];
         lit_torch = torch;
         lit_torch.cost = 0;
+
+        ItemInfo& skull = m_item_infos[ItemType::Skull];
+        skull.cost = (int)SpecialCost::Skull;
+        skull.model = assets::skull.get();
+        skull.model_scale = 0.15f;
+        skull.model_offset = glm::vec3(-0.5f, -0.18f, -1.1f);
     }
 
     const WeaponInfo& get_weapon_info(WeaponType type)
@@ -178,6 +184,26 @@ namespace kvejken
         ecs::add_component(Fireplace{}, entity);
     }
 
+    static void spawn_throne(glm::vec3 position)
+    {
+        Throne throne;
+        throne.has_skull = false;
+
+        Transform transform;
+        transform.position = position;
+        transform.rotation = glm::vec3(0, PI, 0);
+        transform.scale = get_item_info(ItemType::Skull).model_scale;
+
+        Interactable inter = {};
+        inter.max_player_dist = 2.2f;
+        inter.cost = (int)SpecialCost::Skull;
+
+        Entity entity = ecs::create_entity();
+        ecs::add_component(throne, entity);
+        ecs::add_component(transform, entity);
+        ecs::add_component(inter, entity);
+    }
+
     void spawn_interactables()
     {
         spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(15.03f, 4.2f, 32.38f), glm::vec3(0), 100);
@@ -187,18 +213,21 @@ namespace kvejken
 
         spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Skull, glm::vec3(9.31f, 0.054f, 125.0f), glm::vec3(0, 0, 0), 100);
 
         spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 0);
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
 
         spawn_fireplace(glm::vec3(-26.67f, 1.508f, 12.14f));
+        spawn_throne(glm::vec3(28.49f, 7.20f, 81.61f));
 
 #ifdef KVEJKEN_TEST
         spawn_weapon(WeaponType::Axe, glm::vec3(0, 3, 0), glm::vec3(0, PI / 2.0f, 0), 100);
         spawn_weapon(WeaponType::SpikedClub, glm::vec3(1, 3, 0), glm::vec3(0, 0, 0), 100);
         spawn_weapon(WeaponType::Hammer, glm::vec3(2, 3, 0), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(3, 3, 0), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Skull, glm::vec3(4, 3, 0), glm::vec3(0, 0, 0), 100);
 #endif
     }
 
@@ -365,6 +394,33 @@ namespace kvejken
         }
     }
 
+    static void update_throne(Player& player, std::vector<Entity>& remove_interactable)
+    {
+        static std::vector<Entity> to_add_skull;
+        to_add_skull.clear();
+
+        for (auto [id, throne, interactable] : ecs::get_components_ids<Throne, Interactable>())
+        {
+            if (interactable.player_interacted)
+            {
+                player.left_hand_item = ItemType::None;
+                throne.has_skull = true;
+                remove_interactable.push_back(id);
+                to_add_skull.push_back(id);
+            }
+            else if (interactable.player_close && player.left_hand_item == ItemType::Skull)
+            {
+                renderer::draw_text(u8"[E] postavi lobanjo", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+            }
+
+            interactable.player_close = false;
+            interactable.player_interacted = false;
+        }
+
+        for (const auto& id : to_add_skull)
+            ecs::add_component(assets::skull.get(), id);
+    }
+
     void update_interactables(float delta_time, float game_time)
     {
         static std::vector<Entity> remove_interactable;
@@ -376,6 +432,7 @@ namespace kvejken
         update_weapons(player, player_transform);
         update_items(player, player_transform);
         update_fireplace(player);
+        update_throne(player, remove_interactable);
 
         for (const auto& entity : remove_interactable)
         {

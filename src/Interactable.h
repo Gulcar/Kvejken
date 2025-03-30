@@ -68,6 +68,11 @@ namespace kvejken
 
     struct Fireplace {};
 
+    struct Throne
+    {
+        bool has_skull;
+    };
+
     void init_weapon_item_infos();
     const WeaponInfo& get_weapon_info(WeaponType type);
     const ItemInfo& get_item_info(ItemType type);
