@@ -6,6 +6,7 @@ namespace kvejken::input
 {
     static bool m_keys_just_pressed[GLFW_KEY_LAST + 1];
     static bool m_keys_just_released[GLFW_KEY_LAST + 1];
+    static int m_last_key_pressed = 0;
 
     static bool m_mouse_just_pressed[GLFW_MOUSE_BUTTON_LAST + 1];
     static bool m_mouse_just_released[GLFW_MOUSE_BUTTON_LAST + 1];
@@ -19,6 +20,7 @@ namespace kvejken::input
         if (action == GLFW_PRESS)
         {
             m_keys_just_pressed[key] = true;
+            m_last_key_pressed = key;
         }
         else if (action == GLFW_RELEASE)
         {
@@ -56,6 +58,7 @@ namespace kvejken::input
     {
         memset(m_keys_just_pressed, 0, sizeof(m_keys_just_pressed));
         memset(m_keys_just_released, 0, sizeof(m_keys_just_released));
+        m_last_key_pressed = 0;
 
         memset(m_mouse_just_pressed, 0, sizeof(m_mouse_just_pressed));
         memset(m_mouse_just_released, 0, sizeof(m_mouse_just_released));
@@ -76,6 +79,30 @@ namespace kvejken::input
     bool key_released(int key)
     {
         return m_keys_just_released[key];
+    }
+
+    const char* key_name(int key)
+    {
+        const char* glfw_name = glfwGetKeyName(key, 0);
+        if (glfw_name != nullptr) return glfw_name;
+
+        switch (key)
+        {
+        case GLFW_KEY_SPACE: return "space";
+        case GLFW_KEY_LEFT_SHIFT: return "Lshift";
+        case GLFW_KEY_RIGHT_SHIFT: return "Rshift";
+        case GLFW_KEY_LEFT_CONTROL: return "Lctrl";
+        case GLFW_KEY_RIGHT_CONTROL: return "Rctrl";
+        case GLFW_KEY_LEFT_ALT: return "Lalt";
+        case GLFW_KEY_RIGHT_ALT: return "Ralt";
+        }
+
+        return "?";
+    }
+
+    int last_key_pressed()
+    {
+        return m_last_key_pressed;
     }
 
     int key_axis(int neg, int poz)

@@ -14,6 +14,7 @@
 #include "Interactable.h"
 #include "UI.h"
 #include "Particles.h"
+#include "Settings.h"
 
 using namespace kvejken;
 
@@ -29,6 +30,9 @@ int main()
 
     assets::load();
     atexit(assets::unload);
+
+    settings::load();
+    atexit(settings::save);
 
     init_enemies();
     init_weapon_item_infos();

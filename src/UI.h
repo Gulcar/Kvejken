@@ -8,6 +8,7 @@ namespace kvejken::ui
         Main,
         Play,
         Settings,
+        Keybinds,
         Pause,
     };
 

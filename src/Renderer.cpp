@@ -836,7 +836,7 @@ namespace kvejken::renderer
         }
     }
 
-    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align, bool allow_repeats)
+    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align, uint64_t repeats_id)
     {
         glm::vec2 rect_pos = position;
         if (horizontal_align == Align::Left) rect_pos.x += rect_size.x / 2.0f - size / 8.0f;
@@ -850,16 +850,16 @@ namespace kvejken::renderer
 
         draw_text(text, position, size, color, horizontal_align);
 
-        if (allow_repeats)
+        if (repeats_id != 0)
         {
             struct MouseHold
             {
                 float pressed_time;
                 int repeats;
             };
-            static std::map<std::string, MouseHold> mouse_hold;
+            static std::map<uint64_t, MouseHold> mouse_hold;
 
-            MouseHold& curr = mouse_hold[text];
+            MouseHold& curr = mouse_hold[repeats_id];
 
             if (hover && input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
             {

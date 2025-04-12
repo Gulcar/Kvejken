@@ -1,9 +1,24 @@
 #pragma once
 
-namespace kvejken
+namespace kvejken::settings
 {
     struct SettingsData
     {
         int mouse_speed;
+        int brightness;
+        bool vsync;
+
+        int key_forward;
+        int key_backward;
+        int key_left;
+        int key_right;
+        int key_jump;
+        int key_interact;
+        int key_slide;
     };
+
+    SettingsData& get();
+
+    void load();
+    void save();
 }

@@ -15,6 +15,9 @@ namespace kvejken::input
     bool key_pressed(int key);
     bool key_released(int key);
 
+    const char* key_name(int key);
+    int last_key_pressed();
+
     int key_axis(int neg, int poz);
 
     bool mouse_held(int button);

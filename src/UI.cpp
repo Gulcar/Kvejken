@@ -1,6 +1,7 @@
 #include "UI.h"
 #include "Input.h"
 #include "Renderer.h"
+#include "Settings.h"
 #include <glm/vec2.hpp>
 #include <cstdlib>
 #include <algorithm>
@@ -12,6 +13,8 @@ namespace kvejken::ui
         Menu m_curr_menu = Menu::Main;
 
         std::vector<Menu> m_menu_history;
+
+        int* changing_keybind = nullptr;
     }
 
     static void set_menu(Menu menu)
@@ -37,14 +40,49 @@ namespace kvejken::ui
     {
         renderer::draw_text(text, glm::vec2(600, y), 64);
 
-        if (renderer::draw_button("-", glm::vec2(1120, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, true))
+        if (renderer::draw_button("-", glm::vec2(1120, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, (uint64_t)value))
             *value = std::clamp(*value - step, min_value, max_value);
 
         std::string value_str = std::to_string(*value);
         renderer::draw_text(value_str.c_str(), glm::vec2(1220, y), 64, glm::vec4(1.0f), Align::Center);
 
-        if (renderer::draw_button("+", glm::vec2(1320, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, true))
+        if (renderer::draw_button("+", glm::vec2(1320, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, (uint64_t)value + 1))
             *value = std::clamp(*value + step, min_value, max_value);
+    }
+
+    // vrne true ce je bilo spremenjeno
+    static bool draw_on_off_input(const char* text, bool* value, int y)
+    {
+        renderer::draw_text(text, glm::vec2(600, y), 64);
+
+        if (*value)
+        {
+            if (renderer::draw_button("Da", glm::vec2(1220, y), 64, glm::vec2(128, 64), glm::vec4(1.0f), Align::Center))
+            {
+                *value = false;
+                return true;
+            }
+        }
+        else
+        {
+            if (renderer::draw_button("Ne", glm::vec2(1220, y), 64, glm::vec2(128, 64), glm::vec4(1.0f), Align::Center))
+            {
+                *value = true;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    static void draw_keybind_input(const char* text, int* value, int y)
+    {
+        renderer::draw_text(text, glm::vec2(600, y), 64);
+
+        if (renderer::draw_button(input::key_name(*value), glm::vec2(1220, y), 64, glm::vec2(148, 64), glm::vec4(1.0f), Align::Center))
+        {
+            changing_keybind = value;
+        }
     }
 
     static void draw_main_menu()
@@ -91,15 +129,46 @@ namespace kvejken::ui
     {
         int y = 469;
 
-        static int mouse_speed = 10;
-        draw_number_input(u8"Hitrost miške", &mouse_speed, y, 0, 100); y += 80;
-        renderer::draw_button("V-sync", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
-        renderer::draw_button("Svetlost", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
-        renderer::draw_button("Urejanje tipk", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
+        draw_number_input(u8"Hitrost miške", &settings::get().mouse_speed, y, 1, 40); y += 80;
+        draw_number_input("Svetlost", &settings::get().brightness, y, 1, 40); y += 80;
+        draw_on_off_input("VSync", &settings::get().vsync, y); y += 80;
+
+        if (renderer::draw_button("Urejanje tipk", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+            set_menu(Menu::Keybinds);
+        y += 80;
 
         if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+        {
+            settings::save();
             set_previous_menu();
+        }
         y += 80;
+    }
+
+    static void draw_keybinds_menu()
+    {
+        int y = 269;
+        draw_keybind_input("Naprej", &settings::get().key_forward, y); y += 80;
+        draw_keybind_input("Nazaj", &settings::get().key_backward, y); y += 80;
+        draw_keybind_input("Levo", &settings::get().key_left, y); y += 80;
+        draw_keybind_input("Desno", &settings::get().key_right, y); y += 80;
+        draw_keybind_input("Skok", &settings::get().key_jump, y); y += 80;
+        draw_keybind_input(u8"Poèep", &settings::get().key_slide, y); y += 80;
+        draw_keybind_input("Interakcija", &settings::get().key_interact, y); y += 80;
+
+        if (changing_keybind != nullptr)
+        {
+            renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(0.0f, 0.0f, 0.0f, 0.9f));
+            renderer::draw_text(u8"pritisni na želeno tipko", glm::vec2(1920 / 2, 1080 / 2), 64, glm::vec4(1.0f), Align::Center);
+
+            if (input::last_key_pressed() != 0)
+            {
+                *changing_keybind = input::last_key_pressed();
+                changing_keybind = nullptr;
+            }
+        }
+        else if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+            set_previous_menu();
     }
 
     static void draw_pause_menu()
@@ -139,6 +208,7 @@ namespace kvejken::ui
         case Menu::Main: draw_main_menu(); break;
         case Menu::Play: draw_play_menu(); break;
         case Menu::Settings: draw_settings_menu(); break;
+        case Menu::Keybinds: draw_keybinds_menu(); break;
         case Menu::Pause: draw_pause_menu(); break;
         }
     }
