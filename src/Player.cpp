@@ -7,6 +7,7 @@
 #include "Enemy.h"
 #include "Interactable.h"
 #include "Particles.h"
+#include "Settings.h"
 #include <glm/mat4x4.hpp>
 #include <glm/gtc/noise.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -25,8 +26,6 @@ namespace kvejken
     constexpr float MAX_MOVE_SPEED_SLIDE = 16.0f;
     constexpr float DECELERATION_SLIDE = DECELERATION * 0.1f;
     constexpr float SLIDE_BOOST = 1.2f;
-
-    constexpr float MOUSE_SENS = 4.0f / 10000.0f;
 
     constexpr float PLAYER_GRAVITY = -25.0f;
     constexpr float MAX_Y_VELOCITY = -PLAYER_GRAVITY * 5.0f;
@@ -129,12 +128,12 @@ namespace kvejken
             glm::vec3 forward = transform.rotation * glm::vec3(0, 0, -1);
             glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0, 1, 0)));
             glm::vec3 move_dir = {};
-            move_dir += forward * (float)input::key_axis(GLFW_KEY_S, GLFW_KEY_W);
-            move_dir += right * (float)input::key_axis(GLFW_KEY_A, GLFW_KEY_D);
+            move_dir += forward * (float)input::key_axis(settings::get().key_backward, settings::get().key_forward);
+            move_dir += right * (float)input::key_axis(settings::get().key_left, settings::get().key_right);
             move_dir.y = 0.0f;
 
             bool grounded = (game_time <= player.jump_allowed_time);
-            bool sliding = input::key_held(GLFW_KEY_LEFT_SHIFT);
+            bool sliding = input::key_held(settings::get().key_slide);
 
             if (move_dir != glm::vec3(0, 0, 0) && !sliding)
             {
@@ -395,8 +394,8 @@ namespace kvejken
             if (input::is_mouse_locked() && player.forced_movement_time <= 0.0f)
             {
                 glm::vec2 mouse_delta = input::mouse_delta();
-                player.look_yaw -= mouse_delta.x * MOUSE_SENS;
-                player.look_pitch -= mouse_delta.y * MOUSE_SENS;
+                player.look_yaw -= mouse_delta.x * settings::get().mouse_speed / 1.0f / 10000.0f;
+                player.look_pitch -= mouse_delta.y * settings::get().mouse_speed / 1.0f / 10000.0f;
                 player.look_pitch = glm::clamp(player.look_pitch, -PI / 2.0f + 0.01f, PI / 2.0f - 0.01f);
                 transform.rotation = glm::quat(glm::vec3(player.look_pitch, player.look_yaw, 0.0f));
             }
@@ -409,14 +408,14 @@ namespace kvejken
                 transform.rotation = glm::quat(glm::vec3(player.look_pitch, player.look_yaw, 0.0f));
             }
 
-            if (input::key_pressed(GLFW_KEY_SPACE) && game_time <= player.jump_allowed_time)
+            if (input::key_pressed(settings::get().key_jump) && game_time <= player.jump_allowed_time)
             {
                 player.velocity_y += JUMP_STRENGTH;
                 player.move_velocity = player.move_velocity * MAX_MOVE_SPEED_AIR / MAX_MOVE_SPEED;
                 player.jump_allowed_time = -1.0f;
             }
 
-            if (input::key_held(GLFW_KEY_LEFT_SHIFT))
+            if (input::key_held(settings::get().key_slide))
             {
                 camera.position = glm::vec3(0, 0.29f, 0);
             }
@@ -435,7 +434,7 @@ namespace kvejken
                 player.screen_shake = std::max(player.screen_shake - delta_time, 0.0f);
             }
 
-            if (input::key_pressed(GLFW_KEY_LEFT_SHIFT))
+            if (input::key_pressed(settings::get().key_slide))
             {
                 player.move_velocity *= SLIDE_BOOST;
             }
@@ -499,7 +498,7 @@ namespace kvejken
             {
                 closest_interactable->player_close = true;
 
-                if (input::key_pressed(GLFW_KEY_E))
+                if (input::key_pressed(settings::get().key_interact))
                 {
                     if (closest_interactable->cost >= 0 && player.points >= closest_interactable->cost)
                     {

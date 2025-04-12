@@ -6,6 +6,8 @@
 #include "Player.h"
 #include "Collision.h"
 #include "Particles.h"
+#include "Input.h"
+#include "Settings.h"
 
 namespace kvejken
 {
@@ -16,6 +18,11 @@ namespace kvejken
     }
 
     constexpr glm::vec4 INTERACT_TEXT_COLOR = glm::vec4(0.9f, 0.9f, 0.9f, 1.0f);
+
+    const char* interact_key_name()
+    {
+        return input::key_name(settings::get().key_interact);
+    }
 
     void init_weapon_item_infos()
     {
@@ -307,12 +314,14 @@ namespace kvejken
             {
                 if (interactable.cost == (int)SpecialCost::Key)
                 {
-                    renderer::draw_text(u8"[E] odpri prehod s ključem", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                    char text[64];
+                    sprintf(text, u8"[%s] odpri prehod s ključem", interact_key_name());
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
                 else
                 {
                     char text[64];
-                    sprintf(text, u8"[E] odpri prehod za %d točk", interactable.cost);
+                    sprintf(text, u8"[%s] odpri prehod za %d točk", interact_key_name(), interactable.cost);
                     renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
             }
@@ -346,12 +355,14 @@ namespace kvejken
             {
                 if (interactable.cost == 0)
                 {
-                    renderer::draw_text(u8"[E] poberi orožje", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                    char text[64];
+                    sprintf(text, u8"[%s] poberi orožje", interact_key_name());
+                    renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
                 else
                 {
                     char text[64];
-                    sprintf(text, u8"[E] kupi orožje za %d točk", interactable.cost);
+                    sprintf(text, u8"[%s] kupi orožje za %d točk", interact_key_name(), interactable.cost);
                     renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
             }
@@ -401,13 +412,13 @@ namespace kvejken
                 if (interactable.cost == 0)
                 {
                     char text[64];
-                    sprintf(text, u8"[E] vzemi %s", item_name);
+                    sprintf(text, u8"[%s] vzemi %s", interact_key_name(), item_name);
                     renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
                 else
                 {
                     char text[64];
-                    sprintf(text, u8"[E] kupi %s za %d točk", item_name, interactable.cost);
+                    sprintf(text, u8"[%s] kupi %s za %d točk", interact_key_name(), item_name, interactable.cost);
                     renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
                 }
             }
@@ -432,7 +443,9 @@ namespace kvejken
             }
             else if (interactable.player_close && player.left_hand_item == ItemType::Torch)
             {
-                renderer::draw_text(u8"[E] prižgi baklo", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                char text[64];
+                sprintf(text, u8"[%s] prižgi baklo", interact_key_name());
+                renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
             }
 
             interactable.player_close = false;
@@ -460,7 +473,9 @@ namespace kvejken
             }
             else if (interactable.player_close && player.left_hand_item == ItemType::Skull)
             {
-                renderer::draw_text(u8"[E] postavi lobanjo", glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+                char text[64];
+                sprintf(text, u8"[%s] postavi lobanjo", interact_key_name());
+                renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
             }
 
             interactable.player_close = false;
@@ -491,7 +506,7 @@ namespace kvejken
             else if (interactable.player_close && player.health < 100)
             {
                 char text[64];
-                sprintf(text, u8"[E] kupi zdravljenje za %d točk", interactable.cost);
+                sprintf(text, u8"[%s] kupi zdravljenje za %d točk", interact_key_name(), interactable.cost);
                 renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
             }
 

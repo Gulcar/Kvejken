@@ -95,6 +95,10 @@ namespace kvejken::input
         case GLFW_KEY_RIGHT_CONTROL: return "Rctrl";
         case GLFW_KEY_LEFT_ALT: return "Lalt";
         case GLFW_KEY_RIGHT_ALT: return "Ralt";
+        case GLFW_KEY_LEFT: return "Larrow";
+        case GLFW_KEY_RIGHT: return "Rarrow";
+        case GLFW_KEY_UP: return "Uarrow";
+        case GLFW_KEY_DOWN: return "Darrow";
         }
 
         return "?";

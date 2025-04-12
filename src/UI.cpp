@@ -79,7 +79,11 @@ namespace kvejken::ui
     {
         renderer::draw_text(text, glm::vec2(600, y), 64);
 
-        if (renderer::draw_button(input::key_name(*value), glm::vec2(1220, y), 64, glm::vec2(148, 64), glm::vec4(1.0f), Align::Center))
+        const char* key_name = input::key_name(*value);
+        int width = 96;
+        if (strnlen(key_name, 10) > 2) width = 256;
+
+        if (renderer::draw_button(input::key_name(*value), glm::vec2(1220, y), 64, glm::vec2(width, 64), glm::vec4(1.0f), Align::Center))
         {
             changing_keybind = value;
         }
@@ -149,8 +153,8 @@ namespace kvejken::ui
     {
         int y = 269;
         draw_keybind_input("Naprej", &settings::get().key_forward, y); y += 80;
-        draw_keybind_input("Nazaj", &settings::get().key_backward, y); y += 80;
         draw_keybind_input("Levo", &settings::get().key_left, y); y += 80;
+        draw_keybind_input("Nazaj", &settings::get().key_backward, y); y += 80;
         draw_keybind_input("Desno", &settings::get().key_right, y); y += 80;
         draw_keybind_input("Skok", &settings::get().key_jump, y); y += 80;
         draw_keybind_input(u8"Poèep", &settings::get().key_slide, y); y += 80;
