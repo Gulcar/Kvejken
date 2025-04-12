@@ -240,6 +240,7 @@ namespace kvejken
 
             ecs::queue_destroy_entity(closest);
             player.points += 10;
+            player.health = std::min(player.health + utils::rand(2, 4), 100);
 
             player.attack_hit = true;
             player.screen_shake += 0.3f;
@@ -531,6 +532,9 @@ namespace kvejken
                 renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, opacity));
                 player.time_since_recv_damage += delta_time;
             }
+
+            if (player.health <= 30)
+                renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(1.0f, 0.0f, 0.0f, 0.08f * (std::sin(7*game_time)+1)/2));
         }
 
         for (auto [player, light, transform] : ecs::get_components<Player, PointLight, Transform>())

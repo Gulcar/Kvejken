@@ -153,4 +153,10 @@ namespace kvejken::utils
         std::uniform_real_distribution<float> distribution(min, max);
         return distribution(generator);
     }
+
+    inline int round_to_multiple(int n, int multiple)
+    {
+        int r = n + multiple / 2;
+        return r - (r % multiple);
+    }
 }

@@ -68,6 +68,8 @@ namespace kvejken
 
     struct Fireplace {};
 
+    struct HealingStatue {};
+
     struct Throne
     {
         bool has_skull;

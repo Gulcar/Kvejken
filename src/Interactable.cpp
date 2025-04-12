@@ -184,6 +184,40 @@ namespace kvejken
         ecs::add_component(Fireplace{}, entity);
     }
 
+    static void spawn_healing_statue(glm::vec3 position)
+    {
+        Transform transform;
+        transform.position = position;
+        transform.rotation = glm::quat(1, 0, 0, 0);
+        transform.scale = 1.0f;
+
+        ParticleSpawner particles = {};
+        particles.active = true;
+        particles.spawn_rate = 120.0f;
+        particles.min_size = 0.04f;
+        particles.max_size = 0.08f;
+        particles.min_time_alive = 0.5f;
+        particles.max_time_alive = 0.8f;
+        particles.origin = glm::vec3(0, 0, 0);
+        particles.origin_radius = 0.2f;
+        particles.min_velocity = 0.5f;
+        particles.max_velocity = 0.75f;
+        particles.velocity_offset = glm::vec3(0, 1, 0);
+        particles.color_a = glm::vec3(0, 0.01f, 1);
+        particles.color_b = glm::vec3(0, 0.03f, 1);
+        particles.draw_layer = Layer::World;
+
+        Interactable inter = {};
+        inter.max_player_dist = 3.2f;
+        inter.cost = 100;
+
+        Entity entity = ecs::create_entity();
+        ecs::add_component(transform, entity);
+        ecs::add_component(particles, entity);
+        ecs::add_component(inter, entity);
+        ecs::add_component(HealingStatue{}, entity);
+    }
+
     static void spawn_throne(glm::vec3 position)
     {
         Throne throne;
@@ -221,6 +255,7 @@ namespace kvejken
 
         spawn_fireplace(glm::vec3(-26.67f, 1.508f, 12.14f));
         spawn_throne(glm::vec3(28.49f, 7.20f, 81.61f));
+        spawn_healing_statue(glm::vec3(29.4f, 1.66f, -2.77f));
 
 #ifdef KVEJKEN_TEST
         spawn_weapon(WeaponType::Axe, glm::vec3(0, 3, 0), glm::vec3(0, PI / 2.0f, 0), 100);
@@ -421,6 +456,7 @@ namespace kvejken
                 to_add_skull.push_back(id);
 
                 objective_complete(Objective::SkullOnThrone);
+                player.progress += 2;
             }
             else if (interactable.player_close && player.left_hand_item == ItemType::Skull)
             {
@@ -435,6 +471,35 @@ namespace kvejken
             ecs::add_component(assets::skull.get(), id);
     }
 
+    static void update_healing_statue(Player& player)
+    {
+        for (auto [healing_statue, interactable] : ecs::get_components<HealingStatue, Interactable>())
+        {
+            if (interactable.player_interacted)
+            {
+                if (player.health > 0 && player.health < 100)
+                {
+                    player.health = 100;
+                    interactable.cost = utils::round_to_multiple((int)(interactable.cost * 1.2f), 5);
+                }
+                else
+                {
+                    // refund
+                    player.points += interactable.cost;
+                }
+            }
+            else if (interactable.player_close && player.health < 100)
+            {
+                char text[64];
+                sprintf(text, u8"[E] kupi zdravljenje za %d točk", interactable.cost);
+                renderer::draw_text(text, glm::vec2(1920 / 2, 800), 48, INTERACT_TEXT_COLOR, Align::Center);
+            }
+
+            interactable.player_close = false;
+            interactable.player_interacted = false;
+        }
+    }
+
     void update_interactables(float delta_time, float game_time)
     {
         static std::vector<Entity> remove_interactable;
@@ -447,6 +512,7 @@ namespace kvejken
         update_items(player, player_transform);
         update_fireplace(player);
         update_throne(player, remove_interactable);
+        update_healing_statue(player);
 
         for (const auto& entity : remove_interactable)
         {
