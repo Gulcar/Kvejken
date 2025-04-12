@@ -12,6 +12,7 @@ uniform sampler2D u_textures[16];
 
 uniform float u_shading;
 uniform float u_sun_light;
+uniform float u_brightness;
 
 uniform int u_num_point_lights;
 uniform vec3 u_point_lights_pos[4];
@@ -64,7 +65,7 @@ void main()
 
     light = mix(vec3(1.0), light, u_shading);
 
-    v_frag_color = tex_color * vec4(light, 1.0);
+    v_frag_color = tex_color * vec4(light, 1.0) * u_brightness;
 
     //v_frag_color = vec4(v_uv, 0.0, 1.0);
     //v_frag_color = vec4(v_normal, 1.0);

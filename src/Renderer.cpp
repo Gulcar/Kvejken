@@ -225,8 +225,6 @@ namespace kvejken::renderer
         * - bloom
         */
 
-        glfwSwapInterval(0);
-
         stbi_set_flip_vertically_on_load(true);
 
         uint8_t white_pixel[] = { 0xff, 0xff, 0xff, 0xff };
@@ -275,6 +273,11 @@ namespace kvejken::renderer
         sp.y = -((sp.y / window_height()) * 2.0f - 1.0f);
         glm::vec4 up = m_ui_view_proj_inv * glm::vec4(sp, 0.0f, 1.0f);
         return glm::vec2(up.x, up.y);
+    }
+
+    void set_vsync(bool enable)
+    {
+        glfwSwapInterval(enable ? 1 : 0);
     }
 
     void poll_events()
@@ -965,5 +968,10 @@ namespace kvejken::renderer
     void set_sun_light(float strength)
     {
         m_shader.set_uniform("u_sun_light", strength);
+    }
+
+    void set_brightness(float value)
+    {
+        m_shader.set_uniform("u_brightness", value);
     }
 }

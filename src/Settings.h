@@ -7,6 +7,7 @@ namespace kvejken::settings
         int mouse_speed;
         int brightness;
         bool vsync;
+        bool draw_fps;
 
         int key_forward;
         int key_backward;

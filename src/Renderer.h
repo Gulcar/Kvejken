@@ -67,6 +67,8 @@ namespace kvejken::renderer
     float aspect_ratio();
     glm::vec2 mouse_ui_position();
 
+    void set_vsync(bool enable);
+
     void poll_events();
     void clear_screen();
     void draw_queue();
@@ -91,4 +93,5 @@ namespace kvejken::renderer
 
     void set_skybox(const std::string& skybox_obj_path);
     void set_sun_light(float strength);
+    void set_brightness(float value);
 }

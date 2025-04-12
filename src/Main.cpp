@@ -50,10 +50,13 @@ int main()
 
     renderer::set_skybox("assets/environment/skybox.obj");
 
-    int frame_count = 0;
     float prev_time = glfwGetTime();
     float delta_time = 0.0f;
     float game_time = 0.0f;
+
+    float avg_frametime = -1.0f;
+    float displayed_frametime = -1.0f;
+    float displayed_frametime_time = 0.5f;
 
     while (renderer::is_window_open())
     {
@@ -147,17 +150,32 @@ int main()
         draw_particles(game_time);
         draw_levers();
 
+        if (settings::get().draw_fps)
+        {
+            if (avg_frametime == -1.0f)
+            {
+                avg_frametime = delta_time;
+                displayed_frametime = delta_time;
+            }
+
+            avg_frametime = avg_frametime * 0.95f + delta_time * 0.05f;
+
+            displayed_frametime_time -= delta_time;
+            if (displayed_frametime_time <= 0.0f)
+            {
+                displayed_frametime = avg_frametime;
+                displayed_frametime_time = 0.4f;
+            }
+
+            char text[64];
+            sprintf(text, "%d fps (%.1f ms)", (int)std::round(1.0f / displayed_frametime), displayed_frametime * 1000.0f);
+            renderer::draw_text(text, glm::vec2(16, 144), 48, glm::vec4(0.1f, 0.9f, 0.1f, 0.9f));
+        }
+
         ui::draw_and_update_ui();
 
         renderer::draw_queue();
 
         renderer::swap_buffers();
-
-        frame_count++;
-        if (frame_count % 512 == 0)
-        {
-            float frametime = glfwGetTime() / frame_count;
-            printf("frametime: %f ms (%d fps)\n", frametime * 1000, (int)(1 / frametime));
-        }
     }
 }

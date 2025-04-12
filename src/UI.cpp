@@ -36,9 +36,10 @@ namespace kvejken::ui
         input::lock_mouse();
     }
 
-    static void draw_number_input(const char* text, int* value, int y, int min_value, int max_value, int step = 1)
+    static bool draw_number_input(const char* text, int* value, int y, int min_value, int max_value, int step = 1)
     {
         renderer::draw_text(text, glm::vec2(600, y), 64);
+        int og = *value;
 
         if (renderer::draw_button("-", glm::vec2(1120, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, (uint64_t)value))
             *value = std::clamp(*value - step, min_value, max_value);
@@ -48,6 +49,8 @@ namespace kvejken::ui
 
         if (renderer::draw_button("+", glm::vec2(1320, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, (uint64_t)value + 1))
             *value = std::clamp(*value + step, min_value, max_value);
+
+        return *value != og;
     }
 
     // vrne true ce je bilo spremenjeno
@@ -131,11 +134,18 @@ namespace kvejken::ui
 
     static void draw_settings_menu()
     {
-        int y = 469;
+        int y = 339;
 
         draw_number_input(u8"Hitrost miške", &settings::get().mouse_speed, y, 1, 40); y += 80;
-        draw_number_input("Svetlost", &settings::get().brightness, y, 1, 40); y += 80;
-        draw_on_off_input("VSync", &settings::get().vsync, y); y += 80;
+        if (draw_number_input("Svetlost", &settings::get().brightness, y, 1, 40))
+            renderer::set_brightness(settings::get().brightness / 20.0f);
+        y += 80;
+
+        if (draw_on_off_input("VSync", &settings::get().vsync, y))
+            renderer::set_vsync(settings::get().vsync);
+        y += 80;
+
+        draw_on_off_input(u8"Prikaži FPS", &settings::get().draw_fps, y); y += 80;
 
         if (renderer::draw_button("Urejanje tipk", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_menu(Menu::Keybinds);
