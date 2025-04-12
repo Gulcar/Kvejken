@@ -22,4 +22,6 @@ namespace kvejken::settings
 
     void load();
     void save();
+
+    inline int difficulty = 0;
 }

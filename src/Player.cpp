@@ -118,6 +118,12 @@ namespace kvejken
         ecs::add_component(particles, entity);
     }
 
+    void reset_player()
+    {
+        ecs::remove_all_with<Player>();
+        spawn_local_player(glm::vec3(0, 8, 0));
+    }
+
     void update_players_movement(float delta_time, float game_time)
     {
         for (auto [player, transform] : ecs::get_components<Player, Transform>())
@@ -518,8 +524,11 @@ namespace kvejken
             renderer::draw_text(points.c_str(), glm::vec2(16, 48), 48);
             renderer::draw_text(health.c_str(), glm::vec2(16, 96), 48);
 
-            std::string time_elapsed = std::to_string((int)game_time);
-            //std::string time_elapsed = std::to_string((int)game_time) + "," + std::to_string((int)(game_time * 10) % 10);
+            std::string minutes = std::to_string((int)game_time / 60);
+            std::string seconds = std::to_string((int)game_time % 60);
+            if (minutes.length() < 2) minutes = "0" + minutes;
+            if (seconds.length() < 2) seconds = "0" + seconds;
+            std::string time_elapsed = minutes + ":" + seconds;
             renderer::draw_text(time_elapsed.c_str(), glm::vec2(1904, 48), 48, glm::vec4(1.0f), Align::Right);
 
             if (player.curr_objective != Objective::None)

@@ -2,6 +2,8 @@
 #include "Input.h"
 #include "Renderer.h"
 #include "Settings.h"
+#include "Enemy.h"
+#include "Player.h"
 #include <glm/vec2.hpp>
 #include <cstdlib>
 #include <algorithm>
@@ -116,15 +118,24 @@ namespace kvejken::ui
         int y = 469;
 
         if (renderer::draw_button("Lahko", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+        {
+            settings::difficulty = 0;
             quit_menu();
+        }
         y += 80;
 
         if (renderer::draw_button("Navadno", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+        {
+            settings::difficulty = 1;
             quit_menu();
+        }
         y += 80;
 
         if (renderer::draw_button(u8"Težko", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+        {
+            settings::difficulty = 2;
             quit_menu();
+        }
         y += 80;
         
         if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
@@ -203,6 +214,10 @@ namespace kvejken::ui
         {
             m_curr_menu = Menu::Main;
             m_menu_history.clear();
+
+            reset_enemies();
+            reset_player();
+            reset_interactables();
         }
         y += 80;
     }

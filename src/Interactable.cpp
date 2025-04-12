@@ -273,6 +273,12 @@ namespace kvejken
 #endif
     }
 
+    void reset_interactables()
+    {
+        ecs::remove_all_with<Interactable>();
+        spawn_interactables();
+    }
+
     static void update_gates(Player& player, std::vector<Entity>& remove_interactable, float delta_time)
     {
         for (auto [gate, transform] : ecs::get_components<Gate, Transform>())

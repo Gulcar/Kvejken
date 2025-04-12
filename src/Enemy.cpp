@@ -15,6 +15,8 @@ namespace kvejken
     {
         float m_time_to_spawn = time_btw_spawns(0.0f, 0);
 
+        float m_spawner_active_time = 0.0f;
+
         constexpr float ENEMY_ANIM_TIME = 0.5f;
 
         constexpr float MOVE_SPEED = 4.0f;
@@ -43,6 +45,13 @@ namespace kvejken
 
             m_raycast_dirs.emplace_back(x, y, z);
         }
+    }
+
+    void reset_enemies()
+    {
+        ecs::remove_all_with<Enemy>();
+        m_spawner_active_time = 0.0f;
+        m_time_to_spawn = time_btw_spawns(0.0f, 0);
     }
 
     float time_btw_spawns(float game_time, int player_progress)
@@ -138,20 +147,19 @@ namespace kvejken
         const Player& player = pl.first;
         const Transform& player_transform = pl.second;
 
-        static float spawner_active_time = 0.0f;
         // zacni s spawnanjem ko player pobere prvo orozje
-        if (spawner_active_time == 0.0f && player.right_hand_item != WeaponType::None)
+        if (m_spawner_active_time == 0.0f && player.right_hand_item != WeaponType::None)
         {
-            spawner_active_time += delta_time;
+            m_spawner_active_time += delta_time;
         }
-        else if (spawner_active_time > 0.0f)
+        else if (m_spawner_active_time > 0.0f)
         {
-            spawner_active_time += delta_time;
+            m_spawner_active_time += delta_time;
             m_time_to_spawn -= delta_time;
 
             if (m_time_to_spawn <= 0.0f)
             {
-                m_time_to_spawn = time_btw_spawns(spawner_active_time, player.progress);
+                m_time_to_spawn = time_btw_spawns(m_spawner_active_time, player.progress);
 
                 glm::vec3 spawn_point = get_spawn_point(player_transform.position);
                 glm::vec3 direction = player_transform.position - spawn_point;

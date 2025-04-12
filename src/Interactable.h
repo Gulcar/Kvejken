@@ -80,6 +80,7 @@ namespace kvejken
     const ItemInfo& get_item_info(ItemType type);
 
     void spawn_interactables();
+    void reset_interactables();
     void update_interactables(float delta_time, float game_time);
 
     void draw_levers();

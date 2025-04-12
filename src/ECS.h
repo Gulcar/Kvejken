@@ -701,6 +701,21 @@ namespace kvejken
             auto p3 = (ComponentPool<T3>*)(component_pools()[comp_id3]);
             return ComponentPoolCollectionIds3(p1, p2, p3);
         }
+
+        template<typename T>
+        inline void remove_all_with()
+        {
+            std::vector<Entity> to_remove;
+            for (auto [id, comp] : ecs::get_components_ids<T>())
+            {
+                to_remove.push_back(id);
+            }
+
+            for (auto id : to_remove)
+            {
+                ecs::destroy_entity(id);
+            }
+        }
     }
 
     // chatgpt mi je dal idejo kako bi z vecimi threadi hkrati updatal komponente
