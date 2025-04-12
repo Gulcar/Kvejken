@@ -174,6 +174,9 @@ int main()
 
         ui::draw_and_update_ui();
 
+        if (ui::current_menu() == ui::Menu::Main)
+            game_time = 0.0f;
+
         renderer::draw_queue();
 
         renderer::swap_buffers();

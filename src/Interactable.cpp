@@ -248,16 +248,16 @@ namespace kvejken
     void spawn_interactables()
     {
         spawn_gate(glm::vec3(11.91f, 3.5f, 33.76f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(15.03f, 4.2f, 32.38f), glm::vec3(0), 100);
-        spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), glm::vec3(32.46f, 4.2f, 61.53f), glm::vec3(0), 500);
-        spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(290.0f), 0), glm::vec3(12.85f, 4.2f, 67.94f), glm::vec3(0), 700);
+        spawn_gate(glm::vec3(34.36f, 3.5f, 62.52f), glm::vec3(0, glm::radians(110.0f), 0), glm::vec3(32.46f, 4.2f, 61.53f), glm::vec3(0), 300);
+        spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(290.0f), 0), glm::vec3(12.85f, 4.2f, 67.94f), glm::vec3(0), 300);
         spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(6.4f, 0, 91.69f), glm::vec3(0, PI/2.0f, 0), (int)SpecialCost::Key);
 
         spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
         spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
-        spawn_item(ItemType::Skull, glm::vec3(9.31f, 0.054f, 125.0f), glm::vec3(0, 0, 0), 100);
+        spawn_item(ItemType::Skull, glm::vec3(9.31f, 0.054f, 125.0f), glm::vec3(0, 0, 0), 200);
 
         spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 0);
-        spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 100);
+        spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 200);
         spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
 
         spawn_fireplace(glm::vec3(-26.67f, 1.508f, 12.14f));

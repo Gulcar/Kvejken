@@ -244,8 +244,22 @@ namespace kvejken
             spawn_particle_explosion(particle_params);
 
             ecs::queue_destroy_entity(closest);
-            player.points += 10;
-            player.health = std::min(player.health + utils::rand(2, 4), 100);
+
+            if (settings::difficulty == 0)
+            {
+                player.points += 35;
+                player.health = std::min(player.health + 4, 100);
+            }
+            else if (settings::difficulty == 1)
+            {
+                player.points += 25;
+                player.health = std::min(player.health + 2, 100);
+            }
+            else if (settings::difficulty == 2)
+            {
+                player.points += 15;
+                player.health = std::min(player.health + 1, 100);
+            }
 
             player.attack_hit = true;
             player.screen_shake += 0.3f;

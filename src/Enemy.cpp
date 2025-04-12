@@ -6,6 +6,7 @@
 #include "Model.h"
 #include "Collision.h"
 #include "Assets.h"
+#include "Settings.h"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -58,6 +59,8 @@ namespace kvejken
     {
         //return 1.5f;
         game_time += player_progress * 124.0f;
+        if (settings::difficulty == 1) game_time += 2.0f * 124.0f;
+        else if (settings::difficulty == 2) game_time += 4.0f * 124.0f;
         // cas pada zaradi e na -x in valovi zaradi sinusa
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
     }
@@ -237,6 +240,9 @@ namespace kvejken
                 else
                     speed_mult = hit->distance - 1.0f;
             }
+
+            if (settings::difficulty == 0) speed_mult *= 0.8f;
+            if (settings::difficulty == 1) speed_mult *= 0.9f;
 
             transform.position += forward * MOVE_SPEED * speed_mult * delta_time;
 
