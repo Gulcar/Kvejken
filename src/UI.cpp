@@ -3,6 +3,7 @@
 #include "Renderer.h"
 #include <glm/vec2.hpp>
 #include <cstdlib>
+#include <algorithm>
 
 namespace kvejken::ui
 {
@@ -30,6 +31,20 @@ namespace kvejken::ui
         m_menu_history.clear();
         m_curr_menu = Menu::None;
         input::lock_mouse();
+    }
+
+    static void draw_number_input(const char* text, int* value, int y, int min_value, int max_value, int step = 1)
+    {
+        renderer::draw_text(text, glm::vec2(600, y), 64);
+
+        if (renderer::draw_button("-", glm::vec2(1120, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, true))
+            *value = std::clamp(*value - step, min_value, max_value);
+
+        std::string value_str = std::to_string(*value);
+        renderer::draw_text(value_str.c_str(), glm::vec2(1220, y), 64, glm::vec4(1.0f), Align::Center);
+
+        if (renderer::draw_button("+", glm::vec2(1320, y), 64, glm::vec2(64, 64), glm::vec4(1.0f), Align::Center, true))
+            *value = std::clamp(*value + step, min_value, max_value);
     }
 
     static void draw_main_menu()
@@ -76,9 +91,11 @@ namespace kvejken::ui
     {
         int y = 469;
 
-        renderer::draw_button(u8"Hitrost miške", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
+        static int mouse_speed = 10;
+        draw_number_input(u8"Hitrost miške", &mouse_speed, y, 0, 100); y += 80;
         renderer::draw_button("V-sync", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
-        renderer::draw_button("Goljufija", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
+        renderer::draw_button("Svetlost", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
+        renderer::draw_button("Urejanje tipk", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center); y += 80;
 
         if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_previous_menu();

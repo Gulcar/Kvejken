@@ -208,7 +208,7 @@ namespace kvejken
         particles.draw_layer = Layer::World;
 
         Interactable inter = {};
-        inter.max_player_dist = 3.2f;
+        inter.max_player_dist = 2.7f;
         inter.cost = 100;
 
         Entity entity = ecs::create_entity();

@@ -83,7 +83,7 @@ namespace kvejken::renderer
 
     void load_font(const char* font_file);
     void draw_text(const char* text, glm::vec2 position, int size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
-    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left);
+    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color = glm::vec4(1.0f), Align horizontal_align = Align::Left, bool allow_repeats = false);
 
     void draw_rect(glm::vec2 position, glm::vec2 size, glm::vec4 color);
     void draw_rect(const Texture& texture, glm::vec2 position, glm::vec2 size, glm::vec4 color = glm::vec4(1.0f));

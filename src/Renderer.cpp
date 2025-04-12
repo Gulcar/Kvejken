@@ -836,7 +836,7 @@ namespace kvejken::renderer
         }
     }
 
-    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align)
+    bool draw_button(const char* text, glm::vec2 position, int size, glm::vec2 rect_size, glm::vec4 color, Align horizontal_align, bool allow_repeats)
     {
         glm::vec2 rect_pos = position;
         if (horizontal_align == Align::Left) rect_pos.x += rect_size.x / 2.0f - size / 8.0f;
@@ -849,6 +849,43 @@ namespace kvejken::renderer
             draw_rect(rect_pos, rect_size, color * glm::vec4(1.0f, 1.0f, 1.0f, 0.05f));
 
         draw_text(text, position, size, color, horizontal_align);
+
+        if (allow_repeats)
+        {
+            struct MouseHold
+            {
+                float pressed_time;
+                int repeats;
+            };
+            static std::map<std::string, MouseHold> mouse_hold;
+
+            MouseHold& curr = mouse_hold[text];
+
+            if (hover && input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT))
+            {
+                curr.pressed_time = glfwGetTime();
+            }
+            else if (!hover || !input::mouse_held(GLFW_MOUSE_BUTTON_LEFT))
+            {
+                curr.pressed_time = 0.0f;
+                curr.repeats = 0;
+            }
+
+            if (curr.pressed_time != 0.0f)
+            {
+                float diff = glfwGetTime() - curr.pressed_time;
+                if (curr.repeats == 0 && diff > 0.6f)
+                {
+                    curr.repeats++;
+                    return true;
+                }
+                if (curr.repeats > 0 && diff > curr.repeats * 0.1f + 0.6f)
+                {
+                    curr.repeats++;
+                    return true;
+                }
+            }
+        }
 
         return hover && input::mouse_pressed(GLFW_MOUSE_BUTTON_LEFT);
     }
