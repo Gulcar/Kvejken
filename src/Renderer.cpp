@@ -920,13 +920,13 @@ namespace kvejken::renderer
         float t0 = tex_min_coord.t / texture.height;
         float t1 = tex_max_coord.t / texture.height;
 
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, false, 0 });
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, false, 0 });
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t0), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t1), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t0), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y0), glm::vec2(s1, t1), rgba8, false, 0 });
 
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t0), rgba8, false, 0 });
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t1), rgba8, false, 0 });
-        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t1), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y0), glm::vec2(s0, t1), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x0, y1), glm::vec2(s0, t0), rgba8, false, 0 });
+        m_ui_batched_vertices.push_back(UIVertex{ glm::vec2(x1, y1), glm::vec2(s1, t0), rgba8, false, 0 });
     }
 
     void set_skybox(const std::string& skybox_obj_path)

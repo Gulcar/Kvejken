@@ -16,7 +16,7 @@ namespace kvejken::ui
 
         std::vector<Menu> m_menu_history;
 
-        int* changing_keybind = nullptr;
+        int* m_changing_keybind = nullptr;
     }
 
     static void set_menu(Menu menu)
@@ -90,15 +90,18 @@ namespace kvejken::ui
 
         if (renderer::draw_button(input::key_name(*value), glm::vec2(1220, y), 64, glm::vec2(width, 64), glm::vec4(1.0f), Align::Center))
         {
-            changing_keybind = value;
+            m_changing_keybind = value;
         }
     }
 
     static void draw_main_menu()
     {
-        int y = 300;
+        int y = 350;
 
-        renderer::draw_text("Kvejken", glm::vec2(1920 / 2, y), 169, glm::vec4(1.0f), Align::Center); y += 169;
+        //renderer::draw_text("Kvejken", glm::vec2(1920 / 2, y), 169, glm::vec4(1.0f), Align::Center); y += 169;
+        static Texture kvejken_text = renderer::load_texture("assets/kvejken-text.png");
+        renderer::draw_rect(kvejken_text, glm::vec2(1920 / 2, y), glm::vec2(kvejken_text.width, kvejken_text.height) / 1.5f);
+        y += 169;
 
         if (renderer::draw_button("Igraj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_menu(Menu::Play);
@@ -115,7 +118,7 @@ namespace kvejken::ui
 
     static void draw_play_menu()
     {
-        int y = 469;
+        int y = 409;
 
         if (renderer::draw_button("Lahko", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
         {
@@ -136,7 +139,7 @@ namespace kvejken::ui
             settings::difficulty = 2;
             quit_menu();
         }
-        y += 80;
+        y += 160;
         
         if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_previous_menu();
@@ -181,15 +184,15 @@ namespace kvejken::ui
         draw_keybind_input(u8"Poèep", &settings::get().key_slide, y); y += 80;
         draw_keybind_input("Interakcija", &settings::get().key_interact, y); y += 80;
 
-        if (changing_keybind != nullptr)
+        if (m_changing_keybind != nullptr)
         {
             renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(0.0f, 0.0f, 0.0f, 0.9f));
             renderer::draw_text(u8"pritisni na želeno tipko", glm::vec2(1920 / 2, 1080 / 2), 64, glm::vec4(1.0f), Align::Center);
 
             if (input::last_key_pressed() != 0)
             {
-                *changing_keybind = input::last_key_pressed();
-                changing_keybind = nullptr;
+                *m_changing_keybind = input::last_key_pressed();
+                m_changing_keybind = nullptr;
             }
         }
         else if (renderer::draw_button("Nazaj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
@@ -198,9 +201,9 @@ namespace kvejken::ui
 
     static void draw_pause_menu()
     {
-        int y = 300;
+        int y = 390;
 
-        renderer::draw_text("Pavza", glm::vec2(1920 / 2, y), 169, glm::vec4(1.0f), Align::Center); y += 169;
+        renderer::draw_text("PAVZA", glm::vec2(1920 / 2, y), 64, glm::vec4(1.0f), Align::Center); y += 99;
 
         if (renderer::draw_button("Nadaljuj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             quit_menu();
