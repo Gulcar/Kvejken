@@ -1,5 +1,6 @@
 #include "Settings.h"
 #include "Utils.h"
+#include "Renderer.h"
 #include "InputDefines.h"
 #include <fstream>
 
@@ -43,6 +44,12 @@ namespace kvejken::settings
 
     void save()
     {
+        if (!renderer::is_fullscreen())
+        {
+            settings::get().window_pos = renderer::get_window_position();
+            settings::get().window_size = glm::ivec2(renderer::window_width(), renderer::window_height());
+        }
+
         std::ofstream file("kvejken_settings.bin", std::ios::binary);
         ASSERT(file.is_open() && file.good());
 

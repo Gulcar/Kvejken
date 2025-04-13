@@ -190,11 +190,4 @@ int main()
 
         renderer::swap_buffers();
     }
-
-
-    if (!renderer::is_fullscreen())
-    {
-        settings::get().window_pos = renderer::get_window_position();
-        settings::get().window_size = glm::ivec2(renderer::window_width(), renderer::window_height());
-    }
 }

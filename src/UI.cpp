@@ -101,7 +101,10 @@ namespace kvejken::ui
         //renderer::draw_text("Kvejken", glm::vec2(1920 / 2, y), 169, glm::vec4(1.0f), Align::Center); y += 169;
         static Texture kvejken_text = renderer::load_texture("assets/kvejken-text.png");
         renderer::draw_rect(kvejken_text, glm::vec2(1920 / 2, y), glm::vec2(kvejken_text.width, kvejken_text.height) / 1.5f);
-        y += 169;
+        y += 129;
+
+        renderer::draw_text(u8"Maturitetni izdelek naredil Gal Konèar", glm::vec2(1920 / 2, y), 48, glm::vec4(1.0f), Align::Center);
+        y += 80;
 
         if (renderer::draw_button("Igraj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_menu(Menu::Play);
