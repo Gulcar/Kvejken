@@ -275,9 +275,39 @@ namespace kvejken::renderer
         return glm::vec2(up.x, up.y);
     }
 
+    void set_fullscreen()
+    {
+        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+        glfwSetWindowMonitor(m_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    }
+
+    void set_windowed(glm::ivec2 position, glm::ivec2 size)
+    {
+        glfwSetWindowMonitor(m_window, nullptr, position.x, position.y, size.x, size.y, 0);
+    }
+
+    bool is_fullscreen()
+    {
+        return glfwGetWindowMonitor(m_window) != nullptr;
+    }
+
     void set_vsync(bool enable)
     {
         glfwSwapInterval(enable ? 1 : 0);
+    }
+
+    glm::ivec2 get_window_position()
+    {
+        glm::ivec2 pos;
+        glfwGetWindowPos(m_window, &pos.x, &pos.y);
+        return pos;
+    }
+
+    void set_window_position(glm::ivec2 position)
+    {
+        glfwSetWindowPos(m_window, position.x, position.y);
     }
 
     void poll_events()

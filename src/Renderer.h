@@ -67,7 +67,13 @@ namespace kvejken::renderer
     float aspect_ratio();
     glm::vec2 mouse_ui_position();
 
+    void set_fullscreen();
+    void set_windowed(glm::ivec2 position, glm::ivec2 size);
+    bool is_fullscreen();
     void set_vsync(bool enable);
+
+    glm::ivec2 get_window_position();
+    void set_window_position(glm::ivec2 position);
 
     void poll_events();
     void clear_screen();

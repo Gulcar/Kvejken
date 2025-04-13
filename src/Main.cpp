@@ -23,16 +23,25 @@ int main()
     printf("pozdravljen svet\n");
     atexit(renderer::terminate);
 
-    renderer::create_window("Kvejken", 1280, 720);
+    settings::load();
+    atexit(settings::save);
+
+    renderer::create_window("Kvejken", settings::get().window_size.x, settings::get().window_size.y);
+
+    if (settings::get().fullscreen)
+        renderer::set_fullscreen();
+    else
+        renderer::set_window_position(settings::get().window_pos);
+
+    renderer::set_vsync(settings::get().vsync);
+    renderer::set_brightness(settings::get().brightness / 20.0f);
+
     renderer::load_font("assets/Shafarik-Regular.ttf");
     
     input::init(renderer::window_ptr());
 
     assets::load();
     atexit(assets::unload);
-
-    settings::load();
-    atexit(settings::save);
 
     init_enemies();
     init_weapon_item_infos();
@@ -180,5 +189,12 @@ int main()
         renderer::draw_queue();
 
         renderer::swap_buffers();
+    }
+
+
+    if (!renderer::is_fullscreen())
+    {
+        settings::get().window_pos = renderer::get_window_position();
+        settings::get().window_size = glm::ivec2(renderer::window_width(), renderer::window_height());
     }
 }

@@ -1,7 +1,6 @@
 #include "Settings.h"
 #include "Utils.h"
 #include "InputDefines.h"
-#include "Renderer.h"
 #include <fstream>
 
 namespace kvejken::settings
@@ -25,6 +24,7 @@ namespace kvejken::settings
         {
             m_data.mouse_speed = 20;
             m_data.brightness = 20;
+            m_data.fullscreen = true;
             m_data.vsync = false;
             m_data.draw_fps = false;
 
@@ -35,10 +35,10 @@ namespace kvejken::settings
             m_data.key_jump = GLFW_KEY_SPACE;
             m_data.key_interact = GLFW_KEY_E;
             m_data.key_slide = GLFW_KEY_LEFT_SHIFT;
-        }
 
-        renderer::set_vsync(m_data.vsync);
-        renderer::set_brightness(m_data.brightness / 20.0f);
+            m_data.window_pos = glm::vec2(100, 100);
+            m_data.window_size = glm::vec2(1280, 720);
+        }
     }
 
     void save()

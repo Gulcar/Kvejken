@@ -148,11 +148,24 @@ namespace kvejken::ui
 
     static void draw_settings_menu()
     {
-        int y = 339;
+        int y = 339 - 40;
 
         draw_number_input(u8"Hitrost miške", &settings::get().mouse_speed, y, 1, 40); y += 80;
         if (draw_number_input("Svetlost", &settings::get().brightness, y, 1, 40))
             renderer::set_brightness(settings::get().brightness / 20.0f);
+        y += 80;
+
+        if (draw_on_off_input("Celozaslonsko", &settings::get().fullscreen, y))
+        {
+            if (settings::get().fullscreen)
+            {
+                settings::get().window_pos = renderer::get_window_position();
+                settings::get().window_size = glm::ivec2(renderer::window_width(), renderer::window_height());
+                renderer::set_fullscreen();
+            }
+            else
+                renderer::set_windowed(settings::get().window_pos, settings::get().window_size);
+        }
         y += 80;
 
         if (draw_on_off_input("VSync", &settings::get().vsync, y))
