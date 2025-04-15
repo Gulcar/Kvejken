@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 namespace kvejken::ui
 {
@@ -16,3 +16,4 @@ namespace kvejken::ui
 
     Menu current_menu();
 }
+

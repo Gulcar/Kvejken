@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <stdio.h>
 #include <stdlib.h>
 #include <string_view>
@@ -160,3 +160,4 @@ namespace kvejken::utils
         return r - (r % multiple);
     }
 }
+

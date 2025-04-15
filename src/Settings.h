@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/vec2.hpp>
 
@@ -31,3 +31,4 @@ namespace kvejken::settings
 
     inline int difficulty = 0;
 }
+

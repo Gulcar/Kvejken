@@ -1,4 +1,4 @@
-#include "ECS.h"
+﻿#include "ECS.h"
 #include <vector>
 #include <iostream>
 #include <bitset>
@@ -26,3 +26,4 @@ namespace kvejken::ecs
         return m_to_destroy;
     }
 }
+

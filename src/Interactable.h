@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <glm/vec3.hpp>
 #include "Model.h"
 
@@ -85,3 +85,4 @@ namespace kvejken
 
     void draw_levers();
 }
+

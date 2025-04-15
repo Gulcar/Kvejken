@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -11,4 +11,5 @@ namespace kvejken
         float scale;
     };
 }
+
 

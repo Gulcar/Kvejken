@@ -1,4 +1,4 @@
-#include "Enemy.h"
+﻿#include "Enemy.h"
 #include "ECS.h"
 #include "Player.h"
 #include "Components.h"
@@ -250,7 +250,7 @@ namespace kvejken
             for (auto point : m_raycast_dirs)
             {
                 point = transform.rotation * (point * 2.0f) + transform.position;
-                renderer::draw_model(&m_model_anim[0], point, glm::vec3(0), glm::vec3(0.05f));
+                renderer::draw_model(assets::test_cube.get(), point, glm::vec3(0), glm::vec3(0.05f));
             }
             */
         }
@@ -262,3 +262,4 @@ namespace kvejken
             renderer::draw_model(assets::spawn.get(), spawn, glm::angleAxis(game_time, glm::vec3(0, 1, 0)), glm::vec3(0.8f));
     }
 }
+

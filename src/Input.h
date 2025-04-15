@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -32,3 +32,4 @@ namespace kvejken::input
     void unlock_mouse();
     bool is_mouse_locked();
 }
+

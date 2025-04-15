@@ -1,4 +1,4 @@
-#include "Input.h"
+﻿#include "Input.h"
 #include <GLFW/glfw3.h>
 #include <cstring>
 
@@ -162,3 +162,4 @@ namespace kvejken::input
         return glfwGetInputMode(m_window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL;
     }
 }
+

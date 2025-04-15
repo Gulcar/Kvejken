@@ -1,4 +1,4 @@
-#include "UI.h"
+ï»¿#include "UI.h"
 #include "Input.h"
 #include "Renderer.h"
 #include "Settings.h"
@@ -103,7 +103,7 @@ namespace kvejken::ui
         renderer::draw_rect(kvejken_text, glm::vec2(1920 / 2, y), glm::vec2(kvejken_text.width, kvejken_text.height) / 1.5f);
         y += 129;
 
-        renderer::draw_text(u8"Maturitetni izdelek naredil Gal Konèar", glm::vec2(1920 / 2, y), 48, glm::vec4(1.0f), Align::Center);
+        renderer::draw_text(u8"Maturitetni izdelek naredil Gal KonÄar", glm::vec2(1920 / 2, y), 48, glm::vec4(1.0f), Align::Center);
         y += 80;
 
         if (renderer::draw_button("Igraj", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
@@ -137,7 +137,7 @@ namespace kvejken::ui
         }
         y += 80;
 
-        if (renderer::draw_button(u8"Teko", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
+        if (renderer::draw_button(u8"TeÅ¾ko", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
         {
             settings::difficulty = 2;
             quit_menu();
@@ -153,8 +153,8 @@ namespace kvejken::ui
     {
         int y = 339 - 40;
 
-        draw_number_input(u8"Hitrost miške", &settings::get().mouse_speed, y, 1, 40); y += 80;
-        if (draw_number_input("Svetlost", &settings::get().brightness, y, 1, 40))
+        draw_number_input(u8"Hitrost miÅ¡ke", &settings::get().mouse_speed, y, 1, 40); y += 80;
+        if (draw_number_input("Svetlost", &settings::get().brightness, y, 3, 60))
             renderer::set_brightness(settings::get().brightness / 20.0f);
         y += 80;
 
@@ -175,7 +175,7 @@ namespace kvejken::ui
             renderer::set_vsync(settings::get().vsync);
         y += 80;
 
-        draw_on_off_input(u8"Prikai FPS", &settings::get().draw_fps, y); y += 80;
+        draw_on_off_input(u8"PrikaÅ¾i FPS", &settings::get().draw_fps, y); y += 80;
 
         if (renderer::draw_button("Urejanje tipk", glm::vec2(1920 / 2, y), 64, glm::vec2(400, 64), glm::vec4(1.0f), Align::Center))
             set_menu(Menu::Keybinds);
@@ -197,13 +197,13 @@ namespace kvejken::ui
         draw_keybind_input("Nazaj", &settings::get().key_backward, y); y += 80;
         draw_keybind_input("Desno", &settings::get().key_right, y); y += 80;
         draw_keybind_input("Skok", &settings::get().key_jump, y); y += 80;
-        draw_keybind_input(u8"Poèep", &settings::get().key_slide, y); y += 80;
+        draw_keybind_input(u8"PoÄep", &settings::get().key_slide, y); y += 80;
         draw_keybind_input("Interakcija", &settings::get().key_interact, y); y += 80;
 
         if (m_changing_keybind != nullptr)
         {
             renderer::draw_rect(glm::vec2(1920 / 2, 1080 / 2), glm::vec2(1920, 1080) * 10.0f, glm::vec4(0.0f, 0.0f, 0.0f, 0.9f));
-            renderer::draw_text(u8"pritisni na eleno tipko", glm::vec2(1920 / 2, 1080 / 2), 64, glm::vec4(1.0f), Align::Center);
+            renderer::draw_text(u8"pritisni na Å¾eleno tipko", glm::vec2(1920 / 2, 1080 / 2), 64, glm::vec4(1.0f), Align::Center);
 
             if (input::last_key_pressed() != 0)
             {
@@ -266,3 +266,4 @@ namespace kvejken::ui
         return m_curr_menu;
     }
 }
+

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Renderer.h"
 #include <string>
 #include <vector>
@@ -56,3 +56,4 @@ namespace kvejken
         std::vector<Mesh> m_meshes;
     };
 }
+

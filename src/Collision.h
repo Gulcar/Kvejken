@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Model.h"
 #include <vector>
 #include <optional>
@@ -46,3 +46,4 @@ namespace kvejken::collision
     std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity = glm::vec3(0.0f),
         float max_ground_angle = 35.0f, float slide_threshold = 0.01f);
 }
+

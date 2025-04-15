@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -68,3 +68,4 @@ namespace kvejken
     void add_screen_shake(float amount);
     void objective_complete(Objective completed_objective);
 }
+

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/vec3.hpp>
 
@@ -20,3 +20,4 @@ namespace kvejken
 
     void draw_enemy_spawns(float game_time);
 }
+

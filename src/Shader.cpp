@@ -1,4 +1,4 @@
-#include "Shader.h"
+﻿#include "Shader.h"
 #include <glad/glad.h>
 #include "Utils.h"
 
@@ -117,3 +117,4 @@ namespace kvejken
         return loc;
     }
 }
+

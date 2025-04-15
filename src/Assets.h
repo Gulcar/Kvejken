@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Model.h"
 #include <memory>
 #include <vector>
@@ -83,3 +83,4 @@ namespace kvejken::assets
         test_multiple.reset();
     }
 }
+

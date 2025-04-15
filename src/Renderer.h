@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <glm/vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <string>
@@ -101,3 +101,4 @@ namespace kvejken::renderer
     void set_sun_light(float strength);
     void set_brightness(float value);
 }
+

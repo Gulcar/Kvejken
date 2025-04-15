@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
 #include <stdint.h>
@@ -39,3 +39,4 @@ namespace kvejken
         std::map<std::string, int> m_locations;
     };
 }
+

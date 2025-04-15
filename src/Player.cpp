@@ -639,3 +639,4 @@ namespace kvejken
             player.curr_objective = (Objective)((int)completed_objective + 1);
     }
 }
+

@@ -1,4 +1,4 @@
-#include "Model.h"
+﻿#include "Model.h"
 #include "Utils.h"
 #include <fstream>
 #include <string>
@@ -223,3 +223,4 @@ namespace kvejken
         m_meshes.emplace_back(std::move(vertices), materials[current_material], gen_vertex_buffer);
     }
 }
+

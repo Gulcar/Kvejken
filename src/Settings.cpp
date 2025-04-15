@@ -1,4 +1,4 @@
-#include "Settings.h"
+﻿#include "Settings.h"
 #include "Utils.h"
 #include "Renderer.h"
 #include "InputDefines.h"
@@ -57,3 +57,4 @@ namespace kvejken::settings
         file.close();
     }
 }
+

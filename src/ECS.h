@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Utils.h"
 #include <vector>
 #include <bitset>
@@ -723,3 +723,4 @@ namespace kvejken
     // (to bi ugotovil z bit maskami) in potem vse neodvisne skupine izvedel na svojem threadu
     // mimogrede koncno razumem kaj dela std::bind
 }
+

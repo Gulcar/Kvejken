@@ -1005,3 +1005,4 @@ namespace kvejken::renderer
         m_shader.set_uniform("u_brightness", value);
     }
 }
+

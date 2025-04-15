@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
@@ -60,3 +60,4 @@ namespace kvejken
 
     void draw_particles(float game_time);
 }
+
