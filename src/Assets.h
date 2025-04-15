@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include "Model.h"
+#include "Utils.h"
 #include <memory>
 #include <vector>
 
@@ -30,6 +31,8 @@ namespace kvejken::assets
 
     inline void load()
     {
+        utils::ScopeTimer timer("assets::load");
+
         terrain = std::make_unique<Model>("assets/environment/terrain.obj", false);
         gate = std::make_unique<Model>("assets/environment/gate.obj");
         spawn = std::make_unique<Model>("assets/environment/spawn.obj");
@@ -52,9 +55,11 @@ namespace kvejken::assets
         torch = std::make_unique<Model>("assets/items/torch.obj");
         skull = std::make_unique<Model>("assets/items/skull.obj");
 
+#ifdef KVEJKEN_TEST
         test_cube = std::make_unique<Model>("assets/test/test_cube.obj");
         test_rock = std::make_unique<Model>("assets/test/test_rock.obj");
         test_multiple = std::make_unique<Model>("assets/test/test_multiple.obj");
+#endif
     }
 
     inline void unload()

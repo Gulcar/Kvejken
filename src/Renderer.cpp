@@ -119,6 +119,8 @@ namespace kvejken::renderer
 
     void create_window(const char* title, int width, int height)
     {
+        utils::ScopeTimer timer("renderer::create_window");
+
         ASSERT(m_window == nullptr);
         m_window_width = width;
         m_window_height = height;
@@ -737,6 +739,8 @@ namespace kvejken::renderer
 
     void load_font(const char* font_file)
     {
+        utils::ScopeTimer timer("renderer::load_font");
+
         stbtt_pack_context stbtt_ctx;
         uint8_t* pixels = new uint8_t[FONT_ATLAS_WIDTH * FONT_ATLAS_WIDTH];
 
@@ -961,6 +965,8 @@ namespace kvejken::renderer
 
     void set_skybox(const std::string& skybox_obj_path)
     {
+        utils::ScopeTimer timer("renderer::set_skybox");
+
         m_skybox = std::make_unique<Model>(skybox_obj_path);
 
         for (auto& mesh : m_skybox->meshes())

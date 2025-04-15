@@ -122,6 +122,8 @@ namespace kvejken
 
     Model::Model(const std::string& file_path, bool allow_vbo)
     {
+        utils::ScopeTimer timer(file_path.c_str());
+
         std::ifstream file(file_path);
         if (!file.is_open() || !file.good())
             file = std::ifstream("../../" + file_path);

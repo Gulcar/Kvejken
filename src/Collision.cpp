@@ -172,8 +172,7 @@ namespace kvejken::collision
 
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
-        printf("building triangle bvh\n");
-        auto start_time = std::chrono::steady_clock::now();
+        utils::ScopeTimer timer("collision::build_triangle_bvh");
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
@@ -203,9 +202,6 @@ namespace kvejken::collision
         update_node_bounds(m_bvh_nodes[0]);
 
         subdivide_node(0);
-
-        std::chrono::duration<float> duration = std::chrono::steady_clock::now() - start_time;
-        printf("bvh done %fs\n", duration.count());
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/

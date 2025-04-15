@@ -10,6 +10,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/common.hpp>
+#include <chrono>
 
 #ifdef WIN32
 #define DEBUG_BREAK() __debugbreak()
@@ -159,5 +160,25 @@ namespace kvejken::utils
         int r = n + multiple / 2;
         return r - (r % multiple);
     }
+
+    class ScopeTimer
+    {
+    public:
+        ScopeTimer(const char* name)
+        {
+            m_name = name;
+            m_start_time = std::chrono::steady_clock::now();
+        }
+
+        ~ScopeTimer()
+        {
+            std::chrono::duration<float> duration = std::chrono::steady_clock::now() - m_start_time;
+            printf("%-40s  %.2f ms\n", m_name, duration.count() * 1000.0f);
+        }
+
+    private:
+        const char* m_name;
+        std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    };
 }
 
