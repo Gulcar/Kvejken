@@ -31,7 +31,6 @@ namespace kvejken
             return this->id == o.id && this->height == o.height && this->width == o.width;
         }
     };
-    constexpr Texture TEXTURE_COLLISION_ONLY = Texture{ 0 };
 
     enum class Layer
     {
@@ -82,6 +81,9 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path, bool srgb = true);
     Texture load_texture(const uint8_t* data, int width, int height, int num_components, bool srgb = true);
+    void load_texture_defered(const char* file_path, bool srgb = true);
+    void start_loading_defered_textures();
+    void stop_loading_defered_textures();
 
     void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));
     void draw_mesh(const Mesh* mesh, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer = Layer::World, glm::vec4 color = glm::vec4(1.0f));

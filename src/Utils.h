@@ -11,6 +11,7 @@
 #include <glm/vec4.hpp>
 #include <glm/common.hpp>
 #include <chrono>
+#include <mutex>
 
 #ifdef WIN32
 #define DEBUG_BREAK() __debugbreak()
@@ -179,6 +180,48 @@ namespace kvejken::utils
     private:
         const char* m_name;
         std::chrono::time_point<std::chrono::steady_clock> m_start_time;
+    };
+
+    template<typename T>
+    class Mutex
+    {
+    public:
+        Mutex() {}
+        Mutex(const Mutex&) = delete;
+        Mutex& operator=(const Mutex&) = delete;
+
+        class LockGuard
+        {
+        public:
+            LockGuard(std::mutex& mutex, T* data_ptr)
+                : m_lock(mutex), m_data_ptr(data_ptr) {}
+
+            LockGuard(const LockGuard&) = delete;
+            LockGuard& operator=(const LockGuard&) = delete;
+
+            T* operator->()
+            {
+                return m_data_ptr;
+            }
+
+            T& operator*()
+            {
+                return *m_data_ptr;
+            }
+
+        private:
+            std::scoped_lock<std::mutex> m_lock;
+            T* m_data_ptr;
+        };
+
+        LockGuard lock()
+        {
+            return LockGuard(m_mutex, &m_data);
+        }
+
+    private:
+        std::mutex m_mutex;
+        T m_data;
     };
 }
 

@@ -17,6 +17,8 @@
 #include <map>
 #include <memory>
 #include <cstring>
+#include <deque>
+#include <mutex>
 #include "ECS.h"
 #include "Components.h"
 #include "Shader.h"
@@ -68,8 +70,6 @@ namespace kvejken::renderer
         uint32_t m_batch_vao, m_batch_vbo;
         Shader m_shader;
 
-        std::map<std::string, Texture> m_textures;
-
         Camera m_camera = {};
         glm::mat4 m_view_proj = {};
 
@@ -106,6 +106,27 @@ namespace kvejken::renderer
         std::vector<stbtt_packedchar> m_font_atlas_coords;
 
         Texture m_white_texture = {};
+
+        struct TextureLoadRequest
+        {
+            std::string file_path;
+            bool srgb;
+        };
+        struct TextureUploadData
+        {
+            std::string file_path;
+            uint8_t* data;
+            int width;
+            int height;
+            int num_components;
+            bool srgb;
+        };
+        std::thread m_texture_loading_thread;
+        std::atomic_bool m_texture_loading_thread_done = false;
+        utils::Mutex<std::deque<TextureLoadRequest>> m_textures_to_load;
+        utils::Mutex<std::deque<TextureUploadData>> m_pixels_to_upload;
+
+        utils::Mutex<std::map<std::string, Texture>> m_textures;
 
         std::unique_ptr<Model> m_skybox = nullptr;
     }
@@ -235,6 +256,7 @@ namespace kvejken::renderer
 
     void terminate()
     {
+        stop_loading_defered_textures();
         m_skybox = nullptr;
         glfwTerminate();
         m_window = nullptr;
@@ -317,6 +339,7 @@ namespace kvejken::renderer
         glfwPollEvents();
     }
 
+    static void upload_defered_textures();
     static void draw_skybox(glm::mat4 proj, glm::mat4 view);
 
     static void update_point_lights()
@@ -385,6 +408,10 @@ namespace kvejken::renderer
 
         if (m_skybox)
             draw_skybox(proj, view);
+
+        upload_defered_textures();
+        if (m_texture_loading_thread_done)
+            stop_loading_defered_textures();
     }
 
     static bool draw_sort_predicate(const DrawCommand& a, const DrawCommand& b)
@@ -454,7 +481,7 @@ namespace kvejken::renderer
         // sortiraj tako da bodo DrawOrderKey po vrednosti padajoci
         std::sort(m_draw_queue.begin(), m_draw_queue.end(), draw_sort_predicate);
 
-        uint32_t shader_id = m_draw_queue[0].order.shader_id;
+        uint32_t shader_id = (m_draw_queue.size() > 0) ? m_draw_queue[0].order.shader_id : (uint32_t)-1;
 
         for (int i = 0; i < m_draw_queue.size(); i++)
         {
@@ -595,9 +622,12 @@ namespace kvejken::renderer
 
     Texture load_texture(const char* file_path, bool srgb)
     {
-        auto it = m_textures.find(file_path);
-        if (it != m_textures.end())
-            return it->second;
+        {
+            auto textures = m_textures.lock();
+            auto it = textures->find(file_path);
+            if (it != textures->end())
+                return it->second;
+        }
 
         int width, height;
         int num_components;
@@ -615,7 +645,10 @@ namespace kvejken::renderer
 
         stbi_image_free(data);
 
-        m_textures[file_path] = tex;
+        {
+            auto textures = m_textures.lock();
+            (*textures)[file_path] = tex;
+        }
         return tex;
     }
 
@@ -663,6 +696,109 @@ namespace kvejken::renderer
         return tex;
     }
 
+    void load_texture_defered(const char* file_path, bool srgb)
+    {
+        auto textures_to_load = m_textures_to_load.lock();
+        textures_to_load->push_back({ std::string(file_path), srgb });
+    }
+
+    static void defered_texture_loading()
+    {
+        while (true)
+        {
+            TextureLoadRequest req;
+            {
+                auto textures_to_load = m_textures_to_load.lock();
+                if (textures_to_load->size() > 0)
+                {
+                    req = textures_to_load->front();
+                    textures_to_load->pop_front();
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            {
+                auto textures = m_textures.lock();
+                auto it = textures->find(req.file_path);
+                if (it != textures->end())
+                    continue; // already loaded
+            }
+
+            int width, height;
+            int num_components;
+            uint8_t* data = stbi_load(req.file_path.c_str(), &width, &height, &num_components, 0);
+            if (data == nullptr)
+            {
+                std::string new_path = "../../" + req.file_path;
+                data = stbi_load(new_path.c_str(), &width, &height, &num_components, 0);
+            }
+
+            if (data == nullptr)
+                ERROR_EXIT("Failed to load texture '%s' (%s)", req.file_path.c_str(), stbi_failure_reason());
+
+            {
+                TextureUploadData tex_data;
+                tex_data.file_path = req.file_path;
+                tex_data.data = data;
+                tex_data.width = width;
+                tex_data.height = height;
+                tex_data.num_components = num_components;
+                tex_data.srgb = req.srgb;
+                auto pixels_to_upload = m_pixels_to_upload.lock();
+                pixels_to_upload->push_back(tex_data);
+            }
+        }
+
+        m_texture_loading_thread_done = true;
+    }
+
+    static void upload_defered_textures()
+    {
+        TextureUploadData tex_data = {};
+        {
+            auto pixels_to_upload = m_pixels_to_upload.lock();
+            if (pixels_to_upload->size() > 0)
+            {
+                tex_data = pixels_to_upload->front();
+                pixels_to_upload->pop_front();
+            }
+            else
+            {
+                return;
+            }
+        }
+
+        Texture tex = load_texture(tex_data.data, tex_data.width, tex_data.height, tex_data.num_components, tex_data.srgb);
+
+        {
+            auto textures = m_textures.lock();
+            (*textures)[tex_data.file_path] = tex;
+        }
+
+        printf("texture %s loaded\n", tex_data.file_path.c_str());
+        stbi_image_free(tex_data.data);
+    }
+
+    void start_loading_defered_textures()
+    {
+        printf("starting texture loading thread\n");
+        m_texture_loading_thread = std::thread(defered_texture_loading);
+        m_texture_loading_thread_done = false;
+    }
+
+    void stop_loading_defered_textures()
+    {
+        if (m_texture_loading_thread.joinable())
+        {
+            printf("joining texture loading thread\n");
+            m_texture_loading_thread.join();
+            m_texture_loading_thread_done = false;
+        }
+    }
+
     void draw_model(const Model* model, glm::vec3 position, glm::quat rotation, glm::vec3 scale, Layer layer, glm::vec4 color)
     {
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
@@ -694,8 +830,21 @@ namespace kvejken::renderer
 
     void draw_mesh(const Mesh* mesh, const glm::mat4& transform, Layer layer, glm::vec4 color)
     {
-        if (mesh->diffuse_texture() == TEXTURE_COLLISION_ONLY)
-            return; // ne risi collision_only objektov
+        if (mesh->diffuse_texture() == Texture{ 0 })
+        {
+            Mesh* mut_mesh = (Mesh*)mesh;
+            auto textures = m_textures.lock();
+            auto it = textures->find(mut_mesh->texture_file_path());
+            if (it != textures->end())
+            {
+                mut_mesh->diffuse_texture() = it->second;
+                mut_mesh->texture_file_path() = std::string();
+            }
+            else
+            {
+                return;
+            }
+        }
 
         // TODO: if not in camera view don't draw
         DrawOrderKey order;
@@ -988,6 +1137,21 @@ namespace kvejken::renderer
 
         for (auto& mesh : m_skybox->meshes())
         {
+            if (mesh.diffuse_texture() == Texture{ 0 })
+            {
+                auto textures = m_textures.lock();
+                auto it = textures->find(mesh.texture_file_path());
+                if (it != textures->end())
+                {
+                    mesh.diffuse_texture() = it->second;
+                    mesh.texture_file_path() = std::string();
+                }
+                else
+                {
+                    continue;
+                }
+            }
+
             ASSERT(mesh.has_vertex_buffer());
             glBindVertexArray(mesh.vertex_array_id());
 

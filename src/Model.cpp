@@ -29,10 +29,33 @@ namespace kvejken
             prepare_vertex_buffer();
     }
 
+    Mesh::Mesh(const std::vector<Vertex>& vertices, const std::string& texture_file_path, bool gen_vertex_buffer)
+    {
+        m_vertex_count = vertices.size();
+        m_vertices = vertices;
+        m_diffuse_texture = {};
+        m_texture_file_path = texture_file_path;
+
+        if (gen_vertex_buffer)
+            prepare_vertex_buffer();
+    }
+
+    Mesh::Mesh(std::vector<Vertex>&& vertices, const std::string& texture_file_path, bool gen_vertex_buffer)
+    {
+        m_vertex_count = vertices.size();
+        m_vertices = std::move(vertices);
+        m_diffuse_texture = {};
+        m_texture_file_path = texture_file_path;
+
+        if (gen_vertex_buffer)
+            prepare_vertex_buffer();
+    }
+
     Mesh::Mesh(Mesh&& other) noexcept
     {
         m_vertices = std::move(other.m_vertices);
         m_diffuse_texture = other.m_diffuse_texture;
+        m_texture_file_path = std::move(other.m_texture_file_path);
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
         m_vertex_count = other.m_vertex_count;
@@ -45,6 +68,7 @@ namespace kvejken
     {
         m_vertices = std::move(other.m_vertices);
         m_diffuse_texture = other.m_diffuse_texture;
+        m_texture_file_path = std::move(other.m_texture_file_path);
         m_vao = other.m_vao;
         m_vbo = other.m_vbo;
         m_vertex_count = other.m_vertex_count;
@@ -90,14 +114,14 @@ namespace kvejken
     }
 
 
-    static std::map<std::string, Texture> load_materials(const std::string& directory, const std::string& file_path)
+    static std::map<std::string, std::string> load_materials(const std::string& directory, const std::string& file_path)
     {
         std::ifstream file(directory + file_path);
         if (!file.is_open() || !file.good())
             file = std::ifstream("../../" + directory + file_path);
         ASSERT(file.is_open() && file.good());
 
-        std::map<std::string, Texture> materials;
+        std::map<std::string, std::string> materials;
         std::string current_material;
 
         std::string line;
@@ -108,12 +132,13 @@ namespace kvejken
                 current_material = line.substr(7, -1);
 
                 if (current_material == "collision_only")
-                    materials[current_material] = TEXTURE_COLLISION_ONLY;
+                    materials[current_material] = "collision_only";
             }
             else if (utils::starts_with(line, "map_Kd "))
             {
                 std::string file_path = directory + line.substr(7, -1);
-                materials[current_material] = renderer::load_texture(file_path.c_str());
+                renderer::load_texture_defered(file_path.c_str());
+                materials[current_material] = file_path;
             }
         }
 
@@ -142,7 +167,7 @@ namespace kvejken
         std::vector<uint32_t> normal_indices;
         std::vector<uint32_t> texture_coords_indices;
 
-        std::map<std::string, Texture> materials;
+        std::map<std::string, std::string> materials;
         std::string current_material;
 
         std::vector<Vertex> vertices;
@@ -171,29 +196,41 @@ namespace kvejken
             }
             else if (utils::starts_with(line, "v "))
             {
-                float x, y, z;
-                ASSERT(sscanf(line.c_str(), "v %f %f %f", &x, &y, &z) == 3);
+                char* ptr;
+                float x = std::strtof(line.c_str() + 2, &ptr);
+                float y = std::strtof(ptr, &ptr);
+                float z = std::strtof(ptr, &ptr);
                 positions.push_back({ x, y, z });
             }
             else if (utils::starts_with(line, "vn "))
             {
-                float x, y, z;
-                ASSERT(sscanf(line.c_str(), "vn %f %f %f", &x, &y, &z) == 3);
+                char* ptr;
+                float x = std::strtof(line.c_str() + 3, &ptr);
+                float y = std::strtof(ptr, &ptr);
+                float z = std::strtof(ptr, &ptr);
                 normals.push_back({ x, y, z });
             }
             else if (utils::starts_with(line, "vt "))
             {
-                float x, y, z;
-                ASSERT(sscanf(line.c_str(), "vt %f %f", &x, &y) == 2);
+                char* ptr;
+                float x = std::strtof(line.c_str() + 3, &ptr);
+                float y = std::strtof(ptr, &ptr);
                 texture_coords.push_back({ x, y });
             }
             else if (utils::starts_with(line, "f "))
             {
-                int av, avt, avn;
-                int bv, bvt, bvn;
-                int cv, cvt, cvn;
-                ASSERT(sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i",
-                    &av, &avt, &avn, &bv, &bvt, &bvn, &cv, &cvt, &cvn) == 9);
+                char* ptr;
+                int av = std::strtol(line.c_str() + 2, &ptr, 10);
+                int avt = std::strtol(ptr + 1, &ptr, 10);
+                int avn = std::strtol(ptr + 1, &ptr, 10);
+
+                int bv = std::strtol(ptr + 1, &ptr, 10);
+                int bvt = std::strtol(ptr + 1, &ptr, 10);
+                int bvn = std::strtol(ptr + 1, &ptr, 10);
+
+                int cv = std::strtol(ptr + 1, &ptr, 10);
+                int cvt = std::strtol(ptr + 1, &ptr, 10);
+                int cvn = std::strtol(ptr + 1, &ptr, 10);
 
                 glm::vec2 tex_coords_a = texture_coords[avt - 1];
                 glm::vec2 tex_coords_b = texture_coords[bvt - 1];

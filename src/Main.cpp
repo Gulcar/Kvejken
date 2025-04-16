@@ -36,12 +36,16 @@ int main()
     renderer::set_vsync(settings::get().vsync);
     renderer::set_brightness(settings::get().brightness / 20.0f);
 
+    renderer::set_skybox("assets/environment/skybox.obj");
+
     renderer::load_font("assets/Shafarik-Regular.ttf");
     
     input::init(renderer::window_ptr());
 
     assets::load();
     atexit(assets::unload);
+
+    renderer::start_loading_defered_textures();
 
     init_enemies();
     init_weapon_item_infos();
@@ -56,8 +60,6 @@ int main()
         if (mesh.vertices().size() > 1000)
             mesh.prepare_vertex_buffer();
     }
-
-    renderer::set_skybox("assets/environment/skybox.obj");
 
     float prev_time = glfwGetTime();
     float delta_time = 0.0f;
