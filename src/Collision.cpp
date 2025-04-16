@@ -29,6 +29,10 @@ namespace kvejken::collision
 
         std::vector<BVHNode> m_bvh_nodes;
         std::vector<Triangle> m_triangles;
+
+        std::thread m_bvh_building_thread;
+        std::atomic_bool m_bvh_building_thread_done = false;
+        std::chrono::steady_clock::time_point m_bvh_build_start_time;
     }
 
     static void update_node_bounds(BVHNode& node)
@@ -170,9 +174,34 @@ namespace kvejken::collision
         subdivide_node(right_index);
     }
 
+    static void build_triangle_bvh_thread()
+    {
+        BVHNode root;
+        root.left_child = 0;
+        root.right_child = m_triangles.size() - 1;
+        root.is_leaf = true;
+        m_bvh_nodes.push_back(root);
+        update_node_bounds(m_bvh_nodes[0]);
+
+        subdivide_node(0);
+
+        m_bvh_building_thread_done = true;
+    }
+
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
         utils::ScopeTimer timer("collision::build_triangle_bvh");
+
+        ASSERT(m_bvh_building_thread.joinable() == false);
+
+        m_bvh_nodes.clear();
+        m_triangles.clear();
+
+        size_t total_vertices = 0;
+        for (const auto& mesh : model.meshes()) {
+            total_vertices += mesh.vertices().size();
+        }
+        m_triangles.reserve(total_vertices / 3);
 
         glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
             * glm::toMat4(rotation)
@@ -191,17 +220,22 @@ namespace kvejken::collision
                 });
             }
         }
+        
+        m_bvh_building_thread_done = false;
+        m_bvh_building_thread = std::thread(build_triangle_bvh_thread);
+        m_bvh_build_start_time = std::chrono::steady_clock::now();
+    }
 
-        m_bvh_nodes.clear();
+    void check_bvh_build_thread()
+    {
+        if (m_bvh_building_thread_done && m_bvh_building_thread.joinable())
+        {
+            m_bvh_building_thread.join();
 
-        BVHNode root;
-        root.left_child = 0;
-        root.right_child = m_triangles.size() - 1;
-        root.is_leaf = true;
-        m_bvh_nodes.push_back(root);
-        update_node_bounds(m_bvh_nodes[0]);
-
-        subdivide_node(0);
+            auto stop_time = std::chrono::steady_clock::now();
+            std::chrono::duration<float> duration = stop_time - m_bvh_build_start_time;
+            printf("triangle bvh built  %.2f ms\n", duration.count() * 1000.0f);
+        }
     }
 
     // https://jacco.ompf2.com/2022/04/13/how-to-build-a-bvh-part-1-basics/
@@ -323,6 +357,11 @@ namespace kvejken::collision
 
     std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist)
     {
+        if (m_bvh_building_thread.joinable())
+        {
+            m_bvh_building_thread.join();
+        }
+
         float closest_dist = raycast_bvh(0, position, direction, max_dist);
 
         for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
@@ -430,6 +469,11 @@ namespace kvejken::collision
 
     std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity, float max_ground_angle, float slide_threshold)
     {
+        if (m_bvh_building_thread.joinable())
+        {
+            m_bvh_building_thread.join();
+        }
+
         bool any = false;
         bool ground_collison = false;
 

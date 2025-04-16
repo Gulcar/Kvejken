@@ -6,6 +6,7 @@
 namespace kvejken::collision
 {
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale);
+    void check_bvh_build_thread();
 
     struct RectCollider
     {

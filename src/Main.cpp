@@ -88,6 +88,8 @@ int main()
         }
         prev_time = real_time;
 
+        collision::check_bvh_build_thread();
+        
 
         if (!paused)
         {
