@@ -771,6 +771,13 @@ namespace kvejken::renderer
             }
         }
 
+        {
+            auto textures = m_textures.lock();
+            auto it = textures->find(tex_data.file_path);
+            if (it != textures->end())
+                return; // already loaded
+        }
+
         Texture tex = load_texture(tex_data.data, tex_data.width, tex_data.height, tex_data.num_components, tex_data.srgb);
 
         {
