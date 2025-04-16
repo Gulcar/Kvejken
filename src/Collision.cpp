@@ -89,9 +89,9 @@ namespace kvejken::collision
         glm::vec3 size = node.bounds.max - node.bounds.min;
 
 #ifdef NDEBUG
-        constexpr int NUM_SAH_TESTS = 50;
+        constexpr int NUM_SAH_TESTS = 128;
 #else
-        constexpr int NUM_SAH_TESTS = 5;
+        constexpr int NUM_SAH_TESTS = 6;
 #endif
         for (int i = 0; i < NUM_SAH_TESTS; i++)
         {
@@ -190,8 +190,6 @@ namespace kvejken::collision
 
     void build_triangle_bvh(const Model& model, glm::vec3 position, glm::quat rotation, glm::vec3 scale)
     {
-        utils::ScopeTimer timer("collision::build_triangle_bvh");
-
         ASSERT(m_bvh_building_thread.joinable() == false);
 
         m_bvh_nodes.clear();
@@ -226,15 +224,19 @@ namespace kvejken::collision
         m_bvh_build_start_time = std::chrono::steady_clock::now();
     }
 
+    static void print_bvh_build_thread_time()
+    {
+        auto stop_time = std::chrono::steady_clock::now();
+        std::chrono::duration<float> duration = stop_time - m_bvh_build_start_time;
+        printf("triangle bvh built  %.2f ms\n", duration.count() * 1000.0f);
+    }
+
     void check_bvh_build_thread()
     {
         if (m_bvh_building_thread_done && m_bvh_building_thread.joinable())
         {
             m_bvh_building_thread.join();
-
-            auto stop_time = std::chrono::steady_clock::now();
-            std::chrono::duration<float> duration = stop_time - m_bvh_build_start_time;
-            printf("triangle bvh built  %.2f ms\n", duration.count() * 1000.0f);
+            print_bvh_build_thread_time();
         }
     }
 
@@ -360,6 +362,7 @@ namespace kvejken::collision
         if (m_bvh_building_thread.joinable())
         {
             m_bvh_building_thread.join();
+            print_bvh_build_thread_time();
         }
 
         float closest_dist = raycast_bvh(0, position, direction, max_dist);
@@ -472,6 +475,7 @@ namespace kvejken::collision
         if (m_bvh_building_thread.joinable())
         {
             m_bvh_building_thread.join();
+            print_bvh_build_thread_time();
         }
 
         bool any = false;
