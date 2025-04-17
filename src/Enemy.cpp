@@ -24,6 +24,34 @@ namespace kvejken
         constexpr float TURN_SPEED = 8.0f;
         constexpr float RAYCAST_DIST = 4.0f;
         std::vector<glm::vec3> m_raycast_dirs;
+
+        constexpr glm::vec3 SPAWN_POINTS[] = {
+            // zunaj
+            glm::vec3(-34.6f, 2.5f, 1.3f),
+            glm::vec3(-32.6f, 3.2f, -9.0f),
+            glm::vec3(-24.3f, 3.4f, -16.9f),
+            glm::vec3(-8.7f, 1.7f, -27.3f),
+            glm::vec3(8.5f, 2.3f, -22.3f),
+            glm::vec3(17.0f, 2.1f, -19.5f),
+            glm::vec3(26.9f, 1.6f, -10.8f),
+            glm::vec3(29.7f, 1.9f, -1.6f),
+            glm::vec3(24.7f, 3.14f, 12.9f),
+            glm::vec3(15.6f, 3.98f, 24.5f),
+            glm::vec3(5.1f, 4.1f, 30.3f),
+            glm::vec3(-12.5f, 3.68f, 25.7f),
+            glm::vec3(-29.1f, 2.68f, 21.0f),
+            // grad
+            glm::vec3(23.31f, 6.2f, 82.3f),
+            glm::vec3(32.71f, 6.2f, 78.61f),
+            glm::vec3(9.55f, 3.9f, 47.59f),
+            glm::vec3(21.43f, 3.9f, 43.0f),
+            glm::vec3(48.26f, 3.9f, 53.67f),
+            glm::vec3(-30.3f, 3.9f, 66.9f),
+            // klet
+            glm::vec3(5.4f, -0.3f, 124.0f),
+            glm::vec3(20.96f, -0.3f, 110.0f),
+            glm::vec3(10.32f, -0.3f, 96.16f),
+        };
     }
 
     void init_enemies()
@@ -46,6 +74,23 @@ namespace kvejken
 
             m_raycast_dirs.emplace_back(x, y, z);
         }
+
+        // naredi samo colliderje
+        for (auto spawn_point : SPAWN_POINTS)
+        {
+            Transform transform;
+            transform.position = spawn_point;
+            transform.rotation = glm::vec3(0, 0, 0);
+            transform.scale = 1.0f;
+
+            collision::SphereCollider collider;
+            collider.center_offset = glm::vec3(0, 0.2f, 0);
+            collider.radius = 0.45f;
+
+            Entity e = ecs::create_entity();
+            ecs::add_component(transform, e);
+            ecs::add_component(collider, e);
+        }
     }
 
     void reset_enemies()
@@ -65,34 +110,6 @@ namespace kvejken
         return 15.0f * std::exp(-game_time / 400.0f) + 5.0f * std::sin(game_time / 10.0f) + 5.0f;
     }
 
-    // TODO: dodaj vec
-    constexpr glm::vec3 SPAWN_POINTS[] = {
-        // zunaj
-        glm::vec3(-34.6f, 2.5f, 1.3f),
-        glm::vec3(-32.6f, 3.2f, -9.0f),
-        glm::vec3(-24.3f, 3.4f, -16.9f),
-        glm::vec3(-8.7f, 1.7f, -27.3f),
-        glm::vec3(8.5f, 2.3f, -22.3f),
-        glm::vec3(17.0f, 2.1f, -19.5f),
-        glm::vec3(26.9f, 1.6f, -10.8f),
-        glm::vec3(29.7f, 1.9f, -1.6f),
-        glm::vec3(24.7f, 3.14f, 12.9f),
-        glm::vec3(15.6f, 3.98f, 24.5f),
-        glm::vec3(5.1f, 4.1f, 30.3f),
-        glm::vec3(-12.5f, 3.68f, 25.7f),
-        glm::vec3(-29.1f, 2.68f, 21.0f),
-        // grad
-        glm::vec3(23.31f, 6.2f, 82.3f),
-        glm::vec3(32.71f, 6.2f, 78.61f),
-        glm::vec3(9.55f, 3.9f, 47.59f),
-        glm::vec3(21.43f, 3.9f, 43.0f),
-        glm::vec3(48.26f, 3.9f, 53.67f),
-        glm::vec3(-30.3f, 3.9f, 66.9f),
-        // klet
-        glm::vec3(5.4f, -0.3f, 124.0f),
-        glm::vec3(20.96f, -0.3f, 110.0f),
-        glm::vec3(10.32f, -0.3f, 96.16f),
-    };
     static glm::vec3 get_spawn_point(glm::vec3 player_position)
     {
         static std::vector<int> ok_spawns;
