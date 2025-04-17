@@ -160,6 +160,9 @@ namespace kvejken
             m_spawner_active_time += delta_time;
             m_time_to_spawn -= delta_time;
 
+            if (settings::fast_demo)
+                m_time_to_spawn -= delta_time;
+
             if (m_time_to_spawn <= 0.0f)
             {
                 m_time_to_spawn = time_btw_spawns(m_spawner_active_time, player.progress);

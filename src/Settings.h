@@ -30,5 +30,6 @@ namespace kvejken::settings
     void save();
 
     inline int difficulty = 0;
+    inline bool fast_demo = false;
 }
 

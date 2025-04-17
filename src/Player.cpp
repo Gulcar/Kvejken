@@ -41,8 +41,6 @@ namespace kvejken
         u8"Zakaj sem moral umreti?",
         u8"Pa tako dobro je šlo!",
         u8"Kje se je vse zalomilo?",
-        u8"Nič več življenja",
-        u8"Slab si!",
     };
 
     const char* objective_message(Objective objective)
@@ -245,7 +243,12 @@ namespace kvejken
 
             ecs::queue_destroy_entity(closest);
 
-            if (settings::difficulty == 0)
+            if (settings::fast_demo)
+            {
+                player.points += 150;
+                player.health = std::min(player.health + 10, 100);
+            }
+            else if (settings::difficulty == 0)
             {
                 player.points += 35;
                 player.health = std::min(player.health + 4, 100);
