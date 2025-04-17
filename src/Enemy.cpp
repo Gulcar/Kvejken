@@ -190,7 +190,7 @@ namespace kvejken
 
             for (int i = 0; i < m_raycast_dirs.size(); i++)
             {
-                auto hit = collision::raycast(transform.position, transform.rotation * m_raycast_dirs[i], RAYCAST_DIST);
+                auto hit = collision::raycast(transform.position, transform.rotation * m_raycast_dirs[i], RAYCAST_DIST, false);
                 if (hit)
                 {
                     float danger01 = (1.0f - (hit->distance / RAYCAST_DIST));
@@ -235,7 +235,7 @@ namespace kvejken
             forward = transform.rotation * glm::vec3(0, 0, 1);
             float speed_mult = 1.0f;
 
-            auto hit = collision::raycast(transform.position, forward, 2.0f);
+            auto hit = collision::raycast(transform.position, forward, 2.0f, false);
             if (hit)
             {
                 if (hit->distance < 1.1f)

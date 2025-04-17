@@ -370,7 +370,7 @@ namespace kvejken::collision
         return max_dist;
     }
 
-    std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist)
+    std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist, bool check_other_colliders)
     {
         if (m_bvh_building_thread.joinable())
         {
@@ -380,20 +380,23 @@ namespace kvejken::collision
 
         float closest_dist = raycast_bvh(0, position, direction, max_dist);
 
-        for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
+        if (check_other_colliders)
         {
-            auto [t1, t2] = rect_to_tris(rect, transform);
-            glm::vec2 bary_coords;
-            float distance;
-            if (glm::intersectRayTriangle(position, direction, t1.v1, t1.v2, t1.v3, bary_coords, distance))
+            for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
             {
-                if (distance > 0.0f && distance < max_dist)
-                    max_dist = distance;
-            }
-            if (glm::intersectRayTriangle(position, direction, t2.v1, t2.v2, t2.v3, bary_coords, distance))
-            {
-                if (distance > 0.0f && distance < max_dist)
-                    max_dist = distance;
+                auto [t1, t2] = rect_to_tris(rect, transform);
+                glm::vec2 bary_coords;
+                float distance;
+                if (glm::intersectRayTriangle(position, direction, t1.v1, t1.v2, t1.v3, bary_coords, distance))
+                {
+                    if (distance > 0.0f && distance < closest_dist)
+                        closest_dist = distance;
+                }
+                if (glm::intersectRayTriangle(position, direction, t2.v1, t2.v2, t2.v3, bary_coords, distance))
+                {
+                    if (distance > 0.0f && distance < closest_dist)
+                        closest_dist = distance;
+                }
             }
         }
 

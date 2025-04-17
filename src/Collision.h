@@ -27,7 +27,7 @@ namespace kvejken::collision
         glm::vec3 position;
         float distance;
     };
-    std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist = 9999.0f);
+    std::optional<RaycastHit> raycast(glm::vec3 position, glm::vec3 direction, float max_dist = 9999.0f, bool check_other_colliders = true);
 
     glm::vec3 closest_point_on_line(glm::vec3 a, glm::vec3 b, glm::vec3 p);
 
