@@ -8,6 +8,7 @@
 #include "Particles.h"
 #include "Input.h"
 #include "Settings.h"
+#include "Collision.h"
 
 namespace kvejken
 {
@@ -117,7 +118,7 @@ namespace kvejken
         ecs::add_component(collider, e);
     }
 
-    static void spawn_weapon(WeaponType weapon_tag, glm::vec3 position, glm::quat rotation, int cost)
+    static void spawn_weapon(WeaponType weapon_tag, glm::vec3 position, glm::quat rotation, int cost, bool add_collider = false)
     {
         const WeaponInfo& weapon = get_weapon_info(weapon_tag);
 
@@ -135,9 +136,11 @@ namespace kvejken
         ecs::add_component(weapon.model, e);
         ecs::add_component(transform, e);
         ecs::add_component(weapon_tag, e);
+        if (add_collider)
+            ecs::add_component(collision::SphereCollider{ glm::vec3(0), 0.1f }, e);
     }
 
-    static void spawn_item(ItemType item_tag, glm::vec3 position, glm::quat rotation, int cost)
+    static void spawn_item(ItemType item_tag, glm::vec3 position, glm::quat rotation, int cost, bool add_collider = false)
     {
         const ItemInfo& item = get_item_info(item_tag);
 
@@ -155,6 +158,8 @@ namespace kvejken
         ecs::add_component(item.model, e);
         ecs::add_component(transform, e);
         ecs::add_component(item_tag, e);
+        if (add_collider)
+            ecs::add_component(collision::SphereCollider{ glm::vec3(0), 0.1f }, e);
     }
 
     static void spawn_fireplace(glm::vec3 position)
@@ -252,13 +257,13 @@ namespace kvejken
         spawn_gate(glm::vec3(10.85f, 3.5f, 66.84f), glm::vec3(0, glm::radians(290.0f), 0), glm::vec3(12.85f, 4.2f, 67.94f), glm::vec3(0), 300);
         spawn_gate(glm::vec3(6.138f, -0.62f, 93.78f), glm::vec3(0, glm::radians(20.0f), 0), glm::vec3(6.4f, 0, 91.69f), glm::vec3(0, PI/2.0f, 0), (int)SpecialCost::Key);
 
-        spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100);
-        spawn_item(ItemType::Torch, glm::vec3(-3.67f, 4.0f, 71.58f), glm::vec3(0, 0, 0), 100);
-        spawn_item(ItemType::Skull, glm::vec3(9.31f, 0.054f, 125.0f), glm::vec3(0, 0, 0), 200);
+        spawn_item(ItemType::Key, glm::vec3(43.0f, 4.0f, 54.42f), glm::vec3(0, 0, 0), 100, true);
+        spawn_item(ItemType::Torch, glm::vec3(-3.67f, 3.7f, 71.58f), glm::vec3(0, 0, 0), 100, true);
+        spawn_item(ItemType::Skull, glm::vec3(9.31f, 0.054f, 125.0f), glm::vec3(0, 0, 0), 200, true);
 
-        spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 0);
-        spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 200);
-        spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100);
+        spawn_weapon(WeaponType::Axe, glm::vec3(4.85f, 4.0f, 18.38f), glm::vec3(0, PI/2.0f, 0), 0, true);
+        spawn_weapon(WeaponType::SpikedClub, glm::vec3(11.81f, 8.0f, 60.44f), glm::vec3(0, 0, 0), 200, true);
+        spawn_weapon(WeaponType::Hammer, glm::vec3(24.48f, -0.3f, 106.8f), glm::vec3(0, 0, 0), 100, true);
 
         spawn_fireplace(glm::vec3(-26.67f, 1.508f, 12.14f));
         spawn_throne(glm::vec3(28.49f, 7.20f, 81.61f));
@@ -348,7 +353,10 @@ namespace kvejken
             {
                 if (player.right_hand_item != WeaponType::None)
                 {
-                    new_spawn.push_back({ player.right_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
+                    if (auto hit = collision::raycast(player_transform.position, glm::vec3(0, -1, 0), 10.0f, false))
+                        new_spawn.push_back({ player.right_hand_item, hit->position + glm::vec3(0, 0.05f, 0) });
+                    else
+                        new_spawn.push_back({ player.right_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
 
                 objective_complete(Objective::PickUpWeapon);
@@ -395,7 +403,10 @@ namespace kvejken
                     if (player.left_hand_item == ItemType::LitTorch)
                         player.left_hand_item = ItemType::Torch;
 
-                    new_spawn.push_back({ player.left_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
+                    if (auto hit = collision::raycast(player_transform.position, glm::vec3(0, -1, 0), 10.0f, false))
+                        new_spawn.push_back({ player.left_hand_item, hit->position + glm::vec3(0, 0.05f, 0) });
+                    else
+                        new_spawn.push_back({ player.left_hand_item, player_transform.position + glm::vec3(0, -0.45f, 0) });
                 }
 
                 if (item == ItemType::Torch)

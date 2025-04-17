@@ -14,6 +14,12 @@ namespace kvejken::collision
         float width, height;
     };
 
+    struct SphereCollider
+    {
+        glm::vec3 center_offset;
+        float radius;
+    };
+
     struct AABB
     {
         glm::vec3 min;

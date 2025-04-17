@@ -597,6 +597,17 @@ namespace kvejken::collision
                 }
             }
         }
+        
+        for (const auto [sphere_collider, transform] : ecs::get_components<SphereCollider, Transform>())
+        {
+            glm::vec3 sphere_center = sphere_collider.center_offset + transform.position;
+            glm::vec3 dir = center - sphere_center;
+            float len = glm::length(dir);
+            if (len < sphere_collider.radius + radius)
+            {
+                center += dir * (sphere_collider.radius + radius - len);
+            }
+        }
 
         static std::vector<Triangle> temp_triangles;
         temp_triangles.clear();

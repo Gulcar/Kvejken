@@ -248,6 +248,8 @@ namespace kvejken::ui
             reset_enemies();
             reset_player();
             reset_interactables();
+
+            renderer::set_sun_light(1.0f);
         }
         y += 80;
     }
