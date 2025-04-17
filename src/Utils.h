@@ -223,5 +223,11 @@ namespace kvejken::utils
         std::mutex m_mutex;
         T m_data;
     };
+
+    class NullStreamBuf : public std::streambuf
+    {
+    public:
+        int overflow(int c) override { return c; }
+    };
 }
 

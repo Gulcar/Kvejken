@@ -205,6 +205,8 @@ namespace kvejken::collision
             * glm::toMat4(rotation)
             * glm::scale(glm::mat4(1.0f), scale);
 
+        int skipped = 0;
+
         for (const auto& mesh : model.meshes())
         {
             for (int i = 0; i < mesh.vertices().size(); i += 3)
@@ -212,12 +214,23 @@ namespace kvejken::collision
                 glm::vec3 v1 = transform * glm::vec4(mesh.vertices()[i].position, 1.0f);
                 glm::vec3 v2 = transform * glm::vec4(mesh.vertices()[i + 1].position, 1.0f);
                 glm::vec3 v3 = transform * glm::vec4(mesh.vertices()[i + 2].position, 1.0f);
+
+                if (glm::distance2(v1, v2) < 0.064f * 0.064f ||
+                    glm::distance2(v2, v3) < 0.064f * 0.064f ||
+                    glm::distance2(v1, v3) < 0.064f * 0.064f)
+                {
+                    skipped++;
+                    continue;
+                }
+
                 m_triangles.push_back(Triangle{
                     v1, v2, v3,
                     (v1 + v2 + v3) / 3.0f
                 });
             }
         }
+
+        printf("triangles ignored for collision: %d\n", skipped);
         
         m_bvh_building_thread_done = false;
         m_bvh_building_thread = std::thread(build_triangle_bvh_thread);
@@ -396,19 +409,19 @@ namespace kvejken::collision
 
     glm::vec3 closest_point_on_line(glm::vec3 a, glm::vec3 b, glm::vec3 p)
     {
-        glm::vec3 n = glm::normalize(b - a);
-        float t = glm::dot(p - a, n);
+        glm::vec3 n = b - a;
+        float t = glm::dot(p - a, n) / glm::dot(n, n);
         return a + glm::clamp(t, 0.0f, 1.0f) * n;
     }
 
     // https://wickedengine.net/2020/04/capsule-collision-detection/
-    // TODO: mogoce bi lahko forsiral da se collision lahko resi samo v tisto smer kamor je trikotnik obrnjen,
-    // da bi tezje clipal cez tla ali pa sel v steno, ker so vsi trikotnik ze pravilno obrneni za GL_CULL_FACE
     std::optional<Intersection> sphere_triangle_intersection(glm::vec3 center, float radius, glm::vec3 a, glm::vec3 b, glm::vec3 c)
     {
         glm::vec3 tri_normal = glm::normalize(glm::cross(b - a, c - a));
         float dist = glm::dot(center - a, tri_normal);
 
+        if (dist < 0.0f)
+            return std::nullopt;
         if (dist < -radius || dist > radius)
             return std::nullopt;
 
@@ -470,6 +483,14 @@ namespace kvejken::collision
         return out;
     }
 
+#ifdef KVEJKEN_DEBUG_PHYSICS
+    #define DEBUG_VECTOR(v) debug_file << #v << " [" << v.x << ", " << v.y << ", " << v.z << "]\n"
+    #define DEBUG_VAR(v) debug_file << #v << " " << v << "\n"
+#else
+    #define DEBUG_VECTOR(v) 
+    #define DEBUG_VAR(v) 
+#endif
+
     std::optional<ResolvedCollision> sphere_collision(glm::vec3 center, float radius, glm::vec3 velocity, float max_ground_angle, float slide_threshold)
     {
         if (m_bvh_building_thread.joinable())
@@ -478,11 +499,33 @@ namespace kvejken::collision
             print_bvh_build_thread_time();
         }
 
+#ifdef KVEJKEN_DEBUG_PHYSICS
+        static std::ofstream debug_file("physics_debug.txt");
+        ASSERT(debug_file.is_open() && debug_file.good());
+
+        debug_file << "\n-------------------------------------------------\n";
+        static size_t idx = 0;
+        debug_file << "sphere_collision " << idx++ << "\n";
+        DEBUG_VECTOR(center);
+        DEBUG_VAR(radius);
+        DEBUG_VECTOR(velocity);
+        DEBUG_VAR(max_ground_angle);
+        DEBUG_VAR(slide_threshold);
+        debug_file << "\n";
+#else
+        static utils::NullStreamBuf null_buf;
+        static std::ostream debug_file(&null_buf);
+#endif
+
         bool any = false;
         bool ground_collison = false;
 
         bool only_y_movement = glm::length(glm::vec2(velocity.x, velocity.z)) < slide_threshold;
         float ground_normal_y = std::cos(glm::radians(max_ground_angle));
+
+        DEBUG_VAR(only_y_movement);
+        DEBUG_VAR(ground_normal_y);
+        debug_file << "\n";
 
         BVHNode* node = &m_bvh_nodes[0];
         static std::vector<BVHNode*> stack;
@@ -501,6 +544,10 @@ namespace kvejken::collision
                     const auto& tri = m_triangles[i];
                     if (auto collision = sphere_triangle_intersection(center, radius * 1.6f, tri.v1, tri.v2, tri.v3))
                     {
+                        DEBUG_VECTOR(tri.v1);
+                        DEBUG_VECTOR(tri.v2);
+                        DEBUG_VECTOR(tri.v3);
+                        DEBUG_VAR(collision->depth);
                         close_triangles.push_back({ &tri, collision->depth });
                     }
                 }
@@ -554,12 +601,12 @@ namespace kvejken::collision
         for (const auto [rect, transform] : ecs::get_components<RectCollider, Transform>())
         {
             auto [t1, t2] = rect_to_tris(rect, transform);
-            if (auto collision = sphere_triangle_intersection(center, radius * 1.25f, t1.v1, t1.v2, t1.v3))
+            if (auto collision = sphere_triangle_intersection(center, radius * 1.6f, t1.v1, t1.v2, t1.v3))
             {
                 temp_triangles.push_back(t1);
                 close_triangles.push_back({ &temp_triangles.back(), collision->depth});
             }
-            if (auto collision = sphere_triangle_intersection(center, radius * 1.25f, t2.v1, t2.v2, t2.v3))
+            if (auto collision = sphere_triangle_intersection(center, radius * 1.6f, t2.v1, t2.v2, t2.v3))
             {
                 temp_triangles.push_back(t2);
                 close_triangles.push_back({ &temp_triangles.back(), collision->depth });
@@ -571,9 +618,16 @@ namespace kvejken::collision
             return a.second < b.second;
         });
 
+        debug_file << "sort\n";
+
         for (const auto& [tri, depth] : close_triangles)
         {
             auto intersection = sphere_triangle_intersection(center, radius, tri->v1, tri->v2, tri->v3);
+            DEBUG_VECTOR(tri->v1);
+            DEBUG_VECTOR(tri->v2);
+            DEBUG_VECTOR(tri->v3);
+            DEBUG_VAR(depth);
+            DEBUG_VAR(intersection.has_value());
             if (intersection)
             {
                 any = true;
@@ -587,12 +641,30 @@ namespace kvejken::collision
                     center += intersection->normal * intersection->depth;
                 }
 
+                DEBUG_VECTOR(center);
+
                 if (intersection->normal.y > ground_normal_y)
+                {
                     ground_collison = true;
+                    DEBUG_VAR(ground_collison);
+                }
+                else
+                {
+                    debug_file << "ground_collision 0\n";
+                }
+
+                DEBUG_VECTOR(velocity);
 
                 float vel_on_normal = glm::dot(velocity, -intersection->normal);
-                velocity += glm::max(vel_on_normal, 0.0f) * intersection->normal;
+                velocity -= glm::max(vel_on_normal, 0.0f) * (-intersection->normal);
+
+                DEBUG_VECTOR(intersection->normal);
+                DEBUG_VAR(vel_on_normal);
+                DEBUG_VECTOR(glm::max(vel_on_normal, 0.0f) * intersection->normal);
+                DEBUG_VECTOR(velocity);
             }
+
+            debug_file << "\n";
         }
 
         if (any)
@@ -601,8 +673,12 @@ namespace kvejken::collision
             out.new_center = center;
             out.new_velocity = velocity;
             out.ground_collision = ground_collison;
+            DEBUG_VECTOR(out.new_center);
+            DEBUG_VECTOR(out.new_velocity);
+            DEBUG_VAR(out.ground_collision);
             return out;
         }
+        debug_file << "no collision\n";
         return std::nullopt;
     }
 }

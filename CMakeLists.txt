@@ -37,4 +37,5 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     #KVEJKEN_TEST
+    #KVEJKEN_DEBUG_PHYSICS
 )
